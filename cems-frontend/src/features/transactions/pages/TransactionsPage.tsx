@@ -1,11 +1,22 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, ChevronDown, ArrowLeftRight, TrendingUp, TrendingDown, Move } from 'lucide-react'
 import { useTransactions } from '@/hooks/useTransactions'
 import TransactionFiltersComponent from '../components/TransactionFilters'
 import TransactionTable from '../components/TransactionTable'
 import ExchangeDialog from '../components/ExchangeDialog'
+import IncomeDialog from '../components/IncomeDialog'
+import ExpenseDialog from '../components/ExpenseDialog'
+import TransferDialog from '../components/TransferDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { TransactionFilters, TransactionQueryParams } from '@/types/transaction.types'
 
 export default function TransactionsPage() {
@@ -15,6 +26,9 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false)
+  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
 
   const queryParams: TransactionQueryParams = {
     ...filters,
@@ -76,10 +90,36 @@ export default function TransactionsPage() {
           <h1 className="text-3xl font-bold">Transactions</h1>
           <p className="text-muted-foreground">Manage and view all currency exchange transactions</p>
         </div>
-        <Button onClick={() => setIsExchangeDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Transaction
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              New Transaction
+              <ChevronDown className="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Transaction Type</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setIsExchangeDialogOpen(true)}>
+              <ArrowLeftRight className="w-4 h-4 mr-2" />
+              Currency Exchange
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsIncomeDialogOpen(true)}>
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Income
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsExpenseDialogOpen(true)}>
+              <TrendingDown className="w-4 h-4 mr-2" />
+              Expense
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setIsTransferDialogOpen(true)}>
+              <Move className="w-4 h-4 mr-2" />
+              Branch Transfer
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Filters */}
@@ -169,8 +209,11 @@ export default function TransactionsPage() {
         </Card>
       )}
 
-      {/* Exchange Dialog */}
+      {/* Transaction Dialogs */}
       <ExchangeDialog open={isExchangeDialogOpen} onOpenChange={setIsExchangeDialogOpen} />
+      <IncomeDialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen} />
+      <ExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} />
+      <TransferDialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen} />
     </div>
   )
 }

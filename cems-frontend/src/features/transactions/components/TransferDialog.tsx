@@ -1,0 +1,284 @@
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Loader2, ArrowRight } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useCurrencies } from '@/hooks/useCurrencies'
+import { useBranches, useCreateTransfer } from '@/hooks/useTransactions'
+
+const transferSchema = z.object({
+  from_branch_id: z.number().int().positive('Please select a branch'),
+  to_branch_id: z.number().int().positive('Please select a branch'),
+  currency_code: z.string().min(1, 'Please select a currency'),
+  amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
+  description: z.string().optional(),
+})
+
+type TransferFormData = z.infer<typeof transferSchema>
+
+interface TransferDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export default function TransferDialog({ open, onOpenChange }: TransferDialogProps) {
+  const { data: currencies, isLoading: currenciesLoading } = useCurrencies()
+  const { data: branches, isLoading: branchesLoading } = useBranches()
+  const { mutate: createTransfer, isPending: isCreating } = useCreateTransfer()
+
+  const form = useForm<TransferFormData>({
+    resolver: zodResolver(transferSchema),
+    defaultValues: {
+      from_branch_id: 0,
+      to_branch_id: 0,
+      currency_code: '',
+      amount: 0,
+      description: '',
+    },
+  })
+
+  const fromBranchId = form.watch('from_branch_id')
+  const toBranchId = form.watch('to_branch_id')
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      form.reset()
+    }
+  }, [open, form])
+
+  const onSubmit = (data: TransferFormData) => {
+    if (data.from_branch_id === data.to_branch_id) {
+      form.setError('to_branch_id', {
+        message: 'From and To branches cannot be the same',
+      })
+      return
+    }
+
+    createTransfer(
+      {
+        from_branch_id: data.from_branch_id,
+        to_branch_id: data.to_branch_id,
+        currency_code: data.currency_code,
+        amount: data.amount,
+        description: data.description || undefined,
+      },
+      {
+        onSuccess: () => {
+          onOpenChange(false)
+          form.reset()
+        },
+      }
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>New Transfer Transaction</DialogTitle>
+          <DialogDescription>
+            Transfer funds between branches. Enter the details below.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* From Branch */}
+            <FormField
+              control={form.control}
+              name="from_branch_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>From Branch</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value > 0 ? field.value.toString() : ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {branchesLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        branches?.map((branch) => (
+                          <SelectItem
+                            key={branch.id}
+                            value={branch.id.toString()}
+                            disabled={branch.id === toBranchId}
+                          >
+                            {branch.name} ({branch.code})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Transfer Arrow Indicator */}
+            {fromBranchId > 0 && toBranchId > 0 && (
+              <div className="flex items-center justify-center py-2">
+                <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+
+            {/* To Branch */}
+            <FormField
+              control={form.control}
+              name="to_branch_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>To Branch</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value > 0 ? field.value.toString() : ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {branchesLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        branches?.map((branch) => (
+                          <SelectItem
+                            key={branch.id}
+                            value={branch.id.toString()}
+                            disabled={branch.id === fromBranchId}
+                          >
+                            {branch.name} ({branch.code})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Currency */}
+            <FormField
+              control={form.control}
+              name="currency_code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {currenciesLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        currencies?.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            {currency.code} - {currency.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Amount */}
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={field.value}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Description (Optional) */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Transfer
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -1,6 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/api/client'
-import type { TransactionListResponse, TransactionQueryParams } from '@/types/transaction.types'
+import { transactionApi } from '@/lib/api/transaction.api'
+import type {
+  TransactionListResponse,
+  TransactionQueryParams,
+  IncomeTransactionRequest,
+  ExpenseTransactionRequest,
+  TransferTransactionRequest,
+} from '@/types/transaction.types'
 
 /**
  * Fetch transactions list with filters and pagination
@@ -18,5 +25,58 @@ export const useTransactions = (params: TransactionQueryParams) => {
     queryKey: ['transactions', params],
     queryFn: () => fetchTransactions(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+
+/**
+ * Hook for getting branches list
+ */
+export const useBranches = () => {
+  return useQuery({
+    queryKey: ['branches'],
+    queryFn: transactionApi.getBranches,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  })
+}
+
+/**
+ * Hook for creating income transaction
+ */
+export const useCreateIncome = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: IncomeTransactionRequest) => transactionApi.createIncome(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}
+
+/**
+ * Hook for creating expense transaction
+ */
+export const useCreateExpense = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: ExpenseTransactionRequest) => transactionApi.createExpense(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}
+
+/**
+ * Hook for creating transfer transaction
+ */
+export const useCreateTransfer = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: TransferTransactionRequest) => transactionApi.createTransfer(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
   })
 }

@@ -1,0 +1,47 @@
+import apiClient from './client'
+import type {
+  IncomeTransactionRequest,
+  IncomeTransactionResponse,
+  ExpenseTransactionRequest,
+  ExpenseTransactionResponse,
+  TransferTransactionRequest,
+  TransferTransactionResponse,
+  Branch,
+} from '@/types/transaction.types'
+
+export const transactionApi = {
+  // Create income transaction
+  createIncome: async (data: IncomeTransactionRequest): Promise<IncomeTransactionResponse> => {
+    const response = await apiClient.post<IncomeTransactionResponse>(
+      '/transactions/income',
+      data
+    )
+    return response.data
+  },
+
+  // Create expense transaction
+  createExpense: async (data: ExpenseTransactionRequest): Promise<ExpenseTransactionResponse> => {
+    const response = await apiClient.post<ExpenseTransactionResponse>(
+      '/transactions/expense',
+      data
+    )
+    return response.data
+  },
+
+  // Create transfer transaction
+  createTransfer: async (
+    data: TransferTransactionRequest
+  ): Promise<TransferTransactionResponse> => {
+    const response = await apiClient.post<TransferTransactionResponse>(
+      '/transactions/transfer',
+      data
+    )
+    return response.data
+  },
+
+  // Get all branches
+  getBranches: async (): Promise<Branch[]> => {
+    const response = await apiClient.get<Branch[]>('/branches')
+    return response.data
+  },
+}
