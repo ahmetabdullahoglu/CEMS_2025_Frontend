@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useTransactions } from '@/hooks/useTransactions'
 import TransactionFiltersComponent from '../components/TransactionFilters'
 import TransactionTable from '../components/TransactionTable'
+import ExchangeDialog from '../components/ExchangeDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { TransactionFilters, TransactionQueryParams } from '@/types/transaction.types'
@@ -13,6 +14,7 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState<string>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<TransactionFilters>({})
+  const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false)
 
   const queryParams: TransactionQueryParams = {
     ...filters,
@@ -74,7 +76,7 @@ export default function TransactionsPage() {
           <h1 className="text-3xl font-bold">Transactions</h1>
           <p className="text-muted-foreground">Manage and view all currency exchange transactions</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsExchangeDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Transaction
         </Button>
@@ -166,6 +168,9 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Exchange Dialog */}
+      <ExchangeDialog open={isExchangeDialogOpen} onOpenChange={setIsExchangeDialogOpen} />
     </div>
   )
 }
