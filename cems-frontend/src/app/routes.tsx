@@ -14,7 +14,7 @@ const CurrenciesPage = lazy(() => import('@/features/currencies/pages/Currencies
 const BranchesPage = lazy(() => import('@/features/branches/pages/BranchesPage'))
 const BranchDetailsPage = lazy(() => import('@/features/branches/pages/BranchDetailsPage'))
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
-const VaultPage = lazy(() => import('@/pages/vault/VaultPage'))
+const VaultPage = lazy(() => import('@/features/vault/pages/VaultPage'))
 const UsersPage = lazy(() => import('@/pages/users/UsersPage'))
 
 // Loading fallback component
