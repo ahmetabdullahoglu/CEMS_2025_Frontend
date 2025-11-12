@@ -9,6 +9,7 @@ const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const TransactionsPage = lazy(() => import('@/features/transactions/pages/TransactionsPage'))
 const CustomersPage = lazy(() => import('@/features/customers/pages/CustomersPage'))
+const CustomerDetailsPage = lazy(() => import('@/features/customers/pages/CustomerDetailsPage'))
 const CurrenciesPage = lazy(() => import('@/pages/currencies/CurrenciesPage'))
 const BranchesPage = lazy(() => import('@/pages/branches/BranchesPage'))
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
@@ -76,6 +77,14 @@ export const router = createBrowserRouter([
         element: (
           <LazyLoadWrapper>
             <CustomersPage />
+          </LazyLoadWrapper>
+        ),
+      },
+      {
+        path: 'customers/:id',
+        element: (
+          <LazyLoadWrapper>
+            <CustomerDetailsPage />
           </LazyLoadWrapper>
         ),
       },

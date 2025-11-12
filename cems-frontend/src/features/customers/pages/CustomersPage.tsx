@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import { useCustomers, useDeleteCustomer } from '@/hooks/useCustomers'
 import CustomerTable from '../components/CustomerTable'
@@ -9,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { Customer } from '@/types/customer.types'
 
 export default function CustomersPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
   const [sortBy, setSortBy] = useState<string>('created_at')
@@ -53,6 +55,10 @@ export default function CustomersPage() {
   const handleAddCustomer = () => {
     setSelectedCustomer(null)
     setIsDialogOpen(true)
+  }
+
+  const handleViewCustomer = (customerId: number) => {
+    navigate(`/customers/${customerId}`)
   }
 
   const handleEditCustomer = (customer: Customer) => {
@@ -157,6 +163,7 @@ export default function CustomersPage() {
         customers={data?.customers || []}
         sortBy={sortBy}
         onSort={handleSort}
+        onView={handleViewCustomer}
         onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
         isLoading={isLoading}

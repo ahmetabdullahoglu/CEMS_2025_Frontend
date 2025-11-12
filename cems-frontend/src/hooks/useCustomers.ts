@@ -68,3 +68,45 @@ export const useDeleteCustomer = () => {
     },
   })
 }
+
+/**
+ * Hook for getting customer documents
+ */
+export const useCustomerDocuments = (customerId: number, enabled = true) => {
+  return useQuery({
+    queryKey: ['customer', customerId, 'documents'],
+    queryFn: () => customerApi.getCustomerDocuments(customerId),
+    enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for uploading a document
+ */
+export const useUploadDocument = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ customerId, file }: { customerId: number; file: File }) =>
+      customerApi.uploadDocument(customerId, file),
+    onSuccess: (_, { customerId }) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId, 'documents'] })
+    },
+  })
+}
+
+/**
+ * Hook for deleting a document
+ */
+export const useDeleteDocument = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ customerId, documentId }: { customerId: number; documentId: number }) =>
+      customerApi.deleteDocument(customerId, documentId),
+    onSuccess: (_, { customerId }) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId, 'documents'] })
+    },
+  })
+}

@@ -4,6 +4,8 @@ import type {
   CustomerRequest,
   CustomerListResponse,
   CustomerQueryParams,
+  CustomerDocument,
+  DocumentUploadResponse,
 } from '@/types/customer.types'
 
 export const customerApi = {
@@ -34,5 +36,33 @@ export const customerApi = {
   // Delete customer
   deleteCustomer: async (id: number): Promise<void> => {
     await apiClient.delete(`/customers/${id}`)
+  },
+
+  // Get customer documents
+  getCustomerDocuments: async (customerId: number): Promise<CustomerDocument[]> => {
+    const response = await apiClient.get<CustomerDocument[]>(`/customers/${customerId}/documents`)
+    return response.data
+  },
+
+  // Upload customer document
+  uploadDocument: async (customerId: number, file: File): Promise<DocumentUploadResponse> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await apiClient.post<DocumentUploadResponse>(
+      `/customers/${customerId}/documents`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    return response.data
+  },
+
+  // Delete customer document
+  deleteDocument: async (customerId: number, documentId: number): Promise<void> => {
+    await apiClient.delete(`/customers/${customerId}/documents/${documentId}`)
   },
 }

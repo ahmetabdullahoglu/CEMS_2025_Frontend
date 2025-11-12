@@ -36,3 +36,18 @@ export interface CustomerQueryParams {
   sort_by?: string
   sort_order?: 'asc' | 'desc'
 }
+
+export interface CustomerDocument {
+  id: number
+  customer_id: number
+  file_name: string
+  file_type: string
+  file_size: number
+  file_url: string
+  uploaded_at: string
+}
+
+export interface DocumentUploadResponse {
+  document: CustomerDocument
+  message: string
+}

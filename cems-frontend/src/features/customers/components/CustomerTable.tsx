@@ -16,6 +16,7 @@ interface CustomerTableProps {
   customers: Customer[]
   sortBy?: string
   onSort: (field: string) => void
+  onView?: (customerId: number) => void
   onEdit: (customer: Customer) => void
   onDelete: (customerId: number) => void
   isLoading?: boolean
@@ -32,6 +33,7 @@ export default function CustomerTable({
   customers,
   sortBy,
   onSort,
+  onView,
   onEdit,
   onDelete,
   isLoading,
@@ -102,7 +104,18 @@ export default function CustomerTable({
             {customers.map((customer) => (
               <TableRow key={customer.id}>
                 <TableCell className="font-medium">#{customer.id}</TableCell>
-                <TableCell className="font-medium">{customer.name}</TableCell>
+                <TableCell className="font-medium">
+                  {onView ? (
+                    <button
+                      onClick={() => onView(customer.id)}
+                      className="hover:text-primary hover:underline text-left"
+                    >
+                      {customer.name}
+                    </button>
+                  ) : (
+                    customer.name
+                  )}
+                </TableCell>
                 <TableCell>{ID_TYPE_LABELS[customer.id_type] || customer.id_type}</TableCell>
                 <TableCell>{customer.id_number}</TableCell>
                 <TableCell>{customer.phone || 'N/A'}</TableCell>
