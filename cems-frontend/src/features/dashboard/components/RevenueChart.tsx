@@ -37,7 +37,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 tickFormatter={(value: number) => `$${value.toLocaleString()}`}
               />
               <Tooltip
-                content={({ active, payload }: { active?: boolean; payload?: any[] }) => {
+                content={({ active, payload }: { active?: boolean; payload?: readonly any[] }) => {
                   if (active && payload && payload.length) {
                     return (
                       <div className="rounded-lg border bg-background p-2 shadow-sm">
