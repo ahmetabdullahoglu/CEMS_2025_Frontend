@@ -9,10 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { handleApiError } from '@/lib/api/client'
 
-// Zod validation schema
+// Zod validation schema (matches API LoginRequest)
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   })
@@ -52,15 +52,15 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
-                        type="email"
-                        placeholder="admin@cems.local"
-                        autoComplete="email"
+                        type="text"
+                        placeholder="admin"
+                        autoComplete="username"
                         {...field}
                       />
                     </FormControl>
@@ -99,7 +99,7 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-xs text-center text-muted-foreground mt-4">
-                Test Credentials: admin@cems.local / Admin@123
+                Test Credentials: admin / Admin@123
               </div>
             </form>
           </Form>

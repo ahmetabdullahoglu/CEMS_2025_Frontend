@@ -1,4 +1,4 @@
-import { LogOut, User, Building2 } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import {
@@ -48,19 +48,16 @@ export default function TopBar() {
                   <div className="hidden md:block">
                     <p className="text-sm font-medium text-foreground">{user.full_name}</p>
                     <div className="flex items-center space-x-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(
-                          user.role
-                        )}`}
-                      >
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </span>
-                      {user.branch_id && (
-                        <span className="text-xs text-muted-foreground flex items-center">
-                          <Building2 className="w-3 h-3 mr-1" />
-                          Branch {user.branch_id}
+                      {user.roles.map((role) => (
+                        <span
+                          key={role.id}
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getRoleBadgeColor(
+                            role.name
+                          )}`}
+                        >
+                          {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
                         </span>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>

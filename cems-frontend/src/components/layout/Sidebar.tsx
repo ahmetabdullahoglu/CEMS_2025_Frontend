@@ -81,10 +81,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const location = useLocation()
   const { user } = useAuth()
 
-  // Filter menu items based on user role
+  // Filter menu items based on user roles
   const visibleMenuItems = menuItems.filter((item) => {
     if (!item.roles || !user) return true
-    return item.roles.includes(user.role)
+    // Check if user has any of the required roles
+    return user.roles.some((role) => item.roles?.includes(role.name as any))
   })
 
   return (
