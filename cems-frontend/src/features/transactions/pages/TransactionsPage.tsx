@@ -7,6 +7,7 @@ import ExchangeDialog from '../components/ExchangeDialog'
 import IncomeDialog from '../components/IncomeDialog'
 import ExpenseDialog from '../components/ExpenseDialog'
 import TransferDialog from '../components/TransferDialog'
+import TransactionDetailsDialog from '../components/TransactionDetailsDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -29,6 +30,8 @@ export default function TransactionsPage() {
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
+  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null)
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
   const queryParams: TransactionQueryParams = {
     ...filters,
@@ -57,6 +60,11 @@ export default function TransactionsPage() {
   const handleResetFilters = () => {
     setFilters({})
     setPage(1)
+  }
+
+  const handleViewDetails = (transactionId: number) => {
+    setSelectedTransactionId(transactionId)
+    setIsDetailsDialogOpen(true)
   }
 
   if (isError) {
@@ -144,6 +152,7 @@ export default function TransactionsPage() {
         transactions={data?.transactions || []}
         sortBy={sortBy}
         onSort={handleSort}
+        onViewDetails={handleViewDetails}
         isLoading={isLoading}
       />
 
@@ -214,6 +223,11 @@ export default function TransactionsPage() {
       <IncomeDialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen} />
       <ExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} />
       <TransferDialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen} />
+      <TransactionDetailsDialog
+        transactionId={selectedTransactionId}
+        open={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
+      />
     </div>
   )
 }

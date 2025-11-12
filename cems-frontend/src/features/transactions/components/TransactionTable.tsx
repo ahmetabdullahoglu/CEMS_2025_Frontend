@@ -1,4 +1,4 @@
-import { ArrowUpDown, Eye, MoreHorizontal } from 'lucide-react'
+import { ArrowUpDown, Eye } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,6 +9,7 @@ interface TransactionTableProps {
   transactions: Transaction[]
   sortBy?: string
   onSort: (field: string) => void
+  onViewDetails?: (transactionId: number) => void
   isLoading?: boolean
 }
 
@@ -35,6 +36,7 @@ export default function TransactionTable({
   transactions,
   sortBy,
   onSort,
+  onViewDetails,
   isLoading,
 }: TransactionTableProps) {
   const SortButton = ({ field, children }: { field: string; children: React.ReactNode }) => (
@@ -140,11 +142,13 @@ export default function TransactionTable({
                   })}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewDetails?.(transaction.id)}
+                    title="View Details"
+                  >
                     <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </TableCell>
               </TableRow>

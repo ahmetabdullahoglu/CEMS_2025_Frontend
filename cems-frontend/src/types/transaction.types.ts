@@ -110,3 +110,64 @@ export interface Branch {
   phone?: string
   is_active: boolean
 }
+
+// Transaction Detail Types (for viewing individual transactions)
+export type TransactionDetailType = 'exchange' | 'income' | 'expense' | 'transfer'
+
+interface BaseTransactionDetail {
+  id: number
+  status: TransactionStatus
+  created_by?: string
+  created_at: string
+  updated_at: string
+  branch_id?: number
+  branch_name?: string
+}
+
+export interface ExchangeTransactionDetail extends BaseTransactionDetail {
+  type: 'exchange'
+  from_currency_code: string
+  to_currency_code: string
+  from_amount: number
+  to_amount: number
+  exchange_rate: number
+  customer_name?: string
+}
+
+export interface IncomeTransactionDetail extends BaseTransactionDetail {
+  type: 'income'
+  currency_code: string
+  amount: number
+  description: string
+}
+
+export interface ExpenseTransactionDetail extends BaseTransactionDetail {
+  type: 'expense'
+  currency_code: string
+  amount: number
+  description: string
+  category: string
+}
+
+export interface TransferTransactionDetail extends BaseTransactionDetail {
+  type: 'transfer'
+  from_branch_id: number
+  to_branch_id: number
+  from_branch_name?: string
+  to_branch_name?: string
+  currency_code: string
+  amount: number
+  description?: string
+}
+
+export type TransactionDetail =
+  | ExchangeTransactionDetail
+  | IncomeTransactionDetail
+  | ExpenseTransactionDetail
+  | TransferTransactionDetail
+
+export interface CancelTransactionResponse {
+  id: number
+  status: string
+  cancelled_at: string
+}

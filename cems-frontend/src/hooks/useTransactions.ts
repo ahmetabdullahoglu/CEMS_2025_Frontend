@@ -80,3 +80,31 @@ export const useCreateTransfer = () => {
     },
   })
 }
+
+/**
+ * Hook for getting transaction details by ID
+ */
+export const useTransactionDetails = (id: number, enabled = true) => {
+  return useQuery({
+    queryKey: ['transaction', id],
+    queryFn: () => transactionApi.getTransactionDetails(id),
+    enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for canceling a transaction
+ */
+export const useCancelTransaction = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => transactionApi.cancelTransaction(id),
+    onSuccess: (_, id) => {
+      // Invalidate both the transaction details and the transactions list
+      queryClient.invalidateQueries({ queryKey: ['transaction', id] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}

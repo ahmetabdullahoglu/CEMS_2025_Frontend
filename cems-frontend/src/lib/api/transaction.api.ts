@@ -7,6 +7,8 @@ import type {
   TransferTransactionRequest,
   TransferTransactionResponse,
   Branch,
+  TransactionDetail,
+  CancelTransactionResponse,
 } from '@/types/transaction.types'
 
 export const transactionApi = {
@@ -42,6 +44,18 @@ export const transactionApi = {
   // Get all branches
   getBranches: async (): Promise<Branch[]> => {
     const response = await apiClient.get<Branch[]>('/branches')
+    return response.data
+  },
+
+  // Get transaction details by ID
+  getTransactionDetails: async (id: number): Promise<TransactionDetail> => {
+    const response = await apiClient.get<TransactionDetail>(`/transactions/${id}`)
+    return response.data
+  },
+
+  // Cancel transaction
+  cancelTransaction: async (id: number): Promise<CancelTransactionResponse> => {
+    const response = await apiClient.put<CancelTransactionResponse>(`/transactions/${id}/cancel`)
     return response.data
   },
 }
