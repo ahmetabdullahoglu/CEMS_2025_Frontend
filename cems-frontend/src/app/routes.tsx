@@ -13,7 +13,7 @@ const CustomerDetailsPage = lazy(() => import('@/features/customers/pages/Custom
 const CurrenciesPage = lazy(() => import('@/features/currencies/pages/CurrenciesPage'))
 const BranchesPage = lazy(() => import('@/features/branches/pages/BranchesPage'))
 const BranchDetailsPage = lazy(() => import('@/features/branches/pages/BranchDetailsPage'))
-const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
+const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
 const VaultPage = lazy(() => import('@/pages/vault/VaultPage'))
 const UsersPage = lazy(() => import('@/pages/users/UsersPage'))
 
