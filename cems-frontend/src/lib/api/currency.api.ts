@@ -4,12 +4,22 @@ import type {
   ExchangeRate,
   ExchangeTransactionRequest,
   ExchangeTransactionResponse,
+  CurrencyListResponse,
+  CurrencyQueryParams,
+  UpdateRateRequest,
+  UpdateRateResponse,
 } from '@/types/currency.types'
 
 export const currencyApi = {
-  // Get all active currencies
-  getCurrencies: async (): Promise<Currency[]> => {
-    const response = await apiClient.get<Currency[]>('/currencies')
+  // Get all currencies with pagination
+  getCurrencies: async (params?: CurrencyQueryParams): Promise<CurrencyListResponse> => {
+    const response = await apiClient.get<CurrencyListResponse>('/currencies', { params })
+    return response.data
+  },
+
+  // Get all active currencies (simple list for dropdowns)
+  getActiveCurrencies: async (): Promise<Currency[]> => {
+    const response = await apiClient.get<Currency[]>('/currencies/active')
     return response.data
   },
 
@@ -29,6 +39,15 @@ export const currencyApi = {
       '/transactions/exchange',
       data
     )
+    return response.data
+  },
+
+  // Update currency rates
+  updateCurrencyRates: async (
+    id: number,
+    data: UpdateRateRequest
+  ): Promise<UpdateRateResponse> => {
+    const response = await apiClient.put<UpdateRateResponse>(`/currencies/${id}`, data)
     return response.data
   },
 }

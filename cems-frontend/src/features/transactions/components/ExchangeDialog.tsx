@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useCurrencies, useExchangeRate, useCreateExchange } from '@/hooks/useCurrencies'
+import { useActiveCurrencies, useExchangeRate, useCreateExchange } from '@/hooks/useCurrencies'
 
 const exchangeSchema = z.object({
   from_currency_code: z.string().min(1, 'Please select a currency'),
@@ -45,7 +45,7 @@ interface ExchangeDialogProps {
 }
 
 export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogProps) {
-  const { data: currencies, isLoading: currenciesLoading } = useCurrencies()
+  const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
   const { mutate: createExchange, isPending: isCreating } = useCreateExchange()
 
   const form = useForm<ExchangeFormData>({

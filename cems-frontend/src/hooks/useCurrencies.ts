@@ -1,12 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { currencyApi } from '@/lib/api/currency.api'
-import type { ExchangeTransactionRequest } from '@/types/currency.types'
+import type {
+  ExchangeTransactionRequest,
+  CurrencyQueryParams,
+  UpdateRateRequest,
+} from '@/types/currency.types'
 
-export const useCurrencies = () => {
+export const useCurrencies = (params?: CurrencyQueryParams) => {
   return useQuery({
-    queryKey: ['currencies'],
-    queryFn: currencyApi.getCurrencies,
-    staleTime: 1000 * 60 * 10, // 10 minutes - currencies don't change often
+    queryKey: ['currencies', params],
+    queryFn: () => currencyApi.getCurrencies(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes - currency rates can change
+  })
+}
+
+export const useActiveCurrencies = () => {
+  return useQuery({
+    queryKey: ['currencies', 'active'],
+    queryFn: currencyApi.getActiveCurrencies,
+    staleTime: 1000 * 60 * 10, // 10 minutes - active currencies list doesn't change often
   })
 }
 
@@ -27,6 +39,19 @@ export const useCreateExchange = () => {
     onSuccess: () => {
       // Invalidate transactions list to refresh after creating new transaction
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}
+
+export const useUpdateCurrencyRates = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateRateRequest }) =>
+      currencyApi.updateCurrencyRates(id, data),
+    onSuccess: () => {
+      // Invalidate currencies list to refresh after updating rates
+      queryClient.invalidateQueries({ queryKey: ['currencies'] })
     },
   })
 }

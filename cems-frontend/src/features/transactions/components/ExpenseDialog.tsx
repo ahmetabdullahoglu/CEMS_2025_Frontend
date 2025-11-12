@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useCurrencies } from '@/hooks/useCurrencies'
+import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateExpense } from '@/hooks/useTransactions'
 
 const expenseSchema = z.object({
@@ -60,7 +60,7 @@ const EXPENSE_CATEGORIES = [
 ]
 
 export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps) {
-  const { data: currencies, isLoading: currenciesLoading } = useCurrencies()
+  const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
   const { mutate: createExpense, isPending: isCreating } = useCreateExpense()
 
   const form = useForm<ExpenseFormData>({

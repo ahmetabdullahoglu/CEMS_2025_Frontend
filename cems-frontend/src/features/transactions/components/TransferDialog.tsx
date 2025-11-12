@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useCurrencies } from '@/hooks/useCurrencies'
+import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useBranches, useCreateTransfer } from '@/hooks/useTransactions'
 
 const transferSchema = z.object({
@@ -47,7 +47,7 @@ interface TransferDialogProps {
 }
 
 export default function TransferDialog({ open, onOpenChange }: TransferDialogProps) {
-  const { data: currencies, isLoading: currenciesLoading } = useCurrencies()
+  const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
   const { data: branches, isLoading: branchesLoading } = useBranches()
   const { mutate: createTransfer, isPending: isCreating } = useCreateTransfer()
 

@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useCurrencies } from '@/hooks/useCurrencies'
+import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateIncome } from '@/hooks/useTransactions'
 
 const incomeSchema = z.object({
@@ -45,7 +45,7 @@ interface IncomeDialogProps {
 }
 
 export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) {
-  const { data: currencies, isLoading: currenciesLoading } = useCurrencies()
+  const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
   const { mutate: createIncome, isPending: isCreating } = useCreateIncome()
 
   const form = useForm<IncomeFormData>({
