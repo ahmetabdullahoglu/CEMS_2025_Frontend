@@ -8,7 +8,7 @@ import AuthWrapper from './AuthWrapper'
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const TransactionsPage = lazy(() => import('@/features/transactions/pages/TransactionsPage'))
-const CustomersPage = lazy(() => import('@/pages/customers/CustomersPage'))
+const CustomersPage = lazy(() => import('@/features/customers/pages/CustomersPage'))
 const CurrenciesPage = lazy(() => import('@/pages/currencies/CurrenciesPage'))
 const BranchesPage = lazy(() => import('@/pages/branches/BranchesPage'))
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
