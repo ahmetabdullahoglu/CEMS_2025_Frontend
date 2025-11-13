@@ -1,14 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import apiClient from '@/lib/api/client'
-import type { DashboardOverview } from '@/types/dashboard.types'
-
-/**
- * Fetch dashboard overview data
- */
-const fetchDashboardOverview = async (): Promise<DashboardOverview> => {
-  const response = await apiClient.get<DashboardOverview>('/dashboard/overview')
-  return response.data
-}
+import { dashboardApi } from '@/lib/api/dashboard.api'
 
 /**
  * React Query hook for dashboard overview data
@@ -16,8 +7,64 @@ const fetchDashboardOverview = async (): Promise<DashboardOverview> => {
 export const useDashboard = () => {
   return useQuery({
     queryKey: ['dashboard', 'overview'],
-    queryFn: fetchDashboardOverview,
+    queryFn: dashboardApi.getOverview,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
+  })
+}
+
+/**
+ * Hook for detailed dashboard stats with period filter
+ */
+export const useDashboardStats = (period?: 'today' | 'week' | 'month' | 'year') => {
+  return useQuery({
+    queryKey: ['dashboard', 'stats', period],
+    queryFn: () => dashboardApi.getStats(period),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for dashboard charts data
+ */
+export const useDashboardCharts = (period?: 'week' | 'month' | 'quarter' | 'year') => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', period],
+    queryFn: () => dashboardApi.getCharts(period),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for recent transactions on dashboard
+ */
+export const useDashboardRecentTransactions = (limit: number = 10) => {
+  return useQuery({
+    queryKey: ['dashboard', 'recent-transactions', limit],
+    queryFn: () => dashboardApi.getRecentTransactions(limit),
+    staleTime: 1000 * 60 * 2, // 2 minutes (more frequent updates)
+  })
+}
+
+/**
+ * Hook for dashboard alerts
+ */
+export const useDashboardAlerts = (unreadOnly: boolean = false) => {
+  return useQuery({
+    queryKey: ['dashboard', 'alerts', unreadOnly],
+    queryFn: () => dashboardApi.getAlerts(unreadOnly),
+    staleTime: 1000 * 60 * 1, // 1 minute (alerts need frequent updates)
+    refetchInterval: 1000 * 60 * 1, // Refetch every minute
+  })
+}
+
+/**
+ * Hook for dashboard quick actions
+ */
+export const useDashboardQuickActions = () => {
+  return useQuery({
+    queryKey: ['dashboard', 'quick-actions'],
+    queryFn: dashboardApi.getQuickActions,
+    staleTime: 1000 * 60 * 30, // 30 minutes (rarely changes)
   })
 }
