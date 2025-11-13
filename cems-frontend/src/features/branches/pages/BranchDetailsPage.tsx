@@ -71,7 +71,7 @@ export default function BranchDetailsPage() {
   // Calculate which page numbers to show for transactions
   const getPageNumbers = () => {
     if (!transactionsData) return []
-    const totalPages = transactionsData.total_pages
+    const totalPages = transactionsData.total_pages || 1
     const current = transactionsPage
     const delta = 2
 
@@ -246,30 +246,36 @@ export default function BranchDetailsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {transactionsData.transactions.map((transaction) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell>
-                            {format(new Date(transaction.created_at), 'PPP')}
-                          </TableCell>
-                          <TableCell>{getTypeBadge(transaction.type)}</TableCell>
-                          <TableCell className="font-medium">
-                            {transaction.currency_code}{' '}
-                            {transaction.amount.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(transaction.status)}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {transaction.customer_name || '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {transactionsData.transactions.map((transaction) => {
+                        // Get amount based on transaction type
+                        const amount = transaction.transaction_type === 'exchange'
+                          ? (transaction as any).from_amount
+                          : (transaction as any).amount
+
+                        return (
+                          <TableRow key={transaction.id}>
+                            <TableCell>
+                              {format(new Date(transaction.created_at), 'PPP')}
+                            </TableCell>
+                            <TableCell>{getTypeBadge(transaction.transaction_type)}</TableCell>
+                            <TableCell className="font-medium">
+                              {amount ? Number(amount).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }) : 'N/A'}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(transaction.status)}</TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              -
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
 
                   {/* Pagination */}
-                  {transactionsData.total_pages > 1 && (
+                  {(transactionsData.total_pages || 0) > 1 && (
                     <div className="flex items-center justify-center gap-2 mt-4">
                       <Button
                         variant="outline"

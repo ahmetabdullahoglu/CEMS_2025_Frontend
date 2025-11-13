@@ -2,14 +2,14 @@ import { ArrowUpDown, Eye } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import type { Transaction } from '@/types/transaction.types'
+import type { AnyTransactionResponse, IncomeTransactionResponse, ExpenseTransactionResponse, TransferTransactionResponse, ExchangeTransactionResponse } from '@/types/transaction.types'
 import { cn } from '@/lib/utils'
 
 interface TransactionTableProps {
-  transactions: Transaction[]
+  transactions: AnyTransactionResponse[]
   sortBy?: string
   onSort: (field: string) => void
-  onViewDetails?: (transactionId: number) => void
+  onViewDetails?: (transactionId: string) => void
   isLoading?: boolean
 }
 
@@ -21,15 +21,34 @@ const getStatusBadgeClass = (status: string) => {
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
     case 'cancelled':
       return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    case 'failed':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
   }
 }
 
 const getTypeBadgeClass = (type: string) => {
-  return type === 'buy'
-    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+  switch (type) {
+    case 'income':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    case 'expense':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    case 'exchange':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+    case 'transfer':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+  }
+}
+
+// Helper to get amount display from transaction
+const getTransactionAmount = (transaction: AnyTransactionResponse): string => {
+  if (transaction.transaction_type === 'exchange') {
+    return (transaction as ExchangeTransactionResponse).from_amount
+  }
+  return (transaction as IncomeTransactionResponse | ExpenseTransactionResponse | TransferTransactionResponse).amount
 }
 
 export default function TransactionTable({
@@ -104,55 +123,64 @@ export default function TransactionTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell className="font-medium">#{transaction.id}</TableCell>
-                <TableCell>
-                  <span
-                    className={cn(
-                      'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                      getTypeBadgeClass(transaction.type)
-                    )}
-                  >
-                    {transaction.type.toUpperCase()}
-                  </span>
-                </TableCell>
-                <TableCell>{transaction.customer_name || 'N/A'}</TableCell>
-                <TableCell className="font-medium">
-                  ${transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </TableCell>
-                <TableCell>{transaction.currency_code}</TableCell>
-                <TableCell>
-                  <span
-                    className={cn(
-                      'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                      getStatusBadgeClass(transaction.status)
-                    )}
-                  >
-                    {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {new Date(transaction.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewDetails?.(transaction.id)}
-                    title="View Details"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {transactions.map((transaction) => {
+              const amount = getTransactionAmount(transaction)
+              const displayAmount = Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })
+
+              return (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">#{transaction.transaction_number}</TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
+                        getTypeBadgeClass(transaction.transaction_type)
+                      )}
+                    >
+                      {transaction.transaction_type.toUpperCase()}
+                    </span>
+                  </TableCell>
+                  <TableCell>N/A</TableCell>
+                  <TableCell className="font-medium">
+                    ${displayAmount}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.transaction_type === 'exchange'
+                      ? `${(transaction as ExchangeTransactionResponse).from_amount} → ${(transaction as ExchangeTransactionResponse).to_amount}`
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
+                        getStatusBadgeClass(transaction.status)
+                      )}
+                    >
+                      {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(transaction.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewDetails?.(transaction.id)}
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>

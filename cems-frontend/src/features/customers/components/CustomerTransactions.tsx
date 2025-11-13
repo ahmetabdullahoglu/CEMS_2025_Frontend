@@ -25,15 +25,26 @@ const getStatusBadgeClass = (status: string) => {
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
     case 'cancelled':
       return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    case 'failed':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
   }
 }
 
 const getTypeBadgeClass = (type: string) => {
-  return type === 'buy'
-    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+  switch (type) {
+    case 'income':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    case 'expense':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    case 'exchange':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+    case 'transfer':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+  }
 }
 
 export default function CustomerTransactions({ customerId: _ }: CustomerTransactionsProps) {
@@ -106,42 +117,49 @@ export default function CustomerTransactions({ customerId: _ }: CustomerTransact
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">#{transaction.id}</TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                        getTypeBadgeClass(transaction.type)
-                      )}
-                    >
-                      {transaction.type.toUpperCase()}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    ${transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell>{transaction.currency_code}</TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                        getStatusBadgeClass(transaction.status)
-                      )}
-                    >
-                      {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(transaction.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {data.transactions.map((transaction) => {
+                // Get amount based on transaction type
+                const amount = transaction.transaction_type === 'exchange'
+                  ? (transaction as any).from_amount
+                  : (transaction as any).amount
+
+                return (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-medium">#{transaction.transaction_number}</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
+                          getTypeBadgeClass(transaction.transaction_type)
+                        )}
+                      >
+                        {transaction.transaction_type.toUpperCase()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      ${amount ? Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'N/A'}
+                    </TableCell>
+                    <TableCell>N/A</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
+                          getStatusBadgeClass(transaction.status)
+                        )}
+                      >
+                        {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(transaction.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
