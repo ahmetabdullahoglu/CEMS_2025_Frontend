@@ -98,3 +98,19 @@ export const useCancelTransaction = () => {
     },
   })
 }
+
+/**
+ * Hook for approving a transaction
+ */
+export const useApproveTransaction = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => transactionApi.approveTransaction(id),
+    onSuccess: (_, id) => {
+      // Invalidate both the transaction details and the transactions list
+      queryClient.invalidateQueries({ queryKey: ['transaction', id] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}

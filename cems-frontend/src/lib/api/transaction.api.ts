@@ -66,4 +66,10 @@ export const transactionApi = {
     const response = await apiClient.put<CancelTransactionResponse>(`/transactions/${id}/cancel`)
     return response.data
   },
+
+  // Approve transaction
+  approveTransaction: async (id: string): Promise<TransactionDetail> => {
+    const response = await apiClient.put<TransactionDetail>(`/transactions/${id}/approve`)
+    return response.data
+  },
 }

@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useTransactionDetails, useCancelTransaction } from '@/hooks/useTransactions'
+import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
 import type { TransactionDetail } from '@/types/transaction.types'
 
 interface TransactionDetailsDialogProps {
@@ -211,6 +211,7 @@ export default function TransactionDetailsDialog({
   onOpenChange,
 }: TransactionDetailsDialogProps) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false)
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
     transactionId || '',
@@ -218,6 +219,7 @@ export default function TransactionDetailsDialog({
   )
 
   const { mutate: cancelTransaction, isPending: isCancelling } = useCancelTransaction()
+  const { mutate: approveTransaction, isPending: isApproving } = useApproveTransaction()
 
   const handleCancel = () => {
     if (!transactionId) return
@@ -225,6 +227,17 @@ export default function TransactionDetailsDialog({
     cancelTransaction(transactionId, {
       onSuccess: () => {
         setShowCancelConfirm(false)
+        onOpenChange(false)
+      },
+    })
+  }
+
+  const handleApprove = () => {
+    if (!transactionId) return
+
+    approveTransaction(transactionId, {
+      onSuccess: () => {
+        setShowApproveConfirm(false)
         onOpenChange(false)
       },
     })
@@ -275,8 +288,16 @@ export default function TransactionDetailsDialog({
 
         {!isLoading && !isError && transaction && (
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            {!showCancelConfirm ? (
+            {!showCancelConfirm && !showApproveConfirm ? (
               <>
+                {transaction.status === 'pending' && transaction.transaction_type === 'expense' && (
+                  <Button
+                    onClick={() => setShowApproveConfirm(true)}
+                    className="w-full sm:w-auto"
+                  >
+                    Approve Transaction
+                  </Button>
+                )}
                 {transaction.status === 'pending' && (
                   <Button
                     variant="destructive"
@@ -292,6 +313,29 @@ export default function TransactionDetailsDialog({
                   className="w-full sm:w-auto"
                 >
                   Close
+                </Button>
+              </>
+            ) : showApproveConfirm ? (
+              <>
+                <div className="flex items-center gap-2 text-sm text-green-600 w-full sm:flex-1">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>Are you sure you want to approve this transaction?</span>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowApproveConfirm(false)}
+                  disabled={isApproving}
+                  className="w-full sm:w-auto"
+                >
+                  No, Go Back
+                </Button>
+                <Button
+                  onClick={handleApprove}
+                  disabled={isApproving}
+                  className="w-full sm:w-auto"
+                >
+                  {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Yes, Approve
                 </Button>
               </>
             ) : (

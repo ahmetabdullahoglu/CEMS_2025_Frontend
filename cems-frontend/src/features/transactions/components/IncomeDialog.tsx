@@ -30,10 +30,11 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
-import { useCreateIncome } from '@/hooks/useTransactions'
+import { useCreateIncome, useBranches } from '@/hooks/useTransactions'
 import { useAuth } from '@/contexts/AuthContext'
 // Schema matching IncomeTransactionCreate from API
 const incomeSchema = z.object({
+  branch_id: z.string().uuid('Please select a branch'),
   currency_id: z.string().uuid('Please select a currency'),
   amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
   income_category: z.enum(['service_fee', 'commission', 'other']),
@@ -51,12 +52,17 @@ interface IncomeDialogProps {
 
 export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
+  const { data: branches, isLoading: branchesLoading } = useBranches()
   const { mutate: createIncome, isPending: isCreating } = useCreateIncome()
   const { user } = useAuth()
+
+  // Get user's primary branch as default
+  const defaultBranchId = user?.branches?.find(b => b.is_primary)?.id || user?.branches?.[0]?.id || ''
 
   const form = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: {
+      branch_id: defaultBranchId,
       currency_id: '',
       amount: 0,
       income_category: 'other',
@@ -74,21 +80,7 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
   }, [open, form])
 
   const onSubmit = (data: IncomeFormData) => {
-    // Get branch_id from user's first assigned branch
-    // In production, this might come from a branch selector or session context
-    const branchId = user?.branches?.[0]?.id || ''
-
-    if (!branchId) {
-      console.error('No branch assigned to user')
-      return
-    }
-
-    const payload = {
-      ...data,
-      branch_id: branchId,
-    }
-
-    createIncome(payload, {
+    createIncome(data, {
       onSuccess: () => {
         onOpenChange(false)
         form.reset()
@@ -108,6 +100,38 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Branch */}
+            <FormField
+              control={form.control}
+              name="branch_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Branch *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {branchesLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        branches?.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id}>
+                            {branch.code} - {branch.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Currency */}
             <FormField
               control={form.control}
