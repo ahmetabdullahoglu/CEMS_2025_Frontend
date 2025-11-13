@@ -50,4 +50,27 @@ export const currencyApi = {
     const response = await apiClient.put<UpdateRateResponse>(`/currencies/${id}`, data)
     return response.data
   },
+
+  // Get exchange rate history for a currency
+  getRateHistory: async (
+    currencyId: string,
+    params?: {
+      start_date?: string
+      end_date?: string
+      limit?: number
+    }
+  ): Promise<{
+    currency_id: string
+    currency_code: string
+    rates: Array<{
+      date: string
+      buy_rate: string
+      sell_rate: string
+      created_at: string
+    }>
+    total: number
+  }> => {
+    const response = await apiClient.get(`/currencies/${currencyId}/rates`, { params })
+    return response.data
+  },
 }

@@ -80,4 +80,27 @@ export const customerApi = {
   deleteDocument: async (customerId: string, documentId: string): Promise<void> => {
     await apiClient.delete(`/customers/${customerId}/documents/${documentId}`)
   },
+
+  // Get customer transactions
+  getCustomerTransactions: async (customerId: string, params?: { skip?: number; limit?: number }): Promise<{ transactions: unknown[]; total: number }> => {
+    const response = await apiClient.get<{ transactions: unknown[]; total: number }>(`/customers/${customerId}/transactions`, { params })
+    return response.data
+  },
+
+  // Get customer statistics
+  getCustomerStats: async (customerId: string): Promise<{
+    total_transactions: number
+    total_volume: string
+    average_transaction: string
+    most_used_currency: string
+    last_transaction_date: string
+  }> => {
+    const response = await apiClient.get(`/customers/${customerId}/stats`)
+    return response.data
+  },
+
+  // Verify customer document
+  verifyDocument: async (documentId: string, verified: boolean, notes?: string): Promise<void> => {
+    await apiClient.put(`/customers/documents/${documentId}/verify`, { verified, notes })
+  },
 }
