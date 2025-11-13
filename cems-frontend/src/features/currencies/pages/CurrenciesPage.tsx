@@ -54,7 +54,7 @@ export default function CurrenciesPage() {
   // Calculate which page numbers to show
   const getPageNumbers = () => {
     if (!data) return []
-    const totalPages = data.total_pages
+    const totalPages = data.total_pages || 0
     const current = page
     const delta = 2
 
@@ -153,10 +153,10 @@ export default function CurrenciesPage() {
                       <TableCell className="font-medium">{currency.code}</TableCell>
                       <TableCell>{currency.name}</TableCell>
                       <TableCell className="text-right">
-                        {currency.buy_rate.toFixed(4)}
+                        {Number(currency.buy_rate).toFixed(4)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {currency.sell_rate.toFixed(4)}
+                        {Number(currency.sell_rate).toFixed(4)}
                       </TableCell>
                       <TableCell>
                         {formatDistanceToNow(new Date(currency.updated_at), {
@@ -179,7 +179,7 @@ export default function CurrenciesPage() {
               </Table>
 
               {/* Pagination */}
-              {data.total_pages > 1 && (
+              {(data.total_pages || 0) > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <Button
                     variant="outline"

@@ -14,13 +14,13 @@ export const branchApi = {
   },
 
   // Get single branch
-  getBranch: async (id: number): Promise<Branch> => {
+  getBranch: async (id: string): Promise<Branch> => {
     const response = await apiClient.get<Branch>(`/branches/${id}`)
     return response.data
   },
 
   // Get branch balances
-  getBranchBalances: async (id: number): Promise<BranchBalancesResponse> => {
+  getBranchBalances: async (id: string): Promise<BranchBalancesResponse> => {
     const response = await apiClient.get<BranchBalancesResponse>(`/branches/${id}/balances`)
     return response.data
   },

@@ -39,14 +39,14 @@ export default function BranchesPage() {
     }
   }
 
-  const handleViewBranch = (branchId: number) => {
+  const handleViewBranch = (branchId: string) => {
     navigate(`/branches/${branchId}`)
   }
 
   // Calculate which page numbers to show
   const getPageNumbers = () => {
     if (!data) return []
-    const totalPages = data.total_pages
+    const totalPages = data.total_pages || 0
     const current = page
     const delta = 2
 
@@ -193,7 +193,7 @@ export default function BranchesPage() {
               </Table>
 
               {/* Pagination */}
-              {data.total_pages > 1 && (
+              {(data.total_pages || 0) > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <Button
                     variant="outline"

@@ -38,7 +38,7 @@ export default function BranchBalances({ data, isLoading }: BranchBalancesProps)
           <CardTitle>Branch Balances</CardTitle>
           <div className="flex items-center gap-2 text-2xl font-bold">
             <DollarSign className="w-6 h-6" />
-            {data.total_usd_equivalent.toLocaleString('en-US', {
+            {Number(data.total_usd_equivalent).toLocaleString('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -72,13 +72,13 @@ export default function BranchBalances({ data, isLoading }: BranchBalancesProps)
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    {balance.balance.toLocaleString('en-US', {
+                    {Number(balance.balance).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </TableCell>
                   <TableCell className="text-right">
-                    ${balance.usd_equivalent.toLocaleString('en-US', {
+                    ${Number(balance.usd_equivalent).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}

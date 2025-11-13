@@ -44,7 +44,7 @@ export const currencyApi = {
 
   // Update currency rates
   updateCurrencyRates: async (
-    id: number,
+    id: string,
     data: UpdateRateRequest
   ): Promise<UpdateRateResponse> => {
     const response = await apiClient.put<UpdateRateResponse>(`/currencies/${id}`, data)

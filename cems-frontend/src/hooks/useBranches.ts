@@ -10,7 +10,7 @@ export const useBranches = (params?: BranchQueryParams) => {
   })
 }
 
-export const useBranch = (id: number, enabled = true) => {
+export const useBranch = (id: string, enabled = true) => {
   return useQuery({
     queryKey: ['branch', id],
     queryFn: () => branchApi.getBranch(id),
@@ -19,7 +19,7 @@ export const useBranch = (id: number, enabled = true) => {
   })
 }
 
-export const useBranchBalances = (id: number, enabled = true) => {
+export const useBranchBalances = (id: string, enabled = true) => {
   return useQuery({
     queryKey: ['branch', id, 'balances'],
     queryFn: () => branchApi.getBranchBalances(id),

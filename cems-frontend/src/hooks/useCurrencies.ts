@@ -47,7 +47,7 @@ export const useUpdateCurrencyRates = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateRateRequest }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateRateRequest }) =>
       currencyApi.updateCurrencyRates(id, data),
     onSuccess: () => {
       // Invalidate currencies list to refresh after updating rates

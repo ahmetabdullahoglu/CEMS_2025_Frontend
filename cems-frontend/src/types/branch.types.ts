@@ -1,39 +1,67 @@
+// Branch Response (matches API BranchResponse schema)
 export interface Branch {
-  id: number
+  id: string // UUID
+  branch_number: string
   name: string
   code: string
-  address?: string
-  phone?: string
-  email?: string
+  address?: string | null
+  city?: string | null
+  phone?: string | null
+  email?: string | null
   is_active: boolean
-  created_at: string
-  updated_at: string
+  created_at: string // ISO datetime
+  updated_at: string // ISO datetime
+}
+
+// Branch Create (matches API BranchCreate schema)
+export interface BranchCreate {
+  name: string
+  code: string
+  address?: string | null
+  city?: string | null
+  phone?: string | null
+  email?: string | null
+}
+
+// Branch Update (matches API BranchUpdate schema)
+export interface BranchUpdate {
+  name?: string
+  code?: string
+  address?: string | null
+  city?: string | null
+  phone?: string | null
+  email?: string | null
+  is_active?: boolean
 }
 
 export interface BranchBalance {
   currency_code: string
   currency_name: string
-  balance: number
-  usd_equivalent: number
+  balance: string // Decimal as string
+  usd_equivalent: string // Decimal as string
 }
 
 export interface BranchBalancesResponse {
-  branch_id: number
+  branch_id: string // UUID
   branch_name: string
   balances: BranchBalance[]
-  total_usd_equivalent: number
+  total_usd_equivalent: string // Decimal as string
 }
 
 export interface BranchListResponse {
   branches: Branch[]
   total: number
-  page: number
-  page_size: number
-  total_pages: number
+  page?: number
+  page_size?: number
+  total_pages?: number
 }
 
 export interface BranchQueryParams {
   page?: number
   page_size?: number
   search?: string
+  is_active?: boolean
 }
+
+// Backward compatibility aliases
+export type BranchRequest = BranchCreate

@@ -66,7 +66,7 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
 
   // Calculate to_amount based on exchange rate
   const toAmount =
-    exchangeRate && fromAmount > 0 ? (fromAmount * exchangeRate.rate).toFixed(2) : '0.00'
+    exchangeRate && fromAmount > 0 ? (fromAmount * Number(exchangeRate.rate)).toFixed(2) : '0.00'
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -181,7 +181,7 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : exchangeRate ? (
                       <>
-                        1 {fromCurrency} = {exchangeRate.rate.toFixed(4)} {toCurrency}
+                        1 {fromCurrency} = {Number(exchangeRate.rate).toFixed(4)} {toCurrency}
                       </>
                     ) : (
                       'N/A'

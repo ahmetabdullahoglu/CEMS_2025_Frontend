@@ -21,7 +21,7 @@ import BranchBalances from '../components/BranchBalances'
 export default function BranchDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const branchId = parseInt(id || '0', 10)
+  const branchId = id || ''
 
   const [transactionsPage, setTransactionsPage] = useState(1)
   const [transactionsPageSize] = useState(10)
