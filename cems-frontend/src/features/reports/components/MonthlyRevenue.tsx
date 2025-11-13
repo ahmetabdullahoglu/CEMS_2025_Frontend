@@ -79,7 +79,7 @@ export default function MonthlyRevenue() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ${data.total_revenue.toLocaleString('en-US', {
+                  ${Number(data.total_revenue).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -97,7 +97,7 @@ export default function MonthlyRevenue() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  ${data.total_expenses.toLocaleString('en-US', {
+                  ${Number(data.total_expenses).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -114,8 +114,8 @@ export default function MonthlyRevenue() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${data.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${data.total_profit.toLocaleString('en-US', {
+                <div className={`text-2xl font-bold ${Number(data.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${Number(data.total_profit).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}

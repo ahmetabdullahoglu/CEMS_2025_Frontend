@@ -33,7 +33,7 @@ export default function BranchPerformance() {
 
   // Sort branches by revenue for ranking
   const sortedBranches = data
-    ? [...data.branches].sort((a, b) => b.total_revenue - a.total_revenue)
+    ? [...data.branches].sort((a, b) => Number(b.total_revenue) - Number(a.total_revenue))
     : []
 
   return (
@@ -151,19 +151,19 @@ export default function BranchPerformance() {
                         {branch.total_transactions}
                       </TableCell>
                       <TableCell className="text-right text-green-600">
-                        ${branch.total_revenue.toLocaleString('en-US', {
+                        ${Number(branch.total_revenue).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
                       <TableCell className="text-right text-red-600">
-                        ${branch.total_expenses.toLocaleString('en-US', {
+                        ${Number(branch.total_expenses).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
-                      <TableCell className={`text-right font-medium ${branch.net_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${branch.net_profit.toLocaleString('en-US', {
+                      <TableCell className={`text-right font-medium ${Number(branch.net_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ${Number(branch.net_profit).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}

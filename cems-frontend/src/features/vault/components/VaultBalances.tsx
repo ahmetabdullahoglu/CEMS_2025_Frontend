@@ -44,7 +44,7 @@ export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
           </div>
           <div className="flex items-center gap-2 text-2xl font-bold">
             <DollarSign className="w-6 h-6" />
-            {data.total_value_usd.toLocaleString('en-US', {
+            {Number(data.total_value_usd).toLocaleString('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -79,19 +79,19 @@ export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {balance.balance.toLocaleString('en-US', {
+                    {Number(balance.balance).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </TableCell>
                   <TableCell className="text-right text-yellow-600">
-                    {balance.reserved.toLocaleString('en-US', {
+                    {Number(balance.reserved).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </TableCell>
                   <TableCell className="text-right text-green-600">
-                    {balance.available.toLocaleString('en-US', {
+                    {Number(balance.available).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}

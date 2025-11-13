@@ -79,11 +79,11 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   const onSubmit = (data: TransferFormData) => {
     createTransfer(
       {
-        from_branch_id: data.from_branch_id ? parseInt(data.from_branch_id) : undefined,
-        to_branch_id: data.to_branch_id ? parseInt(data.to_branch_id) : undefined,
+        from_branch_id: data.from_branch_id || null,
+        to_branch_id: data.to_branch_id || null,
         currency_code: data.currency_code,
         amount: Number(data.amount),
-        notes: data.notes || undefined,
+        notes: data.notes || null,
       },
       {
         onSuccess: () => {

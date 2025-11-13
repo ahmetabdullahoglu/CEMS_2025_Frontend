@@ -83,7 +83,7 @@ export default function DailySummary() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ${data.stats.total_revenue.toLocaleString('en-US', {
+                  ${Number(data.stats.total_revenue).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -101,7 +101,7 @@ export default function DailySummary() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  ${data.stats.total_expenses.toLocaleString('en-US', {
+                  ${Number(data.stats.total_expenses).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -118,8 +118,8 @@ export default function DailySummary() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${data.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${data.stats.net_profit.toLocaleString('en-US', {
+                <div className={`text-2xl font-bold ${Number(data.stats.net_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${Number(data.stats.net_profit).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}

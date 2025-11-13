@@ -33,19 +33,19 @@ export default function PendingTransfers() {
   const { mutate: complete, isPending: isCompleting } = useCompleteVaultTransfer()
   const { mutate: reject, isPending: isRejecting } = useRejectVaultTransfer()
 
-  const handleApprove = (id: number) => {
+  const handleApprove = (id: string) => {
     if (window.confirm('Are you sure you want to approve this transfer?')) {
       approve(id)
     }
   }
 
-  const handleComplete = (id: number) => {
+  const handleComplete = (id: string) => {
     if (window.confirm('Are you sure you want to complete this transfer?')) {
       complete(id)
     }
   }
 
-  const handleReject = (id: number) => {
+  const handleReject = (id: string) => {
     if (window.confirm('Are you sure you want to reject this transfer?')) {
       reject(id)
     }
@@ -64,7 +64,7 @@ export default function PendingTransfers() {
   // Calculate which page numbers to show
   const getPageNumbers = () => {
     if (!data) return []
-    const totalPages = data.total_pages
+    const totalPages = data.total_pages || 0
     const current = page
     const delta = 2
 
@@ -149,7 +149,7 @@ export default function PendingTransfers() {
                     </TableCell>
                     <TableCell>{transfer.currency_code}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {transfer.amount.toLocaleString('en-US', {
+                      {Number(transfer.amount).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -201,7 +201,7 @@ export default function PendingTransfers() {
             </Table>
 
             {/* Pagination */}
-            {data.total_pages > 1 && (
+            {(data.total_pages || 0) > 1 && (
               <div className="flex items-center justify-center gap-2 mt-4">
                 <Button
                   variant="outline"

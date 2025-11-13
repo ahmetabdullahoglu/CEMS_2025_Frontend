@@ -2,62 +2,62 @@
 export interface VaultBalance {
   currency_code: string
   currency_name: string
-  balance: number
-  reserved: number
-  available: number
-  last_updated: string
+  balance: string // Decimal as string
+  reserved: string // Decimal as string
+  available: string // Decimal as string
+  last_updated: string // ISO datetime
 }
 
 export interface VaultBalancesResponse {
   balances: VaultBalance[]
-  total_value_usd: number
-  last_updated: string
+  total_value_usd: string // Decimal as string
+  last_updated: string // ISO datetime
 }
 
 // Vault Transfer Types
 export type VaultTransferStatus = 'pending' | 'approved' | 'completed' | 'rejected'
 
 export interface VaultTransfer {
-  id: number
-  from_branch_id?: number
-  from_branch_name?: string
-  to_branch_id?: number
-  to_branch_name?: string
+  id: string // UUID
+  from_branch_id?: string | null // UUID
+  from_branch_name?: string | null
+  to_branch_id?: string | null // UUID
+  to_branch_name?: string | null
   currency_code: string
-  amount: number
+  amount: string // Decimal as string
   status: VaultTransferStatus
-  notes?: string
-  requested_by?: string
-  approved_by?: string
-  completed_by?: string
-  requested_at: string
-  approved_at?: string
-  completed_at?: string
-  created_at: string
-  updated_at: string
+  notes?: string | null
+  requested_by?: string | null
+  approved_by?: string | null
+  completed_by?: string | null
+  requested_at: string // ISO datetime
+  approved_at?: string | null // ISO datetime
+  completed_at?: string | null // ISO datetime
+  created_at: string // ISO datetime
+  updated_at: string // ISO datetime
 }
 
 export interface VaultTransferListResponse {
   transfers: VaultTransfer[]
   total: number
-  page: number
-  page_size: number
-  total_pages: number
+  page?: number
+  page_size?: number
+  total_pages?: number
 }
 
 export interface VaultTransferQueryParams {
   page?: number
   page_size?: number
   status?: VaultTransferStatus
-  branch_id?: number
+  branch_id?: string // UUID
 }
 
 export interface CreateVaultTransferRequest {
-  from_branch_id?: number
-  to_branch_id?: number
+  from_branch_id?: string | null // UUID
+  to_branch_id?: string | null // UUID
   currency_code: string
-  amount: number
-  notes?: string
+  amount: number | string // Accept both for form input
+  notes?: string | null
 }
 
 export interface CreateVaultTransferResponse {
