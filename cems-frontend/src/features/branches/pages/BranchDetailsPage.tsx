@@ -17,6 +17,29 @@ import {
 import { useBranch, useBranchBalances } from '@/hooks/useBranches'
 import { useTransactions } from '@/hooks/useTransactions'
 import BranchBalances from '../components/BranchBalances'
+import type {
+  AnyTransactionResponse,
+  ExchangeTransactionResponse,
+  IncomeTransactionResponse,
+  ExpenseTransactionResponse,
+  TransferTransactionResponse,
+} from '@/types/transaction.types'
+
+// Helper function to get amount from any transaction type with proper type safety
+const getTransactionAmount = (transaction: AnyTransactionResponse): string | undefined => {
+  switch (transaction.transaction_type) {
+    case 'exchange':
+      return (transaction as ExchangeTransactionResponse).from_amount
+    case 'income':
+      return (transaction as IncomeTransactionResponse).amount
+    case 'expense':
+      return (transaction as ExpenseTransactionResponse).amount
+    case 'transfer':
+      return (transaction as TransferTransactionResponse).amount
+    default:
+      return undefined
+  }
+}
 
 export default function BranchDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,10 +52,11 @@ export default function BranchDetailsPage() {
   const { data: branch, isLoading: branchLoading, isError: branchError } = useBranch(branchId, !!branchId)
   const { data: balancesData, isLoading: balancesLoading } = useBranchBalances(branchId, !!branchId)
 
-  // TODO: Add branch_id filter when API supports it
+  // Fetch transactions filtered by branch ID
   const { data: transactionsData, isLoading: transactionsLoading } = useTransactions({
     page: transactionsPage,
     page_size: transactionsPageSize,
+    branch_id: branchId,
   })
 
   if (branchLoading) {
@@ -247,10 +271,8 @@ export default function BranchDetailsPage() {
                     </TableHeader>
                     <TableBody>
                       {transactionsData.transactions.map((transaction) => {
-                        // Get amount based on transaction type
-                        const amount = transaction.transaction_type === 'exchange'
-                          ? (transaction as any).from_amount
-                          : (transaction as any).amount
+                        // Get amount based on transaction type with proper type safety
+                        const amount = getTransactionAmount(transaction)
 
                         return (
                           <TableRow key={transaction.id}>

@@ -137,6 +137,7 @@ export interface TransactionFilters {
   transaction_type?: TransactionType
   status?: TransactionStatus
   branch_id?: string // UUID
+  customer_id?: string // UUID
   date_from?: string // ISO date
   date_to?: string // ISO date
   search?: string

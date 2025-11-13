@@ -12,6 +12,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type {
+  AnyTransactionResponse,
+  ExchangeTransactionResponse,
+  IncomeTransactionResponse,
+  ExpenseTransactionResponse,
+  TransferTransactionResponse,
+} from '@/types/transaction.types'
 
 interface CustomerTransactionsProps {
   customerId: string
@@ -47,16 +54,31 @@ const getTypeBadgeClass = (type: string) => {
   }
 }
 
-export default function CustomerTransactions({ customerId: _ }: CustomerTransactionsProps) {
+// Helper function to get amount from any transaction type with proper type safety
+const getTransactionAmount = (transaction: AnyTransactionResponse): string | undefined => {
+  switch (transaction.transaction_type) {
+    case 'exchange':
+      return (transaction as ExchangeTransactionResponse).from_amount
+    case 'income':
+      return (transaction as IncomeTransactionResponse).amount
+    case 'expense':
+      return (transaction as ExpenseTransactionResponse).amount
+    case 'transfer':
+      return (transaction as TransferTransactionResponse).amount
+    default:
+      return undefined
+  }
+}
+
+export default function CustomerTransactions({ customerId }: CustomerTransactionsProps) {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
 
   // Fetch transactions filtered by customer ID
-  // Note: This currently fetches all transactions
-  // TODO: Add customer_id filter when API supports it
   const { data, isLoading, isError } = useTransactions({
     page,
     page_size: pageSize,
+    customer_id: customerId,
   })
 
   if (isLoading) {
@@ -118,10 +140,8 @@ export default function CustomerTransactions({ customerId: _ }: CustomerTransact
             </TableHeader>
             <TableBody>
               {data.transactions.map((transaction) => {
-                // Get amount based on transaction type
-                const amount = transaction.transaction_type === 'exchange'
-                  ? (transaction as any).from_amount
-                  : (transaction as any).amount
+                // Get amount based on transaction type with proper type safety
+                const amount = getTransactionAmount(transaction)
 
                 return (
                   <TableRow key={transaction.id}>
