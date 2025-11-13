@@ -68,6 +68,7 @@ export interface ExpenseTransactionResponse extends BaseTransactionResponse {
   approval_required: boolean
   approved_at?: string | null // ISO datetime
   approved_by_id?: string | null // UUID
+  is_approved: boolean
 }
 
 // Exchange Transaction Types
@@ -107,13 +108,17 @@ export interface TransferTransactionCreate {
   transaction_date?: string | null // ISO datetime
 }
 
-export interface TransferTransactionResponse extends BaseTransactionResponse {
+export interface TransferTransactionResponse extends Omit<BaseTransactionResponse, 'branch_id'> {
   from_branch_id: string // UUID
   to_branch_id: string // UUID
   currency_id: string // UUID
   amount: string // Decimal as string
+  transfer_type: 'branch_to_branch' | 'vault_to_branch' | 'branch_to_vault'
   received_at?: string | null // ISO datetime
   received_by_id?: string | null // UUID
+  is_received: boolean
+  is_pending_receipt: boolean
+  branch_id?: never // Transfer doesn't have branch_id in base
 }
 
 // Union type for all transaction responses

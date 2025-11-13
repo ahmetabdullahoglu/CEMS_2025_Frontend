@@ -46,9 +46,52 @@ const getTypeBadgeClass = (type: string) => {
 // Helper to get amount display from transaction
 const getTransactionAmount = (transaction: AnyTransactionResponse): string => {
   if (transaction.transaction_type === 'exchange') {
-    return (transaction as ExchangeTransactionResponse).from_amount
+    return (transaction as ExchangeTransactionResponse).from_amount ?? '0'
   }
-  return (transaction as IncomeTransactionResponse | ExpenseTransactionResponse | TransferTransactionResponse).amount
+  return (transaction as IncomeTransactionResponse | ExpenseTransactionResponse | TransferTransactionResponse).amount ?? '0'
+}
+
+// Helper to get currency display
+const getCurrencyDisplay = (transaction: AnyTransactionResponse): string => {
+  const type = transaction.transaction_type
+  if (type === 'exchange') {
+    const ex = transaction as ExchangeTransactionResponse
+    return `${ex.from_amount ?? 'N/A'} → ${ex.to_amount ?? 'N/A'}`
+  }
+  if (type === 'transfer') {
+    const tr = transaction as TransferTransactionResponse
+    return tr.transfer_type === 'branch_to_branch' ? 'Branch Transfer' : 'Vault Transfer'
+  }
+  if (type === 'expense') {
+    const exp = transaction as ExpenseTransactionResponse
+    return exp.expense_category ? exp.expense_category.toUpperCase() : 'N/A'
+  }
+  if (type === 'income') {
+    const inc = transaction as IncomeTransactionResponse
+    return inc.income_category ? inc.income_category.toUpperCase() : 'N/A'
+  }
+  return 'N/A'
+}
+
+// Helper to get customer/branch info
+const getPartyInfo = (transaction: AnyTransactionResponse): string => {
+  const type = transaction.transaction_type
+  if (type === 'exchange') {
+    return 'Exchange'
+  }
+  if (type === 'transfer') {
+    const tr = transaction as TransferTransactionResponse
+    return tr.reference_number ?? 'Transfer'
+  }
+  if (type === 'expense') {
+    const exp = transaction as ExpenseTransactionResponse
+    return exp.expense_to ?? 'Expense'
+  }
+  if (type === 'income') {
+    const inc = transaction as IncomeTransactionResponse
+    return inc.income_source ?? 'Income'
+  }
+  return 'N/A'
 }
 
 export default function TransactionTable({
@@ -108,11 +151,11 @@ export default function TransactionTable({
               <TableHead>
                 <SortButton field="type">Type</SortButton>
               </TableHead>
-              <TableHead>Customer</TableHead>
+              <TableHead>Details</TableHead>
               <TableHead>
                 <SortButton field="amount">Amount</SortButton>
               </TableHead>
-              <TableHead>Currency</TableHead>
+              <TableHead>Info</TableHead>
               <TableHead>
                 <SortButton field="status">Status</SortButton>
               </TableHead>
@@ -126,47 +169,47 @@ export default function TransactionTable({
             {transactions.map((transaction) => {
               const amount = getTransactionAmount(transaction)
               const displayAmount = Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })
+              const partyInfo = getPartyInfo(transaction)
+              const currencyDisplay = getCurrencyDisplay(transaction)
 
               return (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">#{transaction.transaction_number}</TableCell>
+                  <TableCell className="font-medium">#{transaction.transaction_number ?? 'N/A'}</TableCell>
                   <TableCell>
                     <span
                       className={cn(
                         'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                        getTypeBadgeClass(transaction.transaction_type)
+                        getTypeBadgeClass(transaction.transaction_type ?? 'unknown')
                       )}
                     >
-                      {transaction.transaction_type.toUpperCase()}
+                      {(transaction.transaction_type ?? 'unknown').toUpperCase()}
                     </span>
                   </TableCell>
-                  <TableCell>N/A</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{partyInfo}</TableCell>
                   <TableCell className="font-medium">
                     ${displayAmount}
                   </TableCell>
-                  <TableCell>
-                    {transaction.transaction_type === 'exchange'
-                      ? `${(transaction as ExchangeTransactionResponse).from_amount} → ${(transaction as ExchangeTransactionResponse).to_amount}`
-                      : 'N/A'}
+                  <TableCell className="text-sm">
+                    {currencyDisplay}
                   </TableCell>
                   <TableCell>
                     <span
                       className={cn(
                         'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                        getStatusBadgeClass(transaction.status)
+                        getStatusBadgeClass(transaction.status ?? 'pending')
                       )}
                     >
-                      {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                      {((transaction.status ?? 'pending').charAt(0).toUpperCase() + (transaction.status ?? 'pending').slice(1))}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {new Date(transaction.created_at).toLocaleDateString('en-US', {
+                    {transaction.created_at ? new Date(transaction.created_at).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
-                    })}
+                    }) : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
