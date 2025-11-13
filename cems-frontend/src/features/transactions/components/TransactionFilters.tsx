@@ -57,13 +57,15 @@ export default function TransactionFiltersComponent({
           <div className="space-y-2">
             <label className="text-sm font-medium">Type</label>
             <select
-              value={filters.type || ''}
-              onChange={(e) => handleFilterChange('type', e.target.value)}
+              value={filters.transaction_type || ''}
+              onChange={(e) => handleFilterChange('transaction_type', e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">All Types</option>
-              <option value="buy">Buy</option>
-              <option value="sell">Sell</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+              <option value="exchange">Exchange</option>
+              <option value="transfer">Transfer</option>
             </select>
           </div>
 
