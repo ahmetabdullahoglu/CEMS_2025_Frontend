@@ -108,10 +108,14 @@ export interface CustomerDetail extends Customer {
 
 // Customer List Response (paginated)
 export interface CustomerListResponse {
-  customers: Customer[]
+  success: boolean
+  data: Customer[] // Changed from 'customers' to 'data'
   total: number
-  skip?: number
-  limit?: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
 }
 
 // Customer Query Parameters

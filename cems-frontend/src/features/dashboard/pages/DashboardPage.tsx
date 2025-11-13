@@ -160,7 +160,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <p className="font-semibold">
-                      ${currency.total_amount.toLocaleString()}
+                      ${Number(currency.total_amount ?? 0).toLocaleString()}
                     </p>
                   </div>
                 ))}

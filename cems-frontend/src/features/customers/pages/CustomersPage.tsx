@@ -104,8 +104,8 @@ export default function CustomersPage() {
     )
   }
 
-  // Calculate total pages from total count (API doesn't return total_pages with skip/limit)
-  const totalPages = Math.ceil((data?.total || 0) / pageSize)
+  // Get total pages from API response
+  const totalPages = data?.total_pages ?? Math.ceil((data?.total || 0) / pageSize)
 
   return (
     <div className="space-y-6">
@@ -156,7 +156,7 @@ export default function CustomersPage() {
       {data && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>
-            Showing {data.customers.length > 0 ? (page - 1) * pageSize + 1 : 0} to{' '}
+            Showing {(data.data?.length ?? 0) > 0 ? (page - 1) * pageSize + 1 : 0} to{' '}
             {Math.min(page * pageSize, data.total)} of {data.total} customers
           </div>
         </div>
@@ -164,7 +164,7 @@ export default function CustomersPage() {
 
       {/* Table */}
       <CustomerTable
-        customers={data?.customers || []}
+        customers={data?.data ?? []}
         sortBy={sortBy}
         onSort={handleSort}
         onView={handleViewCustomer}
