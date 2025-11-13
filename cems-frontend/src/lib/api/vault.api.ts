@@ -30,19 +30,19 @@ export const vaultApi = {
 
   // Approve vault transfer
   approveVaultTransfer: async (id: string): Promise<ApproveVaultTransferResponse> => {
-    const response = await apiClient.put<ApproveVaultTransferResponse>(`/vault/transfers/${id}/approve`)
+    const response = await apiClient.put<ApproveVaultTransferResponse>(`/vault/transfer/${id}/approve`)
     return response.data
   },
 
   // Complete vault transfer
   completeVaultTransfer: async (id: string): Promise<ApproveVaultTransferResponse> => {
-    const response = await apiClient.put<ApproveVaultTransferResponse>(`/vault/transfers/${id}/complete`)
+    const response = await apiClient.put<ApproveVaultTransferResponse>(`/vault/transfer/${id}/complete`)
     return response.data
   },
 
   // Reject vault transfer
   rejectVaultTransfer: async (id: string): Promise<ApproveVaultTransferResponse> => {
-    const response = await apiClient.put<ApproveVaultTransferResponse>(`/vault/transfers/${id}/reject`)
+    const response = await apiClient.put<ApproveVaultTransferResponse>(`/vault/transfer/${id}/reject`)
     return response.data
   },
 
