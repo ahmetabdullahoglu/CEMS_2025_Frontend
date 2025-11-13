@@ -19,7 +19,7 @@ export default function CustomersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
   const queryParams = {
     page,
@@ -57,7 +57,7 @@ export default function CustomersPage() {
     setIsDialogOpen(true)
   }
 
-  const handleViewCustomer = (customerId: number) => {
+  const handleViewCustomer = (customerId: string) => {
     navigate(`/customers/${customerId}`)
   }
 
@@ -66,7 +66,7 @@ export default function CustomersPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDeleteCustomer = (customerId: number) => {
+  const handleDeleteCustomer = (customerId: string) => {
     setShowDeleteConfirm(customerId)
   }
 

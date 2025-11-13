@@ -13,7 +13,7 @@ import CustomerDialog from '../components/CustomerDialog'
 export default function CustomerDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const customerId = parseInt(id || '0', 10)
+  const customerId = id || ''
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
@@ -27,7 +27,7 @@ export default function CustomerDetailsPage() {
     setIsEditDialogOpen(true)
   }
 
-  if (!customerId || isNaN(customerId)) {
+  if (!customerId) {
     return (
       <div className="space-y-6">
         <Card>
@@ -90,8 +90,10 @@ export default function CustomerDetailsPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{customer.name}</h1>
-            <p className="text-muted-foreground">Customer ID: #{customer.id}</p>
+            <h1 className="text-3xl font-bold">
+              {customer.first_name} {customer.last_name}
+            </h1>
+            <p className="text-muted-foreground">Customer #: {customer.customer_number}</p>
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CustomerTransactionsProps {
-  customerId: number
+  customerId: string
 }
 
 const getStatusBadgeClass = (status: string) => {

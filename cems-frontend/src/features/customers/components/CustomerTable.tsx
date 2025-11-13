@@ -16,17 +16,10 @@ interface CustomerTableProps {
   customers: Customer[]
   sortBy?: string
   onSort: (field: string) => void
-  onView?: (customerId: number) => void
+  onView?: (customerId: string) => void
   onEdit: (customer: Customer) => void
-  onDelete: (customerId: number) => void
+  onDelete: (customerId: string) => void
   isLoading?: boolean
-}
-
-const ID_TYPE_LABELS: Record<string, string> = {
-  national_id: 'National ID',
-  passport: 'Passport',
-  driving_license: 'Driving License',
-  other: 'Other',
 }
 
 export default function CustomerTable({
@@ -85,14 +78,14 @@ export default function CustomerTable({
           <TableHeader>
             <TableRow>
               <TableHead>
-                <SortButton field="id">ID</SortButton>
+                <SortButton field="customer_number">Customer #</SortButton>
               </TableHead>
               <TableHead>
-                <SortButton field="name">Name</SortButton>
+                <SortButton field="first_name">Name</SortButton>
               </TableHead>
-              <TableHead>ID Type</TableHead>
-              <TableHead>ID Number</TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>National ID</TableHead>
+              <TableHead>Phone Number</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>
                 <SortButton field="created_at">Created</SortButton>
@@ -103,22 +96,22 @@ export default function CustomerTable({
           <TableBody>
             {customers.map((customer) => (
               <TableRow key={customer.id}>
-                <TableCell className="font-medium">#{customer.id}</TableCell>
+                <TableCell className="font-medium">{customer.customer_number}</TableCell>
                 <TableCell className="font-medium">
                   {onView ? (
                     <button
                       onClick={() => onView(customer.id)}
                       className="hover:text-primary hover:underline text-left"
                     >
-                      {customer.name}
+                      {customer.first_name} {customer.last_name}
                     </button>
                   ) : (
-                    customer.name
+                    `${customer.first_name} ${customer.last_name}`
                   )}
                 </TableCell>
-                <TableCell>{ID_TYPE_LABELS[customer.id_type] || customer.id_type}</TableCell>
-                <TableCell>{customer.id_number}</TableCell>
-                <TableCell>{customer.phone || 'N/A'}</TableCell>
+                <TableCell className="capitalize">{customer.customer_type}</TableCell>
+                <TableCell>{customer.national_id || customer.passport_number || 'N/A'}</TableCell>
+                <TableCell>{customer.phone_number}</TableCell>
                 <TableCell>{customer.email || 'N/A'}</TableCell>
                 <TableCell>
                   {new Date(customer.created_at).toLocaleDateString('en-US', {

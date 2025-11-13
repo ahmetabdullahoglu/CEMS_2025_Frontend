@@ -1,18 +1,30 @@
 import { useRef, useState } from 'react'
-import { Upload, File, Trash2, Download, AlertCircle } from 'lucide-react'
+import { Upload, File, Trash2, Download, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { useCustomerDocuments, useUploadDocument, useDeleteDocument } from '@/hooks/useCustomers'
 import { format } from 'date-fns'
 
 interface DocumentUploadProps {
-  customerId: number
+  customerId: string
+}
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  national_id: 'National ID',
+  passport: 'Passport',
+  driving_license: 'Driving License',
+  utility_bill: 'Utility Bill',
+  bank_statement: 'Bank Statement',
+  commercial_registration: 'Commercial Registration',
+  tax_certificate: 'Tax Certificate',
+  other: 'Other',
 }
 
 export default function DocumentUpload({ customerId }: DocumentUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
   const { data: documents, isLoading, isError } = useCustomerDocuments(customerId)
   const { mutate: uploadDocument } = useUploadDocument()
@@ -43,7 +55,7 @@ export default function DocumentUpload({ customerId }: DocumentUploadProps) {
     )
   }
 
-  const handleDelete = (documentId: number) => {
+  const handleDelete = (documentId: string) => {
     deleteDocument(
       { customerId, documentId },
       {
@@ -52,14 +64,6 @@ export default function DocumentUpload({ customerId }: DocumentUploadProps) {
         },
       }
     )
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
   if (isLoading) {
@@ -136,11 +140,36 @@ export default function DocumentUpload({ customerId }: DocumentUploadProps) {
                   <div className="flex items-center gap-3 flex-1">
                     <File className="w-8 h-8 text-blue-500" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{doc.file_name}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">
+                          {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
+                        </p>
+                        {doc.is_verified ? (
+                          <Badge variant="default" className="text-xs">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Not Verified
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatFileSize(doc.file_size)}</span>
-                        <span>•</span>
-                        <span>{format(new Date(doc.uploaded_at), 'PP')}</span>
+                        {doc.document_number && (
+                          <>
+                            <span className="font-mono">{doc.document_number}</span>
+                            <span>•</span>
+                          </>
+                        )}
+                        <span>Uploaded {format(new Date(doc.uploaded_at), 'PP')}</span>
+                        {doc.expiry_date && (
+                          <>
+                            <span>•</span>
+                            <span>Expires {format(new Date(doc.expiry_date), 'PP')}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -148,8 +177,8 @@ export default function DocumentUpload({ customerId }: DocumentUploadProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(doc.file_url, '_blank')}
-                      title="Download"
+                      onClick={() => window.open(doc.document_url, '_blank')}
+                      title="View Document"
                     >
                       <Download className="w-4 h-4" />
                     </Button>

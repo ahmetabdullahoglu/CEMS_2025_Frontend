@@ -16,7 +16,7 @@ export const useCustomers = (params: CustomerQueryParams) => {
 /**
  * Hook for getting a single customer by ID
  */
-export const useCustomer = (id: number, enabled = true) => {
+export const useCustomer = (id: string, enabled = true) => {
   return useQuery({
     queryKey: ['customer', id],
     queryFn: () => customerApi.getCustomer(id),
@@ -46,7 +46,7 @@ export const useUpdateCustomer = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CustomerRequest }) =>
+    mutationFn: ({ id, data }: { id: string; data: CustomerRequest }) =>
       customerApi.updateCustomer(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['customer', id] })
@@ -62,7 +62,7 @@ export const useDeleteCustomer = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: number) => customerApi.deleteCustomer(id),
+    mutationFn: (id: string) => customerApi.deleteCustomer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
@@ -72,7 +72,7 @@ export const useDeleteCustomer = () => {
 /**
  * Hook for getting customer documents
  */
-export const useCustomerDocuments = (customerId: number, enabled = true) => {
+export const useCustomerDocuments = (customerId: string, enabled = true) => {
   return useQuery({
     queryKey: ['customer', customerId, 'documents'],
     queryFn: () => customerApi.getCustomerDocuments(customerId),
@@ -88,7 +88,7 @@ export const useUploadDocument = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ customerId, file }: { customerId: number; file: File }) =>
+    mutationFn: ({ customerId, file }: { customerId: string; file: File }) =>
       customerApi.uploadDocument(customerId, file),
     onSuccess: (_, { customerId }) => {
       queryClient.invalidateQueries({ queryKey: ['customer', customerId, 'documents'] })
@@ -103,7 +103,7 @@ export const useDeleteDocument = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ customerId, documentId }: { customerId: number; documentId: number }) =>
+    mutationFn: ({ customerId, documentId }: { customerId: string; documentId: string }) =>
       customerApi.deleteDocument(customerId, documentId),
     onSuccess: (_, { customerId }) => {
       queryClient.invalidateQueries({ queryKey: ['customer', customerId, 'documents'] })

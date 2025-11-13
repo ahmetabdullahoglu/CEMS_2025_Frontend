@@ -16,7 +16,7 @@ export const customerApi = {
   },
 
   // Get customer by ID
-  getCustomer: async (id: number): Promise<Customer> => {
+  getCustomer: async (id: string): Promise<Customer> => {
     const response = await apiClient.get<Customer>(`/customers/${id}`)
     return response.data
   },
@@ -28,24 +28,24 @@ export const customerApi = {
   },
 
   // Update customer
-  updateCustomer: async (id: number, data: CustomerRequest): Promise<Customer> => {
+  updateCustomer: async (id: string, data: CustomerRequest): Promise<Customer> => {
     const response = await apiClient.put<Customer>(`/customers/${id}`, data)
     return response.data
   },
 
   // Delete customer
-  deleteCustomer: async (id: number): Promise<void> => {
+  deleteCustomer: async (id: string): Promise<void> => {
     await apiClient.delete(`/customers/${id}`)
   },
 
   // Get customer documents
-  getCustomerDocuments: async (customerId: number): Promise<CustomerDocument[]> => {
+  getCustomerDocuments: async (customerId: string): Promise<CustomerDocument[]> => {
     const response = await apiClient.get<CustomerDocument[]>(`/customers/${customerId}/documents`)
     return response.data
   },
 
   // Upload customer document
-  uploadDocument: async (customerId: number, file: File): Promise<DocumentUploadResponse> => {
+  uploadDocument: async (customerId: string, file: File): Promise<DocumentUploadResponse> => {
     const formData = new FormData()
     formData.append('file', file)
 
@@ -62,7 +62,7 @@ export const customerApi = {
   },
 
   // Delete customer document
-  deleteDocument: async (customerId: number, documentId: number): Promise<void> => {
+  deleteDocument: async (customerId: string, documentId: string): Promise<void> => {
     await apiClient.delete(`/customers/${customerId}/documents/${documentId}`)
   },
 }
