@@ -125,7 +125,7 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
                       ) : (
                         currencies?.map((currency) => (
                           <SelectItem key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name}
+                            {currency.code} - {currency.name_en}
                           </SelectItem>
                         ))
                       )}
@@ -157,7 +157,7 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
                       ) : (
                         currencies?.map((currency) => (
                           <SelectItem key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name}
+                            {currency.code} - {currency.name_en}
                           </SelectItem>
                         ))
                       )}

@@ -54,8 +54,8 @@ export default function UpdateRateDialog({ currency, open, onClose }: UpdateRate
   useEffect(() => {
     if (currency && open) {
       reset({
-        buy_rate: currency.buy_rate.toString(),
-        sell_rate: currency.sell_rate.toString(),
+        buy_rate: currency.buy_rate?.toString() || '0',
+        sell_rate: currency.sell_rate?.toString() || '0',
       })
     }
   }, [currency, open, reset])
@@ -95,7 +95,7 @@ export default function UpdateRateDialog({ currency, open, onClose }: UpdateRate
         <DialogHeader>
           <DialogTitle>Update Exchange Rates</DialogTitle>
           <DialogDescription>
-            Update buy and sell rates for {currency.name} ({currency.code})
+            Update buy and sell rates for {currency.name_en} ({currency.code})
           </DialogDescription>
         </DialogHeader>
 

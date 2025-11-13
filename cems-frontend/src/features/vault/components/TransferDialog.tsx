@@ -175,7 +175,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
               <SelectContent>
                 {currencies?.map((currency) => (
                   <SelectItem key={currency.code} value={currency.code}>
-                    {currency.code} - {currency.name}
+                    {currency.code} - {currency.name_en}
                   </SelectItem>
                 ))}
               </SelectContent>

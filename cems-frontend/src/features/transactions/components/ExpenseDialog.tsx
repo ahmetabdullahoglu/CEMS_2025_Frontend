@@ -168,7 +168,7 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
                       ) : (
                         currencies?.map((currency) => (
                           <SelectItem key={currency.id} value={String(currency.id)}>
-                            {currency.code} - {currency.name}
+                            {currency.code} - {currency.name_en}
                           </SelectItem>
                         ))
                       )}
