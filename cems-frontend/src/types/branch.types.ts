@@ -1,16 +1,23 @@
 // Branch Response (matches API BranchResponse schema)
 export interface Branch {
   id: string // UUID
-  branch_number: string
-  name: string
   code: string
+  name_en: string // English name
+  name_ar: string // Arabic name
+  region: string // Branch region
   address?: string | null
   city?: string | null
   phone?: string | null
   email?: string | null
+  manager_id?: string | null
+  is_main_branch: boolean
   is_active: boolean
+  opening_balance_date: string // ISO datetime
   created_at: string // ISO datetime
   updated_at: string // ISO datetime
+  // Deprecated fields for backward compatibility
+  branch_number?: string
+  name?: string // Can be derived from name_en
 }
 
 // Branch Create (matches API BranchCreate schema)
@@ -49,10 +56,14 @@ export interface BranchBalancesResponse {
 }
 
 export interface BranchListResponse {
-  branches: Branch[]
+  success: boolean
+  data: Branch[] // Changed from 'branches' to 'data'
   total: number
-  skip?: number
-  limit?: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
 }
 
 export interface BranchQueryParams {

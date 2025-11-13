@@ -125,8 +125,13 @@ export default function BranchDetailsPage() {
           Back
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">{branch.name}</h1>
-          <p className="text-muted-foreground">Branch Details</p>
+          <h1 className="text-3xl font-bold">{branch.name_en ?? branch.name ?? 'N/A'}</h1>
+          {branch.name_ar && (
+            <p className="text-xl text-muted-foreground">{branch.name_ar}</p>
+          )}
+          <p className="text-sm text-muted-foreground mt-1">
+            {branch.code} {branch.is_main_branch && '• Main Branch'}
+          </p>
         </div>
       </div>
 
@@ -161,10 +166,40 @@ export default function BranchDetailsPage() {
                   <div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                       <Building2 className="w-4 h-4" />
-                      Branch Name
+                      Branch Name (English)
                     </div>
-                    <div className="font-medium">{branch.name}</div>
+                    <div className="font-medium">{branch.name_en ?? branch.name ?? 'N/A'}</div>
                   </div>
+
+                  {branch.name_ar && (
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <Building2 className="w-4 h-4" />
+                        Branch Name (Arabic)
+                      </div>
+                      <div className="font-medium">{branch.name_ar}</div>
+                    </div>
+                  )}
+
+                  {branch.city && (
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <MapPin className="w-4 h-4" />
+                        City
+                      </div>
+                      <div className="font-medium">{branch.city}</div>
+                    </div>
+                  )}
+
+                  {branch.region && (
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <MapPin className="w-4 h-4" />
+                        Region
+                      </div>
+                      <div className="font-medium">{branch.region.replace(/_/g, ' ')}</div>
+                    </div>
+                  )}
 
                   {branch.address && (
                     <div>

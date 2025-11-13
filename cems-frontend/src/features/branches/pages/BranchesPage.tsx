@@ -103,7 +103,7 @@ export default function BranchesPage() {
             <CardTitle>Branches</CardTitle>
             {data && (
               <span className="text-sm text-muted-foreground">
-                Showing {data.branches.length} of {data.total} branches
+                Showing {data.data?.length ?? 0} of {data.total} branches
               </span>
             )}
           </div>
@@ -121,36 +121,53 @@ export default function BranchesPage() {
             </div>
           )}
 
-          {data && data.branches.length === 0 && (
+          {data && (data.data?.length ?? 0) === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No branches found.
             </div>
           )}
 
-          {data && data.branches.length > 0 && (
+          {data && (data.data?.length ?? 0) > 0 && (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
+                    <TableHead>Location</TableHead>
                     <TableHead>Contact Info</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.branches.map((branch) => (
+                  {(data.data ?? []).map((branch) => (
                     <TableRow key={branch.id}>
                       <TableCell>
                         <button
                           onClick={() => handleViewBranch(branch.id)}
-                          className="font-medium hover:text-primary hover:underline text-left"
+                          className="hover:text-primary hover:underline text-left"
                         >
-                          {branch.name}
+                          <div className="font-medium">{branch.name_en ?? 'N/A'}</div>
+                          {branch.name_ar && (
+                            <div className="text-sm text-muted-foreground">{branch.name_ar}</div>
+                          )}
+                          {branch.is_main_branch && (
+                            <Badge variant="outline" className="mt-1 text-xs">Main Branch</Badge>
+                          )}
                         </button>
                       </TableCell>
-                      <TableCell className="font-mono">{branch.code}</TableCell>
+                      <TableCell className="font-mono">{branch.code ?? 'N/A'}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1 text-sm">
+                          {branch.city && (
+                            <div className="font-medium">{branch.city}</div>
+                          )}
+                          {branch.region && (
+                            <div className="text-muted-foreground">{branch.region.replace(/_/g, ' ')}</div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1 text-sm">
                           {branch.address && (
