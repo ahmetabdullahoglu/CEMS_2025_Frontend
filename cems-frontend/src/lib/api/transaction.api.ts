@@ -48,13 +48,13 @@ export const transactionApi = {
   },
 
   // Get transaction details by ID
-  getTransactionDetails: async (id: number): Promise<TransactionDetail> => {
+  getTransactionDetails: async (id: string): Promise<TransactionDetail> => {
     const response = await apiClient.get<TransactionDetail>(`/transactions/${id}`)
     return response.data
   },
 
   // Cancel transaction
-  cancelTransaction: async (id: number): Promise<CancelTransactionResponse> => {
+  cancelTransaction: async (id: string): Promise<CancelTransactionResponse> => {
     const response = await apiClient.put<CancelTransactionResponse>(`/transactions/${id}/cancel`)
     return response.data
   },

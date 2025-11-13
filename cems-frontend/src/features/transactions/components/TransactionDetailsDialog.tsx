@@ -14,7 +14,7 @@ import { useTransactionDetails, useCancelTransaction } from '@/hooks/useTransact
 import type { TransactionDetail } from '@/types/transaction.types'
 
 interface TransactionDetailsDialogProps {
-  transactionId: number | null
+  transactionId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -24,6 +24,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     completed: 'bg-green-100 text-green-800',
     pending: 'bg-yellow-100 text-yellow-800',
     cancelled: 'bg-red-100 text-red-800',
+    failed: 'bg-red-100 text-red-800',
   }
 
   return (
@@ -37,7 +38,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   )
 }
 
-const DetailRow = ({ label, value }: { label: string; value: string | number | undefined }) => {
+const DetailRow = ({ label, value }: { label: string; value: string | number | null | undefined }) => {
   if (!value) return null
 
   return (
@@ -49,31 +50,34 @@ const DetailRow = ({ label, value }: { label: string; value: string | number | u
 }
 
 const ExchangeTransactionDetails = ({ transaction }: { transaction: TransactionDetail }) => {
-  if (transaction.type !== 'exchange') return null
+  if (transaction.transaction_type !== 'exchange') return null
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/50 p-4">
         <div className="flex items-center justify-center gap-3 text-lg font-semibold">
           <span>
-            {transaction.from_amount.toFixed(2)} {transaction.from_currency_code}
+            {transaction.from_amount ? Number(transaction.from_amount).toFixed(2) : 'N/A'}{' '}
+            {transaction.from_currency?.code || 'N/A'}
           </span>
           <ArrowRightLeft className="h-5 w-5 text-muted-foreground" />
           <span>
-            {transaction.to_amount.toFixed(2)} {transaction.to_currency_code}
+            {transaction.to_amount ? Number(transaction.to_amount).toFixed(2) : 'N/A'}{' '}
+            {transaction.to_currency?.code || 'N/A'}
           </span>
         </div>
         <div className="text-center text-sm text-muted-foreground mt-2">
-          Exchange Rate: 1 {transaction.from_currency_code} = {transaction.exchange_rate.toFixed(4)}{' '}
-          {transaction.to_currency_code}
+          Exchange Rate: 1 {transaction.from_currency?.code || 'N/A'} ={' '}
+          {transaction.exchange_rate_used ? Number(transaction.exchange_rate_used).toFixed(4) : 'N/A'}{' '}
+          {transaction.to_currency?.code || 'N/A'}
         </div>
       </div>
 
       <div className="space-y-1">
-        <DetailRow label="Transaction ID" value={`#${transaction.id}`} />
-        <DetailRow label="Customer Name" value={transaction.customer_name} />
-        <DetailRow label="Branch" value={transaction.branch_name} />
-        <DetailRow label="Created By" value={transaction.created_by} />
+        <DetailRow label="Transaction Number" value={transaction.transaction_number} />
+        <DetailRow label="Customer Name" value={transaction.customer?.name} />
+        <DetailRow label="Branch" value={transaction.branch?.name} />
+        <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
           value={format(new Date(transaction.created_at), 'PPpp')}
@@ -88,24 +92,27 @@ const ExchangeTransactionDetails = ({ transaction }: { transaction: TransactionD
 }
 
 const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDetail }) => {
-  if (transaction.type !== 'income') return null
+  if (transaction.transaction_type !== 'income') return null
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-green-50 p-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-green-700">
-            {transaction.amount.toFixed(2)} {transaction.currency_code}
+            {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
+            {transaction.currency?.code || 'N/A'}
           </div>
           <div className="text-sm text-green-600 mt-1">Income</div>
         </div>
       </div>
 
       <div className="space-y-1">
-        <DetailRow label="Transaction ID" value={`#${transaction.id}`} />
-        <DetailRow label="Description" value={transaction.description} />
-        <DetailRow label="Branch" value={transaction.branch_name} />
-        <DetailRow label="Created By" value={transaction.created_by} />
+        <DetailRow label="Transaction Number" value={transaction.transaction_number} />
+        <DetailRow label="Category" value={transaction.income_category} />
+        <DetailRow label="Source" value={transaction.income_source} />
+        <DetailRow label="Notes" value={transaction.notes} />
+        <DetailRow label="Branch" value={transaction.branch?.name} />
+        <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
           value={format(new Date(transaction.created_at), 'PPpp')}
@@ -120,25 +127,27 @@ const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDet
 }
 
 const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDetail }) => {
-  if (transaction.type !== 'expense') return null
+  if (transaction.transaction_type !== 'expense') return null
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-red-50 p-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-red-700">
-            {transaction.amount.toFixed(2)} {transaction.currency_code}
+            {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
+            {transaction.currency?.code || 'N/A'}
           </div>
           <div className="text-sm text-red-600 mt-1">Expense</div>
         </div>
       </div>
 
       <div className="space-y-1">
-        <DetailRow label="Transaction ID" value={`#${transaction.id}`} />
-        <DetailRow label="Category" value={transaction.category} />
-        <DetailRow label="Description" value={transaction.description} />
-        <DetailRow label="Branch" value={transaction.branch_name} />
-        <DetailRow label="Created By" value={transaction.created_by} />
+        <DetailRow label="Transaction Number" value={transaction.transaction_number} />
+        <DetailRow label="Category" value={transaction.expense_category} />
+        <DetailRow label="Payee" value={transaction.expense_to} />
+        <DetailRow label="Notes" value={transaction.notes} />
+        <DetailRow label="Branch" value={transaction.branch?.name} />
+        <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
           value={format(new Date(transaction.created_at), 'PPpp')}
@@ -153,7 +162,7 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
 }
 
 const TransferTransactionDetails = ({ transaction }: { transaction: TransactionDetail }) => {
-  if (transaction.type !== 'transfer') return null
+  if (transaction.transaction_type !== 'transfer') return null
 
   return (
     <div className="space-y-4">
@@ -162,26 +171,27 @@ const TransferTransactionDetails = ({ transaction }: { transaction: TransactionD
           <div className="text-center">
             <div className="text-sm text-blue-600 font-medium">From</div>
             <div className="text-lg font-semibold text-blue-900">
-              {transaction.from_branch_name || `Branch #${transaction.from_branch_id}`}
+              Branch #{transaction.from_branch_id || 'N/A'}
             </div>
           </div>
           <ArrowDownLeft className="h-6 w-6 text-blue-500 rotate-90" />
           <div className="text-center">
             <div className="text-sm text-blue-600 font-medium">To</div>
             <div className="text-lg font-semibold text-blue-900">
-              {transaction.to_branch_name || `Branch #${transaction.to_branch_id}`}
+              Branch #{transaction.to_branch_id || 'N/A'}
             </div>
           </div>
         </div>
         <div className="text-center text-xl font-bold text-blue-700 mt-3">
-          {transaction.amount.toFixed(2)} {transaction.currency_code}
+          {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
+          {transaction.currency?.code || 'N/A'}
         </div>
       </div>
 
       <div className="space-y-1">
-        <DetailRow label="Transaction ID" value={`#${transaction.id}`} />
-        <DetailRow label="Description" value={transaction.description} />
-        <DetailRow label="Created By" value={transaction.created_by} />
+        <DetailRow label="Transaction Number" value={transaction.transaction_number} />
+        <DetailRow label="Notes" value={transaction.notes} />
+        <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
           value={format(new Date(transaction.created_at), 'PPpp')}
@@ -203,7 +213,7 @@ export default function TransactionDetailsDialog({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
-    transactionId || 0,
+    transactionId || '',
     !!transactionId && open
   )
 
@@ -241,14 +251,14 @@ export default function TransactionDetailsDialog({
     return (
       <>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold capitalize">{transaction.type} Transaction</h3>
+          <h3 className="text-lg font-semibold capitalize">{transaction.transaction_type} Transaction</h3>
           <StatusBadge status={transaction.status} />
         </div>
 
-        {transaction.type === 'exchange' && <ExchangeTransactionDetails transaction={transaction} />}
-        {transaction.type === 'income' && <IncomeTransactionDetails transaction={transaction} />}
-        {transaction.type === 'expense' && <ExpenseTransactionDetails transaction={transaction} />}
-        {transaction.type === 'transfer' && <TransferTransactionDetails transaction={transaction} />}
+        {transaction.transaction_type === 'exchange' && <ExchangeTransactionDetails transaction={transaction} />}
+        {transaction.transaction_type === 'income' && <IncomeTransactionDetails transaction={transaction} />}
+        {transaction.transaction_type === 'expense' && <ExpenseTransactionDetails transaction={transaction} />}
+        {transaction.transaction_type === 'transfer' && <TransferTransactionDetails transaction={transaction} />}
       </>
     )
   }

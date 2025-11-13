@@ -30,7 +30,7 @@ export default function TransactionsPage() {
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
-  const [selectedTransactionId, setSelectedTransactionId] = useState<number | null>(null)
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
   const queryParams: TransactionQueryParams = {
@@ -62,7 +62,7 @@ export default function TransactionsPage() {
     setPage(1)
   }
 
-  const handleViewDetails = (transactionId: number) => {
+  const handleViewDetails = (transactionId: string) => {
     setSelectedTransactionId(transactionId)
     setIsDetailsDialogOpen(true)
   }

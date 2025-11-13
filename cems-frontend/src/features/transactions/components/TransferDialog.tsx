@@ -203,7 +203,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                         </div>
                       ) : (
                         currencies?.map((currency) => (
-                          <SelectItem key={currency.id} value={currency.id}>
+                          <SelectItem key={currency.id} value={String(currency.id)}>
                             {currency.code} - {currency.name}
                           </SelectItem>
                         ))
