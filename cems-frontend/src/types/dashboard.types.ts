@@ -1,4 +1,33 @@
 // ==================== Overview Endpoint ====================
+export interface DashboardOverviewData {
+  total_transactions_today: number
+  total_revenue_today: number
+  active_branches: number
+  low_balance_alerts: number
+  pending_approvals: number
+  transaction_growth_percent: number
+}
+
+export interface TopCurrency {
+  currency_code: string
+  total_amount: number
+  transaction_count: number
+}
+
+export interface QuickStatsData {
+  transactions_yesterday: number
+  average_transaction_value: number
+  busiest_hour: string
+}
+
+export interface DashboardOverviewResponse {
+  overview: DashboardOverviewData
+  top_currencies: TopCurrency[]
+  quick_stats: QuickStatsData
+  generated_at: string
+}
+
+// Legacy types for backward compatibility
 export interface DashboardStats {
   total_transactions: number
   total_revenue: number
