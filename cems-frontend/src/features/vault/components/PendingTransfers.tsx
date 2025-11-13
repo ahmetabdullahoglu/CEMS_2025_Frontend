@@ -36,7 +36,7 @@ export default function PendingTransfers() {
 
   const handleApprove = (id: string) => {
     if (window.confirm('Are you sure you want to approve this transfer?')) {
-      approve(id)
+      approve({ id })
     }
   }
 
@@ -48,7 +48,7 @@ export default function PendingTransfers() {
 
   const handleReject = (id: string) => {
     if (window.confirm('Are you sure you want to reject this transfer?')) {
-      reject(id)
+      reject({ id })
     }
   }
 
