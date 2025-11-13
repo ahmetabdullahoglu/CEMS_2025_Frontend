@@ -7,6 +7,7 @@ import type {
   CustomerDocument,
   CustomerDocumentCreate,
   DocumentUploadResponse,
+  CustomerTransactionsResponse,
 } from '@/types/customer.types'
 
 export const customerApi = {
@@ -82,8 +83,8 @@ export const customerApi = {
   },
 
   // Get customer transactions
-  getCustomerTransactions: async (customerId: string, params?: { skip?: number; limit?: number }): Promise<{ transactions: unknown[]; total: number }> => {
-    const response = await apiClient.get<{ transactions: unknown[]; total: number }>(`/customers/${customerId}/transactions`, { params })
+  getCustomerTransactions: async (customerId: string, params?: { skip?: number; limit?: number }): Promise<CustomerTransactionsResponse> => {
+    const response = await apiClient.get<CustomerTransactionsResponse>(`/customers/${customerId}/transactions`, { params })
     return response.data
   },
 

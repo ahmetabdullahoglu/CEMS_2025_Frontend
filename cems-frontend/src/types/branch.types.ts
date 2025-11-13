@@ -45,7 +45,14 @@ export interface BranchBalance {
   currency_code: string
   currency_name: string
   balance: string // Decimal as string
-  usd_equivalent: string // Decimal as string
+  reserved_balance?: string | null // Decimal as string
+  available_balance?: string | null // Decimal as string
+  minimum_threshold?: string | null // Decimal as string
+  maximum_threshold?: string | null // Decimal as string
+  last_updated?: string // ISO datetime
+  last_reconciled_at?: string | null // ISO datetime
+  usd_value?: string | null // Decimal as string
+  usd_equivalent?: string // Decimal as string (for backward compatibility)
 }
 
 export interface BranchBalancesResponse {

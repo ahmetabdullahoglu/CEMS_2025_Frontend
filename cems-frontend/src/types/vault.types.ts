@@ -9,11 +9,8 @@ export interface VaultBalance {
   available?: string // Decimal as string
 }
 
-export interface VaultBalancesResponse {
-  balances: VaultBalance[]
-  total_value_usd?: string // Decimal as string
-  last_updated?: string // ISO datetime
-}
+// Vault balances endpoint now returns array directly
+export type VaultBalancesResponse = VaultBalance[]
 
 // Vault Details Response (from GET /vault)
 export interface VaultDetailsResponse {
@@ -33,31 +30,50 @@ export interface VaultDetailsResponse {
 // Vault Transfer Types
 export type VaultTransferStatus = 'pending' | 'approved' | 'completed' | 'rejected'
 
+export interface VaultTransferBranch {
+  id: string
+  name: string
+}
+
+export interface VaultTransferUser {
+  id: string
+  username: string
+}
+
 export interface VaultTransfer {
   id: string // UUID
-  from_branch_id?: string | null // UUID
-  from_branch_name?: string | null
-  to_branch_id?: string | null // UUID
-  to_branch_name?: string | null
+  from_branch?: VaultTransferBranch | null
+  to_branch?: VaultTransferBranch | null
   currency_code: string
+  currency_name?: string
   amount: string // Decimal as string
   status: VaultTransferStatus
   notes?: string | null
-  requested_by?: string | null
-  approved_by?: string | null
-  completed_by?: string | null
-  requested_at: string // ISO datetime
+  created_by?: VaultTransferUser | null
+  approved_by?: VaultTransferUser | null
+  completed_by?: VaultTransferUser | null
+  created_at: string // ISO datetime
   approved_at?: string | null // ISO datetime
   completed_at?: string | null // ISO datetime
-  created_at: string // ISO datetime
-  updated_at: string // ISO datetime
+  // Deprecated fields for backward compatibility
+  from_branch_id?: string | null
+  from_branch_name?: string | null
+  to_branch_id?: string | null
+  to_branch_name?: string | null
+  requested_by?: string | null
+  requested_at?: string
+  updated_at?: string
 }
 
 export interface VaultTransferListResponse {
-  transfers: VaultTransfer[]
+  success: boolean
+  data: VaultTransfer[]
   total: number
-  skip?: number
-  limit?: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
 }
 
 export interface VaultTransferQueryParams {

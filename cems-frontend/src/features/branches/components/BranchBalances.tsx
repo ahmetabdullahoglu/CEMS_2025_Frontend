@@ -56,8 +56,12 @@ export default function BranchBalances({ data, isLoading }: BranchBalancesProps)
             <TableHeader>
               <TableRow>
                 <TableHead>Currency</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
-                <TableHead className="text-right">USD Equivalent</TableHead>
+                <TableHead className="text-right">Total Balance</TableHead>
+                <TableHead className="text-right">Available</TableHead>
+                <TableHead className="text-right">Reserved</TableHead>
+                <TableHead className="text-right">Min Threshold</TableHead>
+                <TableHead className="text-right">Max Threshold</TableHead>
+                <TableHead className="text-right">USD Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -72,16 +76,65 @@ export default function BranchBalances({ data, isLoading }: BranchBalancesProps)
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    {Number(balance.balance).toLocaleString('en-US', {
+                    {Number(balance.balance ?? 0).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </TableCell>
                   <TableCell className="text-right">
-                    ${Number(balance.usd_equivalent).toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {balance.available_balance ? (
+                      Number(balance.available_balance).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {balance.reserved_balance ? (
+                      Number(balance.reserved_balance).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right text-sm text-muted-foreground">
+                    {balance.minimum_threshold ? (
+                      Number(balance.minimum_threshold).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right text-sm text-muted-foreground">
+                    {balance.maximum_threshold ? (
+                      Number(balance.maximum_threshold).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {balance.usd_value ? (
+                      `$${Number(balance.usd_value).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
+                    ) : balance.usd_equivalent ? (
+                      `$${Number(balance.usd_equivalent).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

@@ -101,6 +101,9 @@ export interface CustomerDetail extends Customer {
     full_name: string
     username: string
   } | null
+  // Embedded data
+  documents?: CustomerDocument[]
+  notes?: CustomerNote[]
   // Statistics
   total_transactions?: number
   total_documents?: number
@@ -184,6 +187,28 @@ export interface CustomerNoteCreate {
 export interface CustomerKYCVerification {
   risk_level: RiskLevel
   verification_notes?: string | null
+}
+
+// Customer Transaction (simplified from full transaction types)
+export interface CustomerTransaction {
+  id: string
+  transaction_type: 'exchange' | 'income' | 'expense' | 'transfer'
+  status: 'pending' | 'completed' | 'cancelled'
+  amount?: string | null
+  currency_code?: string | null
+  from_currency?: string | null
+  to_currency?: string | null
+  from_amount?: string | null
+  to_amount?: string | null
+  created_at: string
+  completed_at?: string | null
+}
+
+// Customer Transactions Response
+export interface CustomerTransactionsResponse {
+  customer_id: string
+  transactions: CustomerTransaction[]
+  total: number
 }
 
 // Customer Statistics Response

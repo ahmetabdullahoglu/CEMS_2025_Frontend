@@ -93,7 +93,7 @@ export default function PendingTransfers() {
           <CardTitle>Pending Transfers</CardTitle>
           {data && (
             <span className="text-sm text-muted-foreground">
-              {data.transfers?.length ?? 0} pending transfer(s)
+              {data.data?.length ?? 0} pending transfer(s)
             </span>
           )}
         </div>
@@ -111,13 +111,13 @@ export default function PendingTransfers() {
           </div>
         )}
 
-        {data && (data.transfers?.length ?? 0) === 0 && (
+        {data && (data.data?.length ?? 0) === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No pending transfers.
           </div>
         )}
 
-        {data && (data.transfers?.length ?? 0) > 0 && (
+        {data && (data.data?.length ?? 0) > 0 && (
           <>
             <Table>
               <TableHeader>
@@ -132,7 +132,7 @@ export default function PendingTransfers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(data.transfers ?? []).map((transfer) => (
+                {(data.data ?? []).map((transfer) => (
                   <TableRow key={transfer.id}>
                     <TableCell>
                       {transfer.created_at ? format(new Date(transfer.created_at), 'MMM dd, yyyy') : 'N/A'}
@@ -140,15 +140,22 @@ export default function PendingTransfers() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="text-sm">
-                          {transfer.from_branch_name || 'Vault'}
+                          {transfer.from_branch?.name || transfer.from_branch_name || 'Vault'}
                         </span>
                         <ArrowRight className="w-3 h-3 text-muted-foreground" />
                         <span className="text-sm">
-                          {transfer.to_branch_name || 'Vault'}
+                          {transfer.to_branch?.name || transfer.to_branch_name || 'Vault'}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{transfer.currency_code ?? 'N/A'}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div>{transfer.currency_code ?? 'N/A'}</div>
+                        {transfer.currency_name && (
+                          <div className="text-xs text-muted-foreground">{transfer.currency_name}</div>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right font-medium">
                       {Number(transfer.amount ?? 0).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
@@ -157,7 +164,7 @@ export default function PendingTransfers() {
                     </TableCell>
                     <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {transfer.requested_by || '-'}
+                      {transfer.created_by?.username || transfer.requested_by || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
