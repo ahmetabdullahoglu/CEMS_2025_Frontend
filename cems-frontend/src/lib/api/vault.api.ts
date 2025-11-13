@@ -1,6 +1,7 @@
 import apiClient from './client'
 import type {
   VaultBalancesResponse,
+  VaultDetailsResponse,
   VaultTransferListResponse,
   VaultTransferQueryParams,
   CreateVaultTransferRequest,
@@ -45,14 +46,9 @@ export const vaultApi = {
     return response.data
   },
 
-  // Get main vault details
-  getVaultDetails: async (): Promise<{
-    total_currencies: number
-    total_value_usd: string
-    last_updated: string
-    status: string
-  }> => {
-    const response = await apiClient.get('/vault')
+  // Get main vault details with balances
+  getVaultDetails: async (): Promise<VaultDetailsResponse> => {
+    const response = await apiClient.get<VaultDetailsResponse>('/vault')
     return response.data
   },
 

@@ -3,15 +3,31 @@ export interface VaultBalance {
   currency_code: string
   currency_name: string
   balance: string // Decimal as string
-  reserved: string // Decimal as string
-  available: string // Decimal as string
   last_updated: string // ISO datetime
+  // Deprecated fields for backward compatibility
+  reserved?: string // Decimal as string
+  available?: string // Decimal as string
 }
 
 export interface VaultBalancesResponse {
   balances: VaultBalance[]
-  total_value_usd: string // Decimal as string
-  last_updated: string // ISO datetime
+  total_value_usd?: string // Decimal as string
+  last_updated?: string // ISO datetime
+}
+
+// Vault Details Response (from GET /vault)
+export interface VaultDetailsResponse {
+  id: string
+  vault_code: string
+  name: string
+  vault_type: 'main' | 'branch'
+  branch_id: string | null
+  is_active: boolean
+  description?: string | null
+  location?: string | null
+  balances: VaultBalance[]
+  created_at: string
+  updated_at: string
 }
 
 // Vault Transfer Types

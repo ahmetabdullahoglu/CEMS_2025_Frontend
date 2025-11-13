@@ -7,8 +7,8 @@ import type {
 
 export const useVaultBalances = () => {
   return useQuery({
-    queryKey: ['vault', 'balances'],
-    queryFn: vaultApi.getVaultBalances,
+    queryKey: ['vault', 'details'],
+    queryFn: vaultApi.getVaultDetails,
     staleTime: 1000 * 60 * 2, // 2 minutes - balances change frequently
   })
 }
