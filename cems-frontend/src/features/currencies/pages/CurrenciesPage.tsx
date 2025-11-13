@@ -111,7 +111,7 @@ export default function CurrenciesPage() {
             <CardTitle>Currencies</CardTitle>
             {data && (
               <span className="text-sm text-muted-foreground">
-                Showing {data.currencies?.length ?? 0} of {data.total ?? 0} currencies
+                Showing {data.data?.length ?? 0} of {data.total ?? 0} currencies
               </span>
             )}
           </div>
@@ -129,35 +129,58 @@ export default function CurrenciesPage() {
             </div>
           )}
 
-          {data && (data.currencies?.length ?? 0) === 0 && (
+          {data && (data.data?.length ?? 0) === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No currencies found.
             </div>
           )}
 
-          {data && (data.currencies?.length ?? 0) > 0 && (
+          {data && (data.data?.length ?? 0) > 0 && (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Code</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead className="text-right">Buy Rate</TableHead>
-                    <TableHead className="text-right">Sell Rate</TableHead>
+                    <TableHead>Symbol</TableHead>
+                    <TableHead className="text-center">Base Currency</TableHead>
+                    <TableHead className="text-center">Active</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(data.currencies ?? []).map((currency) => (
+                  {(data.data ?? []).map((currency) => (
                     <TableRow key={currency.id}>
                       <TableCell className="font-medium">{currency.code ?? 'N/A'}</TableCell>
-                      <TableCell>{currency.name ?? 'N/A'}</TableCell>
-                      <TableCell className="text-right">
-                        {Number(currency.buy_rate ?? 0).toFixed(4)}
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{currency.name_en ?? 'N/A'}</div>
+                          {currency.name_ar && (
+                            <div className="text-sm text-muted-foreground">{currency.name_ar}</div>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {Number(currency.sell_rate ?? 0).toFixed(4)}
+                      <TableCell className="text-xl">{currency.symbol ?? '-'}</TableCell>
+                      <TableCell className="text-center">
+                        {currency.is_base_currency ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Base
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {currency.is_active ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                            Inactive
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {currency.updated_at ? formatDistanceToNow(new Date(currency.updated_at), {
@@ -171,7 +194,7 @@ export default function CurrenciesPage() {
                           onClick={() => handleUpdateRate(currency)}
                         >
                           <Edit className="w-4 h-4 mr-2" />
-                          Update Rates
+                          Edit
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -181,7 +204,7 @@ export default function CurrenciesPage() {
 
               {/* Pagination */}
               {(() => {
-                const totalPages = Math.ceil((data?.total || 0) / pageSize)
+                const totalPages = data?.total_pages || Math.ceil((data?.total || 0) / pageSize)
                 return totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-4">
                     <Button

@@ -1,32 +1,45 @@
-// Currency Response (matches API CurrencyResponse schema)
+// Currency Response (matches actual API response)
 export interface Currency {
   id: string // UUID
   code: string
-  name: string
+  name_en: string
+  name_ar: string
   symbol: string
-  exchange_rate_to_base: string // Decimal as string
-  buy_rate: string // Decimal as string
-  sell_rate: string // Decimal as string
+  is_base_currency: boolean
+  decimal_places: number
   is_active: boolean
   created_at: string // ISO datetime
   updated_at: string // ISO datetime
+  // Exchange rates (may not be present in list response)
+  exchange_rate_to_base?: string // Decimal as string
+  buy_rate?: string // Decimal as string
+  sell_rate?: string // Decimal as string
 }
+
+// Legacy field for backward compatibility
+export type CurrencyName = string
 
 // Currency Create (matches API CurrencyCreate schema)
 export interface CurrencyCreate {
   code: string
-  name: string
+  name_en: string
+  name_ar: string
   symbol: string
-  exchange_rate_to_base: number | string // Accept both for form input
-  buy_rate: number | string // Accept both for form input
-  sell_rate: number | string // Accept both for form input
+  is_base_currency?: boolean
+  decimal_places?: number
+  exchange_rate_to_base?: number | string // Accept both for form input
+  buy_rate?: number | string // Accept both for form input
+  sell_rate?: number | string // Accept both for form input
 }
 
 // Currency Update (matches API CurrencyUpdate schema)
 export interface CurrencyUpdate {
   code?: string
-  name?: string
+  name_en?: string
+  name_ar?: string
   symbol?: string
+  is_base_currency?: boolean
+  decimal_places?: number
   exchange_rate_to_base?: number | string
   buy_rate?: number | string
   sell_rate?: number | string
@@ -63,11 +76,16 @@ export interface ExchangeTransactionResponse {
   created_at: string // ISO datetime
 }
 
+// API List Response (matches actual API structure)
 export interface CurrencyListResponse {
-  currencies: Currency[]
+  success: boolean
+  data: Currency[] // API returns data array, not currencies
   total: number
-  skip?: number
-  limit?: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
 }
 
 export interface CurrencyQueryParams {
