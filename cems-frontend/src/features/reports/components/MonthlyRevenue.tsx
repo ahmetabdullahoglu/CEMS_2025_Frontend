@@ -79,13 +79,13 @@ export default function MonthlyRevenue() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ${Number(data.total_revenue).toLocaleString('en-US', {
+                  ${Number(data.total_revenue ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  For {data.month}
+                  For {data.month ?? 'N/A'}
                 </p>
               </CardContent>
             </Card>
@@ -97,13 +97,13 @@ export default function MonthlyRevenue() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  ${Number(data.total_expenses).toLocaleString('en-US', {
+                  ${Number(data.total_expenses ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  For {data.month}
+                  For {data.month ?? 'N/A'}
                 </p>
               </CardContent>
             </Card>
@@ -114,8 +114,8 @@ export default function MonthlyRevenue() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${Number(data.total_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${Number(data.total_profit).toLocaleString('en-US', {
+                <div className={`text-2xl font-bold ${Number(data.total_profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${Number(data.total_profit ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -132,12 +132,12 @@ export default function MonthlyRevenue() {
             <CardHeader>
               <CardTitle>Daily Revenue & Expenses</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Daily breakdown for {data.month}
+                Daily breakdown for {data.month ?? 'N/A'}
               </p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <ComposedChart data={data.daily_data}>
+                <ComposedChart data={data.daily_data ?? []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"

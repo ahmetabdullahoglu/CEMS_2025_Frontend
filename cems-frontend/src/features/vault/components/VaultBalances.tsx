@@ -39,12 +39,12 @@ export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
           <div>
             <CardTitle>Vault Balances</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Last updated {formatDistanceToNow(new Date(data.last_updated), { addSuffix: true })}
+              Last updated {data?.last_updated ? formatDistanceToNow(new Date(data.last_updated), { addSuffix: true }) : 'N/A'}
             </p>
           </div>
           <div className="flex items-center gap-2 text-2xl font-bold">
             <DollarSign className="w-6 h-6" />
-            {Number(data.total_value_usd).toLocaleString('en-US', {
+            {Number(data?.total_value_usd ?? 0).toLocaleString('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -53,7 +53,7 @@ export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
         <p className="text-xs text-muted-foreground">Total USD Value</p>
       </CardHeader>
       <CardContent>
-        {data.balances.length === 0 ? (
+        {(data?.balances ?? []).length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No balances found in vault.
           </div>
@@ -68,30 +68,30 @@ export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.balances.map((balance) => (
+              {(data?.balances ?? []).map((balance) => (
                 <TableRow key={balance.currency_code}>
                   <TableCell className="font-medium">
                     <div>
-                      <div>{balance.currency_code}</div>
+                      <div>{balance.currency_code ?? 'N/A'}</div>
                       <div className="text-sm text-muted-foreground">
-                        {balance.currency_name}
+                        {balance.currency_name ?? 'N/A'}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {Number(balance.balance).toLocaleString('en-US', {
+                    {Number(balance.balance ?? 0).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </TableCell>
                   <TableCell className="text-right text-yellow-600">
-                    {Number(balance.reserved).toLocaleString('en-US', {
+                    {Number(balance.reserved ?? 0).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </TableCell>
                   <TableCell className="text-right text-green-600">
-                    {Number(balance.available).toLocaleString('en-US', {
+                    {Number(balance.available ?? 0).toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}

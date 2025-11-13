@@ -80,11 +80,11 @@ const ExchangeTransactionDetails = ({ transaction }: { transaction: TransactionD
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
-          value={format(new Date(transaction.created_at), 'PPpp')}
+          value={transaction.created_at ? format(new Date(transaction.created_at), 'PPpp') : 'N/A'}
         />
         <DetailRow
           label="Updated At"
-          value={format(new Date(transaction.updated_at), 'PPpp')}
+          value={transaction.updated_at ? format(new Date(transaction.updated_at), 'PPpp') : 'N/A'}
         />
       </div>
     </div>
@@ -115,11 +115,11 @@ const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDet
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
-          value={format(new Date(transaction.created_at), 'PPpp')}
+          value={transaction.created_at ? format(new Date(transaction.created_at), 'PPpp') : 'N/A'}
         />
         <DetailRow
           label="Updated At"
-          value={format(new Date(transaction.updated_at), 'PPpp')}
+          value={transaction.updated_at ? format(new Date(transaction.updated_at), 'PPpp') : 'N/A'}
         />
       </div>
     </div>
@@ -150,11 +150,11 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
-          value={format(new Date(transaction.created_at), 'PPpp')}
+          value={transaction.created_at ? format(new Date(transaction.created_at), 'PPpp') : 'N/A'}
         />
         <DetailRow
           label="Updated At"
-          value={format(new Date(transaction.updated_at), 'PPpp')}
+          value={transaction.updated_at ? format(new Date(transaction.updated_at), 'PPpp') : 'N/A'}
         />
       </div>
     </div>
@@ -194,11 +194,11 @@ const TransferTransactionDetails = ({ transaction }: { transaction: TransactionD
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
-          value={format(new Date(transaction.created_at), 'PPpp')}
+          value={transaction.created_at ? format(new Date(transaction.created_at), 'PPpp') : 'N/A'}
         />
         <DetailRow
           label="Updated At"
-          value={format(new Date(transaction.updated_at), 'PPpp')}
+          value={transaction.updated_at ? format(new Date(transaction.updated_at), 'PPpp') : 'N/A'}
         />
       </div>
     </div>
@@ -264,8 +264,8 @@ export default function TransactionDetailsDialog({
     return (
       <>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold capitalize">{transaction.transaction_type} Transaction</h3>
-          <StatusBadge status={transaction.status} />
+          <h3 className="text-lg font-semibold capitalize">{transaction.transaction_type ?? 'Unknown'} Transaction</h3>
+          <StatusBadge status={transaction.status ?? 'pending'} />
         </div>
 
         {transaction.transaction_type === 'exchange' && <ExchangeTransactionDetails transaction={transaction} />}

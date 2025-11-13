@@ -69,9 +69,9 @@ export default function DailySummary() {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.stats.total_transactions}</div>
+                <div className="text-2xl font-bold">{data.stats?.total_transactions ?? 0}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Exchange: {data.stats.exchange_transactions} | Income: {data.stats.income_transactions}
+                  Exchange: {data.stats?.exchange_transactions ?? 0} | Income: {data.stats?.income_transactions ?? 0}
                 </p>
               </CardContent>
             </Card>
@@ -83,7 +83,7 @@ export default function DailySummary() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ${Number(data.stats.total_revenue).toLocaleString('en-US', {
+                  ${Number(data.stats?.total_revenue ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -101,13 +101,13 @@ export default function DailySummary() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  ${Number(data.stats.total_expenses).toLocaleString('en-US', {
+                  ${Number(data.stats?.total_expenses ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Expense: {data.stats.expense_transactions} | Transfer: {data.stats.transfer_transactions}
+                  Expense: {data.stats?.expense_transactions ?? 0} | Transfer: {data.stats?.transfer_transactions ?? 0}
                 </p>
               </CardContent>
             </Card>
@@ -118,8 +118,8 @@ export default function DailySummary() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${Number(data.stats.net_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${Number(data.stats.net_profit).toLocaleString('en-US', {
+                <div className={`text-2xl font-bold ${Number(data.stats?.net_profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${Number(data.stats?.net_profit ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -141,7 +141,7 @@ export default function DailySummary() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.hourly_data}>
+                <BarChart data={data.hourly_data ?? []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="hour" />
                   <YAxis />
@@ -163,7 +163,7 @@ export default function DailySummary() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data.hourly_data}>
+                <LineChart data={data.hourly_data ?? []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="hour" />
                   <YAxis />

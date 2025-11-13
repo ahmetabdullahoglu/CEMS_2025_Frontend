@@ -32,8 +32,8 @@ export default function BranchPerformance() {
   const { data, isLoading, isError } = useBranchPerformance(startDate, endDate)
 
   // Sort branches by revenue for ranking
-  const sortedBranches = data
-    ? [...data.branches].sort((a, b) => Number(b.total_revenue) - Number(a.total_revenue))
+  const sortedBranches = data?.branches
+    ? [...data.branches].sort((a, b) => Number(b.total_revenue ?? 0) - Number(a.total_revenue ?? 0))
     : []
 
   return (
@@ -92,7 +92,7 @@ export default function BranchPerformance() {
             <CardHeader>
               <CardTitle>Revenue Comparison</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Total revenue by branch ({format(new Date(data.period_start), 'MMM dd, yyyy')} - {format(new Date(data.period_end), 'MMM dd, yyyy')})
+                Total revenue by branch ({data.period_start ? format(new Date(data.period_start), 'MMM dd, yyyy') : 'N/A'} - {data.period_end ? format(new Date(data.period_end), 'MMM dd, yyyy') : 'N/A'})
               </p>
             </CardHeader>
             <CardContent>
@@ -146,31 +146,31 @@ export default function BranchPerformance() {
                           <span className="font-medium">#{index + 1}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">{branch.branch_name}</TableCell>
+                      <TableCell className="font-medium">{branch.branch_name ?? 'N/A'}</TableCell>
                       <TableCell className="text-right">
-                        {branch.total_transactions}
+                        {branch.total_transactions ?? 0}
                       </TableCell>
                       <TableCell className="text-right text-green-600">
-                        ${Number(branch.total_revenue).toLocaleString('en-US', {
+                        ${Number(branch.total_revenue ?? 0).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
                       <TableCell className="text-right text-red-600">
-                        ${Number(branch.total_expenses).toLocaleString('en-US', {
+                        ${Number(branch.total_expenses ?? 0).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
-                      <TableCell className={`text-right font-medium ${Number(branch.net_profit) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${Number(branch.net_profit).toLocaleString('en-US', {
+                      <TableCell className={`text-right font-medium ${Number(branch.net_profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ${Number(branch.net_profit ?? 0).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {branch.top_currency} ({branch.top_currency_volume.toLocaleString()})
+                          {branch.top_currency ?? 'N/A'} ({(branch.top_currency_volume ?? 0).toLocaleString()})
                         </Badge>
                       </TableCell>
                     </TableRow>

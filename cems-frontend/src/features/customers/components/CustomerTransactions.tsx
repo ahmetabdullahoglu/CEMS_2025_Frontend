@@ -109,7 +109,7 @@ export default function CustomerTransactions({ customerId }: CustomerTransaction
     )
   }
 
-  if (data.transactions.length === 0) {
+  if ((data.transactions?.length ?? 0) === 0) {
     return (
       <Card>
         <CardContent className="py-10">
@@ -142,21 +142,21 @@ export default function CustomerTransactions({ customerId }: CustomerTransaction
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.transactions.map((transaction) => {
+              {(data.transactions ?? []).map((transaction) => {
                 // Get amount based on transaction type with proper type safety
                 const amount = getTransactionAmount(transaction)
 
                 return (
                   <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">#{transaction.transaction_number}</TableCell>
+                    <TableCell className="font-medium">#{transaction.transaction_number ?? 'N/A'}</TableCell>
                     <TableCell>
                       <span
                         className={cn(
                           'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                          getTypeBadgeClass(transaction.transaction_type)
+                          getTypeBadgeClass(transaction.transaction_type ?? 'unknown')
                         )}
                       >
-                        {transaction.transaction_type.toUpperCase()}
+                        {(transaction.transaction_type ?? 'unknown').toUpperCase()}
                       </span>
                     </TableCell>
                     <TableCell className="font-medium">
@@ -167,18 +167,18 @@ export default function CustomerTransactions({ customerId }: CustomerTransaction
                       <span
                         className={cn(
                           'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
-                          getStatusBadgeClass(transaction.status)
+                          getStatusBadgeClass(transaction.status ?? 'pending')
                         )}
                       >
-                        {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                        {((transaction.status ?? 'pending').charAt(0).toUpperCase() + (transaction.status ?? 'pending').slice(1))}
                       </span>
                     </TableCell>
                     <TableCell>
-                      {new Date(transaction.created_at).toLocaleDateString('en-US', {
+                      {transaction.created_at ? new Date(transaction.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',
-                      })}
+                      }) : 'N/A'}
                     </TableCell>
                   </TableRow>
                 )

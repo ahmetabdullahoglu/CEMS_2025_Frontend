@@ -93,7 +93,7 @@ export default function PendingTransfers() {
           <CardTitle>Pending Transfers</CardTitle>
           {data && (
             <span className="text-sm text-muted-foreground">
-              {data.transfers.length} pending transfer(s)
+              {data.transfers?.length ?? 0} pending transfer(s)
             </span>
           )}
         </div>
@@ -111,13 +111,13 @@ export default function PendingTransfers() {
           </div>
         )}
 
-        {data && data.transfers.length === 0 && (
+        {data && (data.transfers?.length ?? 0) === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No pending transfers.
           </div>
         )}
 
-        {data && data.transfers.length > 0 && (
+        {data && (data.transfers?.length ?? 0) > 0 && (
           <>
             <Table>
               <TableHeader>
@@ -132,10 +132,10 @@ export default function PendingTransfers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.transfers.map((transfer) => (
+                {(data.transfers ?? []).map((transfer) => (
                   <TableRow key={transfer.id}>
                     <TableCell>
-                      {format(new Date(transfer.created_at), 'MMM dd, yyyy')}
+                      {transfer.created_at ? format(new Date(transfer.created_at), 'MMM dd, yyyy') : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -148,14 +148,14 @@ export default function PendingTransfers() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{transfer.currency_code}</TableCell>
+                    <TableCell>{transfer.currency_code ?? 'N/A'}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {Number(transfer.amount).toLocaleString('en-US', {
+                      {Number(transfer.amount ?? 0).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
                     </TableCell>
-                    <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                    <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {transfer.requested_by || '-'}
                     </TableCell>

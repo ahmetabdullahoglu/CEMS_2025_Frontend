@@ -111,7 +111,7 @@ export default function CurrenciesPage() {
             <CardTitle>Currencies</CardTitle>
             {data && (
               <span className="text-sm text-muted-foreground">
-                Showing {data.currencies.length} of {data.total} currencies
+                Showing {data.currencies?.length ?? 0} of {data.total ?? 0} currencies
               </span>
             )}
           </div>
@@ -129,13 +129,13 @@ export default function CurrenciesPage() {
             </div>
           )}
 
-          {data && data.currencies.length === 0 && (
+          {data && (data.currencies?.length ?? 0) === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No currencies found.
             </div>
           )}
 
-          {data && data.currencies.length > 0 && (
+          {data && (data.currencies?.length ?? 0) > 0 && (
             <>
               <Table>
                 <TableHeader>
@@ -149,20 +149,20 @@ export default function CurrenciesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.currencies.map((currency) => (
+                  {(data.currencies ?? []).map((currency) => (
                     <TableRow key={currency.id}>
-                      <TableCell className="font-medium">{currency.code}</TableCell>
-                      <TableCell>{currency.name}</TableCell>
+                      <TableCell className="font-medium">{currency.code ?? 'N/A'}</TableCell>
+                      <TableCell>{currency.name ?? 'N/A'}</TableCell>
                       <TableCell className="text-right">
-                        {Number(currency.buy_rate).toFixed(4)}
+                        {Number(currency.buy_rate ?? 0).toFixed(4)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {Number(currency.sell_rate).toFixed(4)}
+                        {Number(currency.sell_rate ?? 0).toFixed(4)}
                       </TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(currency.updated_at), {
+                        {currency.updated_at ? formatDistanceToNow(new Date(currency.updated_at), {
                           addSuffix: true,
-                        })}
+                        }) : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

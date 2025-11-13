@@ -42,7 +42,16 @@ export default function DashboardPage() {
     return null
   }
 
-  const { stats, revenue_trend } = data
+  const stats = data.stats ?? {
+    total_transactions: 0,
+    transactions_change: 0,
+    total_revenue: 0,
+    revenue_change: 0,
+    active_customers: 0,
+    customers_change: 0,
+    vault_balance: 0,
+  }
+  const revenue_trend = data.revenue_trend ?? []
 
   return (
     <div className="space-y-6">
@@ -56,25 +65,25 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Transactions"
-          value={stats.total_transactions.toLocaleString()}
-          change={stats.transactions_change}
+          value={(stats.total_transactions ?? 0).toLocaleString()}
+          change={stats.transactions_change ?? 0}
           icon={ArrowRightLeft}
         />
         <StatCard
           title="Total Revenue"
-          value={`$${stats.total_revenue.toLocaleString()}`}
-          change={stats.revenue_change}
+          value={`$${(stats.total_revenue ?? 0).toLocaleString()}`}
+          change={stats.revenue_change ?? 0}
           icon={DollarSign}
         />
         <StatCard
           title="Active Customers"
-          value={stats.active_customers.toLocaleString()}
-          change={stats.customers_change}
+          value={(stats.active_customers ?? 0).toLocaleString()}
+          change={stats.customers_change ?? 0}
           icon={Users}
         />
         <StatCard
           title="Vault Balance"
-          value={`$${stats.vault_balance.toLocaleString()}`}
+          value={`$${(stats.vault_balance ?? 0).toLocaleString()}`}
           description="Across all currencies"
           icon={Vault}
         />
