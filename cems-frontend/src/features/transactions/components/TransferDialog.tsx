@@ -27,16 +27,19 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useBranches, useCreateTransfer } from '@/hooks/useTransactions'
 
+// Schema matching TransferTransactionCreate from API
 const transferSchema = z.object({
-  from_branch_id: z.number().int().positive('Please select a branch'),
-  to_branch_id: z.number().int().positive('Please select a branch'),
-  currency_code: z.string().min(1, 'Please select a currency'),
+  from_branch_id: z.string().uuid('Please select a from branch'),
+  to_branch_id: z.string().uuid('Please select a to branch'),
+  currency_id: z.string().uuid('Please select a currency'),
   amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
-  description: z.string().optional(),
+  notes: z.string().optional(),
+  reference_number: z.string().optional(),
 })
 
 type TransferFormData = z.infer<typeof transferSchema>
@@ -54,11 +57,12 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferSchema),
     defaultValues: {
-      from_branch_id: 0,
-      to_branch_id: 0,
-      currency_code: '',
+      from_branch_id: '',
+      to_branch_id: '',
+      currency_id: '',
       amount: 0,
-      description: '',
+      notes: '',
+      reference_number: '',
     },
   })
 
@@ -80,21 +84,12 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
       return
     }
 
-    createTransfer(
-      {
-        from_branch_id: data.from_branch_id,
-        to_branch_id: data.to_branch_id,
-        currency_code: data.currency_code,
-        amount: data.amount,
-        description: data.description || undefined,
+    createTransfer(data, {
+      onSuccess: () => {
+        onOpenChange(false)
+        form.reset()
       },
-      {
-        onSuccess: () => {
-          onOpenChange(false)
-          form.reset()
-        },
-      }
-    )
+    })
   }
 
   return (
@@ -115,11 +110,8 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
               name="from_branch_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>From Branch</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    value={field.value > 0 ? field.value.toString() : ''}
-                  >
+                  <FormLabel>From Branch *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select branch" />
@@ -134,7 +126,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                         branches?.map((branch) => (
                           <SelectItem
                             key={branch.id}
-                            value={branch.id.toString()}
+                            value={branch.id}
                             disabled={branch.id === toBranchId}
                           >
                             {branch.name} ({branch.code})
@@ -149,7 +141,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
             />
 
             {/* Transfer Arrow Indicator */}
-            {fromBranchId > 0 && toBranchId > 0 && (
+            {fromBranchId && toBranchId && (
               <div className="flex items-center justify-center py-2">
                 <ArrowRight className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -161,11 +153,8 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
               name="to_branch_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>To Branch</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    value={field.value > 0 ? field.value.toString() : ''}
-                  >
+                  <FormLabel>To Branch *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select branch" />
@@ -180,7 +169,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                         branches?.map((branch) => (
                           <SelectItem
                             key={branch.id}
-                            value={branch.id.toString()}
+                            value={branch.id}
                             disabled={branch.id === fromBranchId}
                           >
                             {branch.name} ({branch.code})
@@ -197,10 +186,10 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
             {/* Currency */}
             <FormField
               control={form.control}
-              name="currency_code"
+              name="currency_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Currency</FormLabel>
+                  <FormLabel>Currency *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -214,7 +203,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                         </div>
                       ) : (
                         currencies?.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
+                          <SelectItem key={currency.id} value={currency.id}>
                             {currency.code} - {currency.name}
                           </SelectItem>
                         ))
@@ -232,7 +221,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Amount *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -247,15 +236,35 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
               )}
             />
 
-            {/* Description (Optional) */}
+            {/* Reference Number */}
             <FormField
               control={form.control}
-              name="description"
+              name="reference_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Reference Number (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter description" {...field} />
+                    <Input placeholder="Enter reference number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Notes */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter any additional notes"
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

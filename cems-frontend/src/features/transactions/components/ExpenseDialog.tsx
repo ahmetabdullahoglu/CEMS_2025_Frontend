@@ -27,15 +27,23 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateExpense } from '@/hooks/useTransactions'
+import { useAuth } from '@/contexts/AuthContext'
+import type { ExpenseCategory } from '@/types/transaction.types'
 
+// Schema matching ExpenseTransactionCreate from API
 const expenseSchema = z.object({
-  currency_code: z.string().min(1, 'Please select a currency'),
+  currency_id: z.string().uuid('Please select a currency'),
   amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
-  description: z.string().min(1, 'Description is required'),
-  category: z.string().min(1, 'Category is required'),
+  expense_category: z.enum(['rent', 'salary', 'utilities', 'maintenance', 'supplies', 'other']),
+  expense_to: z.string().min(1, 'Payee name is required'),
+  approval_required: z.boolean().optional(),
+  notes: z.string().optional(),
+  reference_number: z.string().optional(),
 })
 
 type ExpenseFormData = z.infer<typeof expenseSchema>
@@ -45,31 +53,31 @@ interface ExpenseDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-// Common expense categories
-const EXPENSE_CATEGORIES = [
-  'Rent',
-  'Utilities',
-  'Salaries',
-  'Supplies',
-  'Marketing',
-  'Maintenance',
-  'Insurance',
-  'Transportation',
-  'Professional Services',
-  'Other',
+// Expense categories matching API enum
+const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
+  { value: 'rent', label: 'Rent' },
+  { value: 'salary', label: 'Salary' },
+  { value: 'utilities', label: 'Utilities' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'supplies', label: 'Supplies' },
+  { value: 'other', label: 'Other' },
 ]
 
 export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
   const { mutate: createExpense, isPending: isCreating } = useCreateExpense()
+  const { user } = useAuth()
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      currency_code: '',
+      currency_id: '',
       amount: 0,
-      description: '',
-      category: '',
+      expense_category: 'other',
+      expense_to: '',
+      approval_required: false,
+      notes: '',
+      reference_number: '',
     },
   })
 
@@ -81,7 +89,13 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
   }, [open, form])
 
   const onSubmit = (data: ExpenseFormData) => {
-    createExpense(data, {
+    // Add branch_id from user context
+    const payload = {
+      ...data,
+      branch_id: user?.id || '', // TODO: Get actual branch_id from user context or selection
+    }
+
+    createExpense(payload, {
       onSuccess: () => {
         onOpenChange(false)
         form.reset()
@@ -104,10 +118,10 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
             {/* Currency */}
             <FormField
               control={form.control}
-              name="currency_code"
+              name="currency_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Currency</FormLabel>
+                  <FormLabel>Currency *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -121,7 +135,7 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
                         </div>
                       ) : (
                         currencies?.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
+                          <SelectItem key={currency.id} value={currency.id}>
                             {currency.code} - {currency.name}
                           </SelectItem>
                         ))
@@ -139,7 +153,7 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Amount *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -154,13 +168,13 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
               )}
             />
 
-            {/* Category */}
+            {/* Expense Category */}
             <FormField
               control={form.control}
-              name="category"
+              name="expense_category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Category *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -169,8 +183,8 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
                     </FormControl>
                     <SelectContent>
                       {EXPENSE_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -180,17 +194,74 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
               )}
             />
 
-            {/* Description */}
+            {/* Expense To (Payee) */}
             <FormField
               control={form.control}
-              name="description"
+              name="expense_to"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Payee Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter description" {...field} />
+                    <Input placeholder="Enter payee name" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Reference Number */}
+            <FormField
+              control={form.control}
+              name="reference_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reference Number (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter reference number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Notes */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter any additional notes"
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Approval Required */}
+            <FormField
+              control={form.control}
+              name="approval_required"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Requires Approval</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Check if this expense needs manager approval
+                    </p>
+                  </div>
                 </FormItem>
               )}
             />

@@ -1,37 +1,145 @@
-export type TransactionType = 'buy' | 'sell'
-export type TransactionStatus = 'completed' | 'pending' | 'cancelled'
+// Transaction Type and Status Enums (matches API)
+export type TransactionType = 'income' | 'expense' | 'exchange' | 'transfer'
+export type TransactionStatus = 'pending' | 'completed' | 'cancelled' | 'failed'
 
-export interface Transaction {
-  id: number
-  type: TransactionType
-  amount: number
-  currency_code: string
-  exchange_rate: number
-  total_amount: number
+// Income and Expense Category Enums
+export type IncomeCategory = 'service_fee' | 'commission' | 'other'
+export type ExpenseCategory = 'rent' | 'salary' | 'utilities' | 'maintenance' | 'supplies' | 'other'
+
+// Base Transaction Response Fields
+interface BaseTransactionResponse {
+  id: string // UUID
+  transaction_number: string
+  transaction_type: TransactionType
   status: TransactionStatus
-  customer_name?: string
-  branch_id?: number
-  branch_name?: string
-  created_by?: string
-  created_at: string
-  updated_at: string
+  branch_id: string // UUID
+  customer_id?: string | null // UUID
+  user_id: string // UUID
+  reference_number?: string | null
+  notes?: string | null
+  transaction_date: string // ISO datetime
+  completed_at?: string | null // ISO datetime
+  cancelled_at?: string | null // ISO datetime
+  cancelled_by_id?: string | null // UUID
+  cancellation_reason?: string | null
+  created_at: string // ISO datetime
+  updated_at: string // ISO datetime
 }
 
-export interface TransactionFilters {
-  type?: TransactionType
-  status?: TransactionStatus
-  branch_id?: number
-  date_from?: string
-  date_to?: string
-  search?: string
+// Income Transaction Types
+export interface IncomeTransactionCreate {
+  amount: number | string
+  currency_id: string // UUID
+  branch_id: string // UUID
+  customer_id?: string | null // UUID
+  reference_number?: string | null
+  notes?: string | null
+  transaction_date?: string | null // ISO datetime
+  income_category: IncomeCategory
+  income_source?: string | null
 }
 
+export interface IncomeTransactionResponse extends BaseTransactionResponse {
+  amount: string // Decimal as string
+  currency_id: string // UUID
+  income_category: IncomeCategory
+  income_source?: string | null
+}
+
+// Expense Transaction Types
+export interface ExpenseTransactionCreate {
+  amount: number | string
+  currency_id: string // UUID
+  branch_id: string // UUID
+  customer_id?: string | null // UUID
+  reference_number?: string | null
+  notes?: string | null
+  transaction_date?: string | null // ISO datetime
+  expense_category: ExpenseCategory
+  expense_to: string // Payee name (required)
+  approval_required?: boolean
+}
+
+export interface ExpenseTransactionResponse extends BaseTransactionResponse {
+  amount: string // Decimal as string
+  currency_id: string // UUID
+  expense_category: ExpenseCategory
+  expense_to: string
+  approval_required: boolean
+  approved_at?: string | null // ISO datetime
+  approved_by_id?: string | null // UUID
+}
+
+// Exchange Transaction Types
+export interface ExchangeTransactionCreate {
+  branch_id: string // UUID
+  customer_id?: string | null // UUID
+  from_currency_id: string // UUID
+  to_currency_id: string // UUID
+  from_amount: number | string
+  exchange_rate?: number | string | null // Uses current rate if not provided
+  commission_percentage?: number | string | null // Uses default if not provided
+  reference_number?: string | null
+  notes?: string | null
+  transaction_date?: string | null // ISO datetime
+}
+
+export interface ExchangeTransactionResponse extends BaseTransactionResponse {
+  from_currency_id: string // UUID
+  to_currency_id: string // UUID
+  from_amount: string // Decimal as string
+  to_amount: string // Decimal as string
+  exchange_rate_used: string // Decimal as string
+  commission_amount: string // Decimal as string
+  commission_percentage: string // Decimal as string
+  effective_rate: string // Rate with commission
+  total_cost: string // Total including commission
+}
+
+// Transfer Transaction Types
+export interface TransferTransactionCreate {
+  from_branch_id: string // UUID
+  to_branch_id: string // UUID
+  currency_id: string // UUID
+  amount: number | string
+  reference_number?: string | null
+  notes?: string | null
+  transaction_date?: string | null // ISO datetime
+}
+
+export interface TransferTransactionResponse extends BaseTransactionResponse {
+  from_branch_id: string // UUID
+  to_branch_id: string // UUID
+  currency_id: string // UUID
+  amount: string // Decimal as string
+  received_at?: string | null // ISO datetime
+  received_by_id?: string | null // UUID
+}
+
+// Union type for all transaction responses
+export type AnyTransactionResponse =
+  | IncomeTransactionResponse
+  | ExpenseTransactionResponse
+  | ExchangeTransactionResponse
+  | TransferTransactionResponse
+
+// Transaction List Response (with pagination)
 export interface TransactionListResponse {
-  transactions: Transaction[]
   total: number
-  page: number
-  page_size: number
-  total_pages: number
+  transactions: AnyTransactionResponse[]
+  page?: number
+  page_size?: number
+  total_pages?: number
+}
+
+// Transaction Filters and Query Params
+export interface TransactionFilters {
+  transaction_type?: TransactionType
+  status?: TransactionStatus
+  branch_id?: string // UUID
+  date_from?: string // ISO date
+  date_to?: string // ISO date
+  search?: string
 }
 
 export interface TransactionQueryParams extends TransactionFilters {
@@ -41,69 +149,99 @@ export interface TransactionQueryParams extends TransactionFilters {
   sort_order?: 'asc' | 'desc'
 }
 
-// Income Transaction Types
-export interface IncomeTransactionRequest {
-  currency_code: string
-  amount: number
-  description: string
-  branch_id?: number
+// Transaction Cancel Request
+export interface TransactionCancelRequest {
+  cancellation_reason?: string
 }
 
-export interface IncomeTransactionResponse {
-  id: number
-  currency_code: string
-  amount: number
-  description: string
-  branch_id?: number
-  status: string
-  created_at: string
+// Transaction Summary/Stats
+export interface TransactionSummary {
+  total_transactions: number
+  total_income: string
+  total_expense: string
+  total_exchange: string
+  total_transfer: string
+  by_status: {
+    pending: number
+    completed: number
+    cancelled: number
+    failed: number
+  }
 }
 
-// Expense Transaction Types
-export interface ExpenseTransactionRequest {
-  currency_code: string
-  amount: number
-  description: string
-  category: string
-  branch_id?: number
+// Transaction Cancel Response
+export interface CancelTransactionResponse {
+  id: string
+  status: TransactionStatus
+  cancelled_at: string
+  cancellation_reason?: string | null
 }
 
-export interface ExpenseTransactionResponse {
-  id: number
-  currency_code: string
-  amount: number
-  description: string
-  category: string
-  branch_id?: number
-  status: string
-  created_at: string
+// Transaction Detail (with relationships) - includes all base fields plus relationships
+export interface TransactionDetail extends BaseTransactionResponse {
+  // Relationship objects
+  branch?: {
+    id: string
+    name: string
+    code: string
+  }
+  customer?: {
+    id: string
+    name: string
+    phone: string
+  } | null
+  user?: {
+    id: string
+    full_name: string
+    username: string
+  }
+  currency?: {
+    id: string
+    code: string
+    name: string
+  }
+
+  // Fields that vary by transaction type (all optional as they depend on type)
+  amount?: string // For income, expense, transfer
+  income_category?: IncomeCategory
+  income_source?: string | null
+  expense_category?: ExpenseCategory
+  expense_to?: string
+  approval_required?: boolean
+  approved_at?: string | null
+  approved_by_id?: string | null
+
+  // Exchange-specific fields
+  from_currency_id?: string
+  to_currency_id?: string
+  from_amount?: string
+  to_amount?: string
+  exchange_rate_used?: string
+  commission_amount?: string
+  commission_percentage?: string
+  effective_rate?: string
+  total_cost?: string
+  from_currency?: {
+    id: string
+    code: string
+    name: string
+  }
+  to_currency?: {
+    id: string
+    code: string
+    name: string
+  }
+
+  // Transfer-specific fields
+  from_branch_id?: string
+  to_branch_id?: string
+  received_at?: string | null
+  received_by_id?: string | null
 }
 
-// Transfer Transaction Types
-export interface TransferTransactionRequest {
-  from_branch_id: number
-  to_branch_id: number
-  currency_code: string
-  amount: number
-  description?: string
-}
-
-export interface TransferTransactionResponse {
-  id: number
-  from_branch_id: number
-  to_branch_id: number
-  from_branch_name?: string
-  to_branch_name?: string
-  currency_code: string
-  amount: number
-  description?: string
-  status: string
-  created_at: string
-}
-
-// Branch Types
+// Branch type (basic info used in transactions)
 export interface Branch {
-  id: number
+  id: string // UUID
   name: string
   code: string
   address?: string
@@ -111,63 +249,9 @@ export interface Branch {
   is_active: boolean
 }
 
-// Transaction Detail Types (for viewing individual transactions)
-export type TransactionDetailType = 'exchange' | 'income' | 'expense' | 'transfer'
-
-interface BaseTransactionDetail {
-  id: number
-  status: TransactionStatus
-  created_by?: string
-  created_at: string
-  updated_at: string
-  branch_id?: number
-  branch_name?: string
-}
-
-export interface ExchangeTransactionDetail extends BaseTransactionDetail {
-  type: 'exchange'
-  from_currency_code: string
-  to_currency_code: string
-  from_amount: number
-  to_amount: number
-  exchange_rate: number
-  customer_name?: string
-}
-
-export interface IncomeTransactionDetail extends BaseTransactionDetail {
-  type: 'income'
-  currency_code: string
-  amount: number
-  description: string
-}
-
-export interface ExpenseTransactionDetail extends BaseTransactionDetail {
-  type: 'expense'
-  currency_code: string
-  amount: number
-  description: string
-  category: string
-}
-
-export interface TransferTransactionDetail extends BaseTransactionDetail {
-  type: 'transfer'
-  from_branch_id: number
-  to_branch_id: number
-  from_branch_name?: string
-  to_branch_name?: string
-  currency_code: string
-  amount: number
-  description?: string
-}
-
-export type TransactionDetail =
-  | ExchangeTransactionDetail
-  | IncomeTransactionDetail
-  | ExpenseTransactionDetail
-  | TransferTransactionDetail
-
-export interface CancelTransactionResponse {
-  id: number
-  status: string
-  cancelled_at: string
-}
+// Backward compatibility aliases (for existing code)
+export type IncomeTransactionRequest = IncomeTransactionCreate
+export type ExpenseTransactionRequest = ExpenseTransactionCreate
+export type ExchangeTransactionRequest = ExchangeTransactionCreate
+export type TransferTransactionRequest = TransferTransactionCreate
+export type Transaction = AnyTransactionResponse // Alias for old 'Transaction' type

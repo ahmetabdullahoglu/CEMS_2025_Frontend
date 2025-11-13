@@ -27,14 +27,19 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateIncome } from '@/hooks/useTransactions'
-
+import { useAuth } from '@/contexts/AuthContext'
+// Schema matching IncomeTransactionCreate from API
 const incomeSchema = z.object({
-  currency_code: z.string().min(1, 'Please select a currency'),
+  currency_id: z.string().uuid('Please select a currency'),
   amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
-  description: z.string().min(1, 'Description is required'),
+  income_category: z.enum(['service_fee', 'commission', 'other']),
+  income_source: z.string().optional(),
+  notes: z.string().optional(),
+  reference_number: z.string().optional(),
 })
 
 type IncomeFormData = z.infer<typeof incomeSchema>
@@ -47,13 +52,17 @@ interface IncomeDialogProps {
 export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
   const { mutate: createIncome, isPending: isCreating } = useCreateIncome()
+  const { user } = useAuth()
 
   const form = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: {
-      currency_code: '',
+      currency_id: '',
       amount: 0,
-      description: '',
+      income_category: 'other',
+      income_source: '',
+      notes: '',
+      reference_number: '',
     },
   })
 
@@ -65,7 +74,14 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
   }, [open, form])
 
   const onSubmit = (data: IncomeFormData) => {
-    createIncome(data, {
+    // Get branch_id from user (assume first role's branch or a default branch)
+    // For now, we need to get this from somewhere - will need to update this logic
+    const payload = {
+      ...data,
+      branch_id: user?.id || '', // TODO: Get actual branch_id from user context or selection
+    }
+
+    createIncome(payload, {
       onSuccess: () => {
         onOpenChange(false)
         form.reset()
@@ -88,10 +104,10 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
             {/* Currency */}
             <FormField
               control={form.control}
-              name="currency_code"
+              name="currency_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Currency</FormLabel>
+                  <FormLabel>Currency *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -105,7 +121,7 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
                         </div>
                       ) : (
                         currencies?.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
+                          <SelectItem key={currency.id} value={currency.id}>
                             {currency.code} - {currency.name}
                           </SelectItem>
                         ))
@@ -123,7 +139,7 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Amount *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -138,15 +154,74 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
               )}
             />
 
-            {/* Description */}
+            {/* Income Category */}
             <FormField
               control={form.control}
-              name="description"
+              name="income_category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Category *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="service_fee">Service Fee</SelectItem>
+                      <SelectItem value="commission">Commission</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Income Source */}
+            <FormField
+              control={form.control}
+              name="income_source"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Source (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter description" {...field} />
+                    <Input placeholder="Enter income source" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Reference Number */}
+            <FormField
+              control={form.control}
+              name="reference_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reference Number (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter reference number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Notes */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter any additional notes"
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
