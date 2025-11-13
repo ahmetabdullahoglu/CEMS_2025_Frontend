@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { customerApi } from '@/lib/api/customer.api'
-import type { CustomerQueryParams, CustomerRequest } from '@/types/customer.types'
+import type { CustomerQueryParams, CustomerRequest, CustomerDocumentCreate } from '@/types/customer.types'
 
 /**
  * Hook for getting customers list with filters and pagination
@@ -82,14 +82,21 @@ export const useCustomerDocuments = (customerId: string, enabled = true) => {
 }
 
 /**
- * Hook for uploading a document
+ * Hook for uploading a document with metadata
  */
 export const useUploadDocument = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ customerId, file }: { customerId: string; file: File }) =>
-      customerApi.uploadDocument(customerId, file),
+    mutationFn: ({
+      customerId,
+      file,
+      metadata
+    }: {
+      customerId: string
+      file: File
+      metadata: CustomerDocumentCreate
+    }) => customerApi.uploadDocument(customerId, file, metadata),
     onSuccess: (_, { customerId }) => {
       queryClient.invalidateQueries({ queryKey: ['customer', customerId, 'documents'] })
     },

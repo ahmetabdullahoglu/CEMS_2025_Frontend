@@ -5,6 +5,7 @@ import type {
   CustomerListResponse,
   CustomerQueryParams,
   CustomerDocument,
+  CustomerDocumentCreate,
   DocumentUploadResponse,
 } from '@/types/customer.types'
 
@@ -44,10 +45,24 @@ export const customerApi = {
     return response.data
   },
 
-  // Upload customer document
-  uploadDocument: async (customerId: string, file: File): Promise<DocumentUploadResponse> => {
+  // Upload customer document with metadata
+  uploadDocument: async (
+    customerId: string,
+    file: File,
+    metadata: CustomerDocumentCreate
+  ): Promise<DocumentUploadResponse> => {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('document_type', metadata.document_type)
+    if (metadata.document_number) {
+      formData.append('document_number', metadata.document_number)
+    }
+    if (metadata.issue_date) {
+      formData.append('issue_date', metadata.issue_date)
+    }
+    if (metadata.expiry_date) {
+      formData.append('expiry_date', metadata.expiry_date)
+    }
 
     const response = await apiClient.post<DocumentUploadResponse>(
       `/customers/${customerId}/documents`,

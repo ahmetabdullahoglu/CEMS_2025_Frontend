@@ -21,9 +21,12 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
+  // Calculate skip from page (API uses skip/limit, not page/page_size)
+  const skip = (page - 1) * pageSize
+
   const queryParams = {
-    page,
-    page_size: pageSize,
+    skip,
+    limit: pageSize,
     sort_by: sortBy,
     sort_order: sortOrder,
     search: search || undefined,
@@ -101,7 +104,8 @@ export default function CustomersPage() {
     )
   }
 
-  const totalPages = data?.total_pages || 0
+  // Calculate total pages from total count (API doesn't return total_pages with skip/limit)
+  const totalPages = Math.ceil((data?.total || 0) / pageSize)
 
   return (
     <div className="space-y-6">

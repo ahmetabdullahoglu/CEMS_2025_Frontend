@@ -110,15 +110,14 @@ export interface CustomerDetail extends Customer {
 export interface CustomerListResponse {
   customers: Customer[]
   total: number
-  page?: number
-  page_size?: number
-  total_pages?: number
+  skip?: number
+  limit?: number
 }
 
 // Customer Query Parameters
 export interface CustomerQueryParams {
-  page?: number
-  page_size?: number
+  skip?: number // Offset for pagination (replaces page)
+  limit?: number // Number of items per page (replaces page_size)
   search?: string
   customer_type?: CustomerType
   risk_level?: RiskLevel

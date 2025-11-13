@@ -73,11 +73,14 @@ const getTransactionAmount = (transaction: AnyTransactionResponse): string | und
 export default function CustomerTransactions({ customerId }: CustomerTransactionsProps) {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
+  // Calculate skip from page (API uses skip/limit, not page/page_size)
+  const skip = (page - 1) * pageSize
+
 
   // Fetch transactions filtered by customer ID
   const { data, isLoading, isError } = useTransactions({
-    page,
-    page_size: pageSize,
+    skip,
+    limit: pageSize,
     customer_id: customerId,
   })
 
@@ -121,7 +124,7 @@ export default function CustomerTransactions({ customerId }: CustomerTransaction
     )
   }
 
-  const totalPages = data.total_pages || 0
+  const totalPages = Math.ceil((data.total || 0) / pageSize)
 
   return (
     <div className="space-y-4">

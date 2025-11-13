@@ -19,14 +19,15 @@ import type { Currency } from '@/types/currency.types'
 export default function CurrenciesPage() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
+  const skip = (page - 1) * pageSize
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [selectedCurrency, setSelectedCurrency] = useState<Currency | null>(null)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
 
   const { data, isLoading, isError } = useCurrencies({
-    page,
-    page_size: pageSize,
+    skip,
+    limit: pageSize,
     search,
   })
 
@@ -54,7 +55,7 @@ export default function CurrenciesPage() {
   // Calculate which page numbers to show
   const getPageNumbers = () => {
     if (!data) return []
-    const totalPages = data.total_pages || 0
+    const totalPages = Math.ceil((data?.total || 0) / pageSize)
     const current = page
     const delta = 2
 
@@ -179,44 +180,47 @@ export default function CurrenciesPage() {
               </Table>
 
               {/* Pagination */}
-              {(data.total_pages || 0) > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
+              {(() => {
+                const totalPages = Math.ceil((data?.total || 0) / pageSize)
+                return totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
 
-                  {getPageNumbers().map((pageNum, idx) =>
-                    pageNum === '...' ? (
-                      <span key={`ellipsis-${idx}`} className="px-2">
-                        ...
-                      </span>
-                    ) : (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setPage(pageNum as number)}
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  )}
+                    {getPageNumbers().map((pageNum, idx) =>
+                      pageNum === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2">
+                          ...
+                        </span>
+                      ) : (
+                        <Button
+                          key={pageNum}
+                          variant={page === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setPage(pageNum as number)}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page === data.total_pages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )
+              })()}
             </>
           )}
         </CardContent>

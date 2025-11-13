@@ -8,6 +8,8 @@ import type {
   TransferTransactionResponse,
   Branch,
   TransactionDetail,
+  TransactionListResponse,
+  TransactionQueryParams,
   CancelTransactionResponse,
 } from '@/types/transaction.types'
 
@@ -44,6 +46,12 @@ export const transactionApi = {
   // Get all branches
   getBranches: async (): Promise<Branch[]> => {
     const response = await apiClient.get<Branch[]>('/branches')
+    return response.data
+  },
+
+  // Get transactions list with filters and pagination
+  getTransactions: async (params: TransactionQueryParams): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>('/transactions', { params })
     return response.data
   },
 

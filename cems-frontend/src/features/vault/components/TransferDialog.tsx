@@ -47,7 +47,7 @@ type TransferFormData = z.infer<typeof transferSchema>
 
 export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
-  const { data: branchesData, isLoading: branchesLoading } = useBranches({ page: 1, page_size: 100 })
+  const { data: branchesData, isLoading: branchesLoading } = useBranches({ skip: 0, limit: 100 })
   const { mutate: createTransfer, isPending } = useCreateVaultTransfer()
 
   const {

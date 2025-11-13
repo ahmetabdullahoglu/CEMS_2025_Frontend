@@ -51,14 +51,13 @@ export interface BranchBalancesResponse {
 export interface BranchListResponse {
   branches: Branch[]
   total: number
-  page?: number
-  page_size?: number
-  total_pages?: number
+  skip?: number
+  limit?: number
 }
 
 export interface BranchQueryParams {
-  page?: number
-  page_size?: number
+  skip?: number // Offset for pagination (replaces page)
+  limit?: number // Number of items per page (replaces page_size)
   search?: string
   is_active?: boolean
 }

@@ -35,8 +35,8 @@ export default function TransactionsPage() {
 
   const queryParams: TransactionQueryParams = {
     ...filters,
-    page,
-    page_size: pageSize,
+    skip: (page - 1) * pageSize,
+    limit: pageSize,
     sort_by: sortBy,
     sort_order: sortOrder,
   }
@@ -88,7 +88,7 @@ export default function TransactionsPage() {
     )
   }
 
-  const totalPages = data?.total_pages || 0
+  const totalPages = Math.ceil((data?.total || 0) / pageSize)
 
   return (
     <div className="space-y-6">

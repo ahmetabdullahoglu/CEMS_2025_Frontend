@@ -40,14 +40,13 @@ export interface VaultTransfer {
 export interface VaultTransferListResponse {
   transfers: VaultTransfer[]
   total: number
-  page?: number
-  page_size?: number
-  total_pages?: number
+  skip?: number
+  limit?: number
 }
 
 export interface VaultTransferQueryParams {
-  page?: number
-  page_size?: number
+  skip?: number // Offset for pagination (replaces page)
+  limit?: number // Number of items per page (replaces page_size)
   status?: VaultTransferStatus
   branch_id?: string // UUID
 }

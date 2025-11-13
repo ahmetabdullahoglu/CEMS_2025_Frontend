@@ -40,7 +40,13 @@ export default function DocumentUpload({ customerId }: DocumentUploadProps) {
 
     setUploading(true)
     uploadDocument(
-      { customerId, file },
+      {
+        customerId,
+        file,
+        metadata: {
+          document_type: 'other',
+        }
+      },
       {
         onSuccess: () => {
           setUploading(false)

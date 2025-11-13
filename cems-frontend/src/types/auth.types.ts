@@ -5,6 +5,14 @@ export interface Role {
   display_name_ar: string
 }
 
+// Branch info in user context
+export interface UserBranch {
+  id: string // UUID
+  name: string
+  code: string
+  is_primary?: boolean
+}
+
 // User interface (matches API UserResponse)
 export interface User {
   id: string // UUID
@@ -20,6 +28,7 @@ export interface User {
   created_at: string // ISO datetime
   updated_at: string // ISO datetime
   roles: Role[]
+  branches?: UserBranch[] // User's assigned branches
 }
 
 // Login request payload (matches API LoginRequest)

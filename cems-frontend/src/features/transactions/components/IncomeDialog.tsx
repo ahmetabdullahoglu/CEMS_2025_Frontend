@@ -74,11 +74,18 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
   }, [open, form])
 
   const onSubmit = (data: IncomeFormData) => {
-    // Get branch_id from user (assume first role's branch or a default branch)
-    // For now, we need to get this from somewhere - will need to update this logic
+    // Get branch_id from user's first assigned branch
+    // In production, this might come from a branch selector or session context
+    const branchId = user?.branches?.[0]?.id || ''
+
+    if (!branchId) {
+      console.error('No branch assigned to user')
+      return
+    }
+
     const payload = {
       ...data,
-      branch_id: user?.id || '', // TODO: Get actual branch_id from user context or selection
+      branch_id: branchId,
     }
 
     createIncome(payload, {

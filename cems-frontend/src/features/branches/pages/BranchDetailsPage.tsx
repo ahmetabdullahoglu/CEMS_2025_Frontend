@@ -48,14 +48,15 @@ export default function BranchDetailsPage() {
 
   const [transactionsPage, setTransactionsPage] = useState(1)
   const [transactionsPageSize] = useState(10)
+  const transactionsSkip = (transactionsPage - 1) * transactionsPageSize
 
   const { data: branch, isLoading: branchLoading, isError: branchError } = useBranch(branchId, !!branchId)
   const { data: balancesData, isLoading: balancesLoading } = useBranchBalances(branchId, !!branchId)
 
   // Fetch transactions filtered by branch ID
   const { data: transactionsData, isLoading: transactionsLoading } = useTransactions({
-    page: transactionsPage,
-    page_size: transactionsPageSize,
+    skip: transactionsSkip,
+    limit: transactionsPageSize,
     branch_id: branchId,
   })
 
@@ -95,7 +96,7 @@ export default function BranchDetailsPage() {
   // Calculate which page numbers to show for transactions
   const getPageNumbers = () => {
     if (!transactionsData) return []
-    const totalPages = transactionsData.total_pages || 1
+    const totalPages = Math.ceil((transactionsData?.total || 0) / transactionsPageSize)
     const current = transactionsPage
     const delta = 2
 
@@ -297,44 +298,47 @@ export default function BranchDetailsPage() {
                   </Table>
 
                   {/* Pagination */}
-                  {(transactionsData.total_pages || 0) > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTransactionsPage(transactionsPage - 1)}
-                        disabled={transactionsPage === 1}
-                      >
-                        Previous
-                      </Button>
+                  {(() => {
+                    const totalPages = Math.ceil((transactionsData?.total || 0) / transactionsPageSize)
+                    return totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTransactionsPage(transactionsPage - 1)}
+                          disabled={transactionsPage === 1}
+                        >
+                          Previous
+                        </Button>
 
-                      {getPageNumbers().map((pageNum, idx) =>
-                        pageNum === '...' ? (
-                          <span key={`ellipsis-${idx}`} className="px-2">
-                            ...
-                          </span>
-                        ) : (
-                          <Button
-                            key={pageNum}
-                            variant={transactionsPage === pageNum ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setTransactionsPage(pageNum as number)}
-                          >
-                            {pageNum}
-                          </Button>
-                        )
-                      )}
+                        {getPageNumbers().map((pageNum, idx) =>
+                          pageNum === '...' ? (
+                            <span key={`ellipsis-${idx}`} className="px-2">
+                              ...
+                            </span>
+                          ) : (
+                            <Button
+                              key={pageNum}
+                              variant={transactionsPage === pageNum ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setTransactionsPage(pageNum as number)}
+                            >
+                              {pageNum}
+                            </Button>
+                          )
+                        )}
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTransactionsPage(transactionsPage + 1)}
-                        disabled={transactionsPage === transactionsData.total_pages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTransactionsPage(transactionsPage + 1)}
+                          disabled={transactionsPage === totalPages}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )
+                  })()}
                 </>
               )}
             </CardContent>

@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import apiClient from '@/lib/api/client'
 import { transactionApi } from '@/lib/api/transaction.api'
 import type {
-  TransactionListResponse,
   TransactionQueryParams,
   IncomeTransactionRequest,
   ExpenseTransactionRequest,
@@ -10,20 +8,12 @@ import type {
 } from '@/types/transaction.types'
 
 /**
- * Fetch transactions list with filters and pagination
- */
-const fetchTransactions = async (params: TransactionQueryParams): Promise<TransactionListResponse> => {
-  const response = await apiClient.get<TransactionListResponse>('/transactions', { params })
-  return response.data
-}
-
-/**
- * React Query hook for transactions list
+ * React Query hook for transactions list with filters and pagination
  */
 export const useTransactions = (params: TransactionQueryParams) => {
   return useQuery({
     queryKey: ['transactions', params],
-    queryFn: () => fetchTransactions(params),
+    queryFn: () => transactionApi.getTransactions(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
 }

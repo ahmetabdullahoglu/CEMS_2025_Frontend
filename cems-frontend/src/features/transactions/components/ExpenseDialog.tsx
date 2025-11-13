@@ -89,10 +89,18 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
   }, [open, form])
 
   const onSubmit = (data: ExpenseFormData) => {
-    // Add branch_id from user context
+    // Get branch_id from user's first assigned branch
+    // In production, this might come from a branch selector or session context
+    const branchId = user?.branches?.[0]?.id || ''
+
+    if (!branchId) {
+      console.error('No branch assigned to user')
+      return
+    }
+
     const payload = {
       ...data,
-      branch_id: user?.id || '', // TODO: Get actual branch_id from user context or selection
+      branch_id: branchId,
     }
 
     createExpense(payload, {

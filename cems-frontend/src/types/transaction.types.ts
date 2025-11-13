@@ -127,9 +127,8 @@ export type AnyTransactionResponse =
 export interface TransactionListResponse {
   total: number
   transactions: AnyTransactionResponse[]
-  page?: number
-  page_size?: number
-  total_pages?: number
+  skip?: number
+  limit?: number
 }
 
 // Transaction Filters and Query Params
@@ -138,14 +137,14 @@ export interface TransactionFilters {
   status?: TransactionStatus
   branch_id?: string // UUID
   customer_id?: string // UUID
-  date_from?: string // ISO date
-  date_to?: string // ISO date
+  from_date?: string // ISO date (renamed from date_from to match API)
+  to_date?: string // ISO date (renamed from date_to to match API)
   search?: string
 }
 
 export interface TransactionQueryParams extends TransactionFilters {
-  page?: number
-  page_size?: number
+  skip?: number // Offset for pagination (replaces page)
+  limit?: number // Number of items per page (replaces page_size)
   sort_by?: string
   sort_order?: 'asc' | 'desc'
 }

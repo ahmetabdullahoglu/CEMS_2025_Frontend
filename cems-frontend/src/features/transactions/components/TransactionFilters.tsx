@@ -89,8 +89,8 @@ export default function TransactionFiltersComponent({
             <label className="text-sm font-medium">Date From</label>
             <Input
               type="date"
-              value={filters.date_from || ''}
-              onChange={(e) => handleFilterChange('date_from', e.target.value)}
+              value={filters.from_date || ''}
+              onChange={(e) => handleFilterChange('from_date', e.target.value)}
             />
           </div>
 
@@ -99,8 +99,8 @@ export default function TransactionFiltersComponent({
             <label className="text-sm font-medium">Date To</label>
             <Input
               type="date"
-              value={filters.date_to || ''}
-              onChange={(e) => handleFilterChange('date_to', e.target.value)}
+              value={filters.to_date || ''}
+              onChange={(e) => handleFilterChange('to_date', e.target.value)}
             />
           </div>
         </div>
