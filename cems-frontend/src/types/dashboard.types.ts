@@ -89,6 +89,75 @@ export interface DashboardCharts {
   }>
 }
 
+// ==================== Individual Chart Endpoints ====================
+// Valid period values for dashboard endpoints: daily, weekly, monthly, yearly
+export type DashboardPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
+export interface TransactionVolumeDataPoint {
+  date: string // ISO date (YYYY-MM-DD)
+  hour?: string // For hourly data (HH:00)
+  count: number
+  label?: string
+}
+
+export interface TransactionVolumeResponse {
+  data: TransactionVolumeDataPoint[]
+  total_transactions: number
+  period: string
+  start_date: string
+  end_date: string
+}
+
+export interface RevenueTrendDataPoint {
+  date: string // ISO date
+  revenue: string // Decimal as string
+  expenses: string // Decimal as string
+  profit: string // Decimal as string
+  label?: string
+}
+
+export interface RevenueTrendResponse {
+  data: RevenueTrendDataPoint[]
+  total_revenue: string // Decimal as string
+  total_expenses: string // Decimal as string
+  total_profit: string // Decimal as string
+  period: string
+}
+
+export interface CurrencyDistributionItem {
+  currency_code: string
+  currency_name: string
+  total_amount: string // Decimal as string
+  transaction_count: number
+  percentage: number
+  trend?: 'up' | 'down' | 'stable'
+}
+
+export interface CurrencyDistributionResponse {
+  data: CurrencyDistributionItem[]
+  total_currencies: number
+  most_traded: string
+  least_traded: string
+}
+
+export interface BranchComparisonItem {
+  branch_id: string
+  branch_name: string
+  branch_code: string
+  total_transactions: number
+  total_revenue: string // Decimal as string
+  total_profit: string // Decimal as string
+  active_customers: number
+  rank: number
+}
+
+export interface BranchComparisonResponse {
+  data: BranchComparisonItem[]
+  total_branches: number
+  top_branch: string
+  comparison_period: string
+}
+
 // ==================== Recent Transactions Endpoint ====================
 export interface RecentTransaction {
   id: string // UUID

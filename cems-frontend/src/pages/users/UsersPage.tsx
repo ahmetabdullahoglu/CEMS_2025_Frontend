@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Shield, Lock, Unlock, User as UserIcon } from 'lucide-react'
+import { Search, Shield, Lock, User as UserIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -146,7 +146,7 @@ export default function UsersPage() {
                             <UserIcon className="w-4 h-4 text-muted-foreground" />
                             <span className="font-medium">{user.full_name ?? 'N/A'}</span>
                             {user.is_superuser && (
-                              <Shield className="w-4 h-4 text-yellow-500" title="Superuser" />
+                              <Shield className="w-4 h-4 text-yellow-500" />
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground">@{user.username ?? 'N/A'}</div>

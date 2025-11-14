@@ -1,5 +1,5 @@
 import { formatDistanceToNow, format } from 'date-fns'
-import { Vault, MapPin, Building2 } from 'lucide-react'
+import { Vault, MapPin } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {

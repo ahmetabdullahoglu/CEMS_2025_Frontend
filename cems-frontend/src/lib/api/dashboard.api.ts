@@ -6,6 +6,11 @@ import type {
   DashboardRecentTransactions,
   DashboardAlerts,
   DashboardQuickActions,
+  DashboardPeriod,
+  TransactionVolumeResponse,
+  RevenueTrendResponse,
+  CurrencyDistributionResponse,
+  BranchComparisonResponse,
 } from '@/types/dashboard.types'
 
 export const dashboardApi = {
@@ -53,6 +58,63 @@ export const dashboardApi = {
   // Get quick actions for dashboard
   getQuickActions: async (): Promise<DashboardQuickActions> => {
     const response = await apiClient.get<DashboardQuickActions>('/dashboard/quick-actions')
+    return response.data
+  },
+
+  // ==================== Individual Chart Endpoints ====================
+
+  // Get transaction volume chart data
+  // Valid periods: daily, weekly, monthly, yearly
+  getTransactionVolume: async (params?: {
+    period?: DashboardPeriod
+    start_date?: string
+    end_date?: string
+  }): Promise<TransactionVolumeResponse> => {
+    const response = await apiClient.get<TransactionVolumeResponse>(
+      '/dashboard/charts/transaction-volume',
+      { params }
+    )
+    return response.data
+  },
+
+  // Get revenue trend chart data
+  // Valid periods: daily, weekly, monthly, yearly
+  getRevenueTrend: async (params?: {
+    period?: DashboardPeriod
+    start_date?: string
+    end_date?: string
+  }): Promise<RevenueTrendResponse> => {
+    const response = await apiClient.get<RevenueTrendResponse>(
+      '/dashboard/charts/revenue-trend',
+      { params }
+    )
+    return response.data
+  },
+
+  // Get currency distribution chart data
+  // Valid periods: daily, weekly, monthly, yearly
+  getCurrencyDistribution: async (params?: {
+    period?: DashboardPeriod
+    limit?: number
+  }): Promise<CurrencyDistributionResponse> => {
+    const response = await apiClient.get<CurrencyDistributionResponse>(
+      '/dashboard/charts/currency-distribution',
+      { params }
+    )
+    return response.data
+  },
+
+  // Get branch comparison chart data
+  // Valid periods: daily, weekly, monthly, yearly
+  getBranchComparison: async (params?: {
+    period?: DashboardPeriod
+    metric?: 'revenue' | 'transactions' | 'profit'
+    limit?: number
+  }): Promise<BranchComparisonResponse> => {
+    const response = await apiClient.get<BranchComparisonResponse>(
+      '/dashboard/charts/branch-comparison',
+      { params }
+    )
     return response.data
   },
 }

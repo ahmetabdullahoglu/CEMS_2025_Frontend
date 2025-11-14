@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api/dashboard.api'
+import type { DashboardPeriod } from '@/types/dashboard.types'
 
 /**
  * React Query hook for dashboard overview data
@@ -66,5 +67,70 @@ export const useDashboardQuickActions = () => {
     queryKey: ['dashboard', 'quick-actions'],
     queryFn: dashboardApi.getQuickActions,
     staleTime: 1000 * 60 * 30, // 30 minutes (rarely changes)
+  })
+}
+
+// ==================== Individual Chart Hooks ====================
+
+/**
+ * Hook for transaction volume chart data
+ * Valid periods: daily, weekly, monthly, yearly
+ */
+export const useTransactionVolume = (params?: {
+  period?: DashboardPeriod
+  start_date?: string
+  end_date?: string
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'transaction-volume', params],
+    queryFn: () => dashboardApi.getTransactionVolume(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for revenue trend chart data
+ * Valid periods: daily, weekly, monthly, yearly
+ */
+export const useRevenueTrend = (params?: {
+  period?: DashboardPeriod
+  start_date?: string
+  end_date?: string
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'revenue-trend', params],
+    queryFn: () => dashboardApi.getRevenueTrend(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for currency distribution chart data
+ * Valid periods: daily, weekly, monthly, yearly
+ */
+export const useCurrencyDistribution = (params?: {
+  period?: DashboardPeriod
+  limit?: number
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'currency-distribution', params],
+    queryFn: () => dashboardApi.getCurrencyDistribution(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for branch comparison chart data
+ * Valid periods: daily, weekly, monthly, yearly
+ */
+export const useBranchComparison = (params?: {
+  period?: DashboardPeriod
+  metric?: 'revenue' | 'transactions' | 'profit'
+  limit?: number
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'branch-comparison', params],
+    queryFn: () => dashboardApi.getBranchComparison(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }

@@ -37,7 +37,20 @@ export const useApproveVaultTransfer = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => vaultApi.approveVaultTransfer(id),
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
+      vaultApi.approveVaultTransfer(id, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })
+    },
+  })
+}
+
+export const useRejectVaultTransfer = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
+      vaultApi.rejectVaultTransfer(id, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })
     },
@@ -52,17 +65,6 @@ export const useCompleteVaultTransfer = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })
       queryClient.invalidateQueries({ queryKey: ['vault', 'balances'] })
-    },
-  })
-}
-
-export const useRejectVaultTransfer = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (id: string) => vaultApi.rejectVaultTransfer(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })
     },
   })
 }
