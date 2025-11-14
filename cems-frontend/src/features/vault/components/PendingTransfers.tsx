@@ -13,6 +13,16 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
   useVaultTransfers,
   useApproveVaultTransfer,
   useCompleteVaultTransfer,
@@ -23,6 +33,12 @@ export default function PendingTransfers() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
   const skip = (page - 1) * pageSize
+
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [actionType, setActionType] = useState<'approve' | 'reject'>('approve')
+  const [selectedTransferId, setSelectedTransferId] = useState<string>('')
+  const [notes, setNotes] = useState('')
 
   const { data, isLoading, isError } = useVaultTransfers({
     skip,
@@ -35,20 +51,51 @@ export default function PendingTransfers() {
   const { mutate: reject, isPending: isRejecting } = useRejectVaultTransfer()
 
   const handleApprove = (id: string) => {
-    if (window.confirm('Are you sure you want to approve this transfer?')) {
-      approve({ id })
+    setActionType('approve')
+    setSelectedTransferId(id)
+    setNotes('')
+    setDialogOpen(true)
+  }
+
+  const handleReject = (id: string) => {
+    setActionType('reject')
+    setSelectedTransferId(id)
+    setNotes('')
+    setDialogOpen(true)
+  }
+
+  const handleConfirmAction = () => {
+    if (!notes.trim()) {
+      alert('الرجاء إدخال الملاحظات')
+      return
+    }
+
+    if (actionType === 'approve') {
+      approve(
+        { id: selectedTransferId, notes },
+        {
+          onSuccess: () => {
+            setDialogOpen(false)
+            setNotes('')
+          },
+        }
+      )
+    } else {
+      reject(
+        { id: selectedTransferId, notes },
+        {
+          onSuccess: () => {
+            setDialogOpen(false)
+            setNotes('')
+          },
+        }
+      )
     }
   }
 
   const handleComplete = (id: string) => {
     if (window.confirm('Are you sure you want to complete this transfer?')) {
       complete(id)
-    }
-  }
-
-  const handleReject = (id: string) => {
-    if (window.confirm('Are you sure you want to reject this transfer?')) {
-      reject({ id })
     }
   }
 
@@ -253,6 +300,73 @@ export default function PendingTransfers() {
           </>
         )}
       </CardContent>
+
+      {/* Approve/Reject Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === 'approve' ? 'الموافقة على التحويل' : 'رفض التحويل'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionType === 'approve'
+                ? 'الرجاء إدخال ملاحظات الموافقة. هذا الحقل إلزامي.'
+                : 'الرجاء إدخال سبب الرفض. هذا الحقل إلزامي.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="notes">
+                الملاحظات <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="notes"
+                placeholder={
+                  actionType === 'approve'
+                    ? 'مثال: تمت الموافقة بعد التحقق من الأرصدة'
+                    : 'مثال: رصيد غير كافي في الفرع'
+                }
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                maxLength={500}
+                rows={4}
+                className="resize-none"
+              />
+              <p className="text-sm text-muted-foreground">
+                {notes.length}/500 حرف
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              disabled={isApproving || isRejecting}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleConfirmAction}
+              disabled={isApproving || isRejecting || !notes.trim()}
+              variant={actionType === 'approve' ? 'default' : 'destructive'}
+            >
+              {isApproving || isRejecting ? (
+                'جاري المعالجة...'
+              ) : actionType === 'approve' ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  تأكيد الموافقة
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4 mr-2" />
+                  تأكيد الرفض
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
