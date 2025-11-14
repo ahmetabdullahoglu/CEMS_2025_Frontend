@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   ArrowRightLeft,
   DollarSign,
@@ -22,16 +23,29 @@ import {
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
 
-  // Fetch chart data
-  const { data: volumeData } = useTransactionVolume({ period: 'week' })
-  const { data: revenueData } = useRevenueTrend({ period: 'month' })
-  const { data: currencyData } = useCurrencyDistribution({ period: 'today', limit: 5 })
-  const { data: branchData } = useBranchComparison({ period: 'week', metric: 'revenue', limit: 5 })
+  // Period filters state
+  const [volumePeriod, setVolumePeriod] = useState<'today' | 'week' | 'month' | 'year'>('week')
+  const [revenuePeriod, setRevenuePeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month')
+  const [currencyPeriod, setCurrencyPeriod] = useState<'today' | 'week' | 'month' | 'year'>('today')
+  const [branchPeriod, setBranchPeriod] = useState<'today' | 'week' | 'month' | 'year'>('week')
+  const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
+
+  // Fetch chart data with filters
+  const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({ period: volumePeriod })
+  const { data: revenueData, isLoading: revenueLoading } = useRevenueTrend({ period: revenuePeriod })
+  const { data: currencyData, isLoading: currencyLoading } = useCurrencyDistribution({ period: currencyPeriod, limit: 5 })
+  const { data: branchData, isLoading: branchLoading } = useBranchComparison({ period: branchPeriod, metric: branchMetric, limit: 5 })
   const { data: alertsData } = useDashboardAlerts(false)
 
   if (isLoading) {
@@ -235,36 +249,94 @@ export default function DashboardPage() {
 
       {/* Dashboard Alerts */}
       {alertsData && alertsData.alerts && alertsData.alerts.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xl font-semibold">System Alerts</h2>
-          <div className="grid gap-3">
-            {alertsData.alerts.slice(0, 3).map((alert) => (
-              <Alert
-                key={alert.id}
-                variant={alert.severity === 'error' || alert.severity === 'critical' ? 'destructive' : 'default'}
-              >
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>{alert.title}</AlertTitle>
-                <AlertDescription>{alert.message}</AlertDescription>
-              </Alert>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              <CardTitle>System Alerts</CardTitle>
+            </div>
+            <CardDescription>
+              {alertsData.unread_count > 0 ? `${alertsData.unread_count} unread alerts` : 'All alerts'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {alertsData.alerts.slice(0, 3).map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`p-3 rounded-lg border ${
+                    alert.severity === 'critical' || alert.severity === 'error'
+                      ? 'border-red-200 bg-red-50'
+                      : alert.severity === 'warning'
+                      ? 'border-yellow-200 bg-yellow-50'
+                      : 'border-blue-200 bg-blue-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle
+                      className={`h-4 w-4 mt-0.5 ${
+                        alert.severity === 'critical' || alert.severity === 'error'
+                          ? 'text-red-600'
+                          : alert.severity === 'warning'
+                          ? 'text-yellow-600'
+                          : 'text-blue-600'
+                      }`}
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{alert.title}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant={alert.read ? 'outline' : 'default'} className="text-xs">
+                          {alert.read ? 'Read' : 'Unread'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(alert.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Charts Section */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Transaction Volume Chart */}
-        {volumeData && (
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
                 <CardTitle>Transaction Volume</CardTitle>
               </div>
-              <CardDescription>Transactions over the past week</CardDescription>
-            </CardHeader>
-            <CardContent>
+              <Select value={volumePeriod} onValueChange={(v: any) => setVolumePeriod(v)}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <CardDescription>
+              {volumePeriod === 'today' && 'Transactions today'}
+              {volumePeriod === 'week' && 'Transactions over the past week'}
+              {volumePeriod === 'month' && 'Transactions over the past month'}
+              {volumePeriod === 'year' && 'Transactions over the past year'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {volumeLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+              </div>
+            ) : volumeData ? (
               <div className="space-y-3">
                 {volumeData.data && volumeData.data.length > 0 ? (
                   <>
@@ -298,21 +370,47 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No transaction volume data available
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Revenue Trend Chart */}
-        {revenueData && (
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 <CardTitle>Revenue Trend</CardTitle>
               </div>
-              <CardDescription>Revenue over the past month</CardDescription>
-            </CardHeader>
-            <CardContent>
+              <Select value={revenuePeriod} onValueChange={(v: any) => setRevenuePeriod(v)}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="quarter">This Quarter</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <CardDescription>
+              {revenuePeriod === 'week' && 'Revenue over the past week'}
+              {revenuePeriod === 'month' && 'Revenue over the past month'}
+              {revenuePeriod === 'quarter' && 'Revenue over the past quarter'}
+              {revenuePeriod === 'year' && 'Revenue over the past year'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {revenueLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+              </div>
+            ) : revenueData ? (
               <div className="space-y-3">
                 {revenueData.data && revenueData.data.length > 0 ? (
                   <>
@@ -360,21 +458,47 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No revenue trend data available
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Currency Distribution */}
-        {currencyData && (
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-purple-600" />
                 <CardTitle>Currency Distribution</CardTitle>
               </div>
-              <CardDescription>Most traded currencies today</CardDescription>
-            </CardHeader>
-            <CardContent>
+              <Select value={currencyPeriod} onValueChange={(v: any) => setCurrencyPeriod(v)}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <CardDescription>
+              {currencyPeriod === 'today' && 'Most traded currencies today'}
+              {currencyPeriod === 'week' && 'Most traded currencies this week'}
+              {currencyPeriod === 'month' && 'Most traded currencies this month'}
+              {currencyPeriod === 'year' && 'Most traded currencies this year'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {currencyLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+              </div>
+            ) : currencyData ? (
               <div className="space-y-3">
                 {currencyData.data && currencyData.data.length > 0 ? (
                   <>
@@ -421,21 +545,56 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No currency distribution data available
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Branch Comparison */}
-        {branchData && (
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-orange-600" />
                 <CardTitle>Branch Performance</CardTitle>
               </div>
-              <CardDescription>Top performing branches this week</CardDescription>
-            </CardHeader>
-            <CardContent>
+              <div className="flex gap-2">
+                <Select value={branchPeriod} onValueChange={(v: any) => setBranchPeriod(v)}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={branchMetric} onValueChange={(v: any) => setBranchMetric(v)}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="revenue">By Revenue</SelectItem>
+                    <SelectItem value="transactions">By Transactions</SelectItem>
+                    <SelectItem value="profit">By Profit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <CardDescription>
+              Top performing branches by {branchMetric} for {branchPeriod === 'today' ? 'today' : branchPeriod === 'week' ? 'this week' : branchPeriod === 'month' ? 'this month' : 'this year'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {branchLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+              </div>
+            ) : branchData ? (
               <div className="space-y-3">
                 {branchData.data && branchData.data.length > 0 ? (
                   <>
@@ -458,10 +617,14 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-bold text-green-600">
-                                ${Number(branch.total_revenue).toLocaleString()}
+                                {branchMetric === 'transactions' ? (
+                                  `${branch.total_transactions.toLocaleString()} txns`
+                                ) : (
+                                  `$${Number(branchMetric === 'revenue' ? branch.total_revenue : branch.total_profit).toLocaleString()}`
+                                )}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {branch.total_transactions} txns
+                                {branch.active_customers} customers
                               </p>
                             </div>
                           </div>
@@ -469,7 +632,13 @@ export default function DashboardPage() {
                             <div
                               className="h-full bg-orange-600 rounded-full"
                               style={{
-                                width: `${Math.min((Number(branch.total_revenue) / Math.max(...branchData.data.map(b => Number(b.total_revenue)))) * 100, 100)}%`
+                                width: `${Math.min(
+                                  branchMetric === 'transactions'
+                                    ? (branch.total_transactions / Math.max(...branchData.data.map(b => b.total_transactions))) * 100
+                                    : (Number(branchMetric === 'revenue' ? branch.total_revenue : branch.total_profit) /
+                                       Math.max(...branchData.data.map(b => Number(branchMetric === 'revenue' ? b.total_revenue : b.total_profit)))) * 100,
+                                  100
+                                )}%`
                               }}
                             />
                           </div>
@@ -483,9 +652,13 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No branch comparison data available
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
