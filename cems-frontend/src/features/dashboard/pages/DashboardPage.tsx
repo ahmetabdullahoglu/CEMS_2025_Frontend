@@ -7,7 +7,6 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  TrendingDown,
   PieChart,
   BarChart3,
   Activity
@@ -20,7 +19,12 @@ import {
   useBranchComparison,
   useDashboardAlerts
 } from '@/hooks/useDashboard'
-import type { DashboardPeriod } from '@/types/dashboard.types'
+import { useBranches } from '@/hooks/useBranches'
+import type {
+  TransactionVolumePeriod,
+  RevenueTrendPeriod,
+  GeneralChartPeriod,
+} from '@/types/dashboard.types'
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -34,19 +38,37 @@ import {
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
+  const { data: branchesData } = useBranches()
 
-  // Period filters state - valid values: daily, weekly, monthly, yearly
-  const [volumePeriod, setVolumePeriod] = useState<DashboardPeriod>('weekly')
-  const [revenuePeriod, setRevenuePeriod] = useState<DashboardPeriod>('monthly')
-  const [currencyPeriod, setCurrencyPeriod] = useState<DashboardPeriod>('daily')
-  const [branchPeriod, setBranchPeriod] = useState<DashboardPeriod>('weekly')
+  // Period filters state - Different periods for different endpoints
+  const [volumePeriod, setVolumePeriod] = useState<TransactionVolumePeriod>('weekly')
+  const [revenuePeriod, setRevenuePeriod] = useState<RevenueTrendPeriod>('monthly')
+  const [currencyPeriod, setCurrencyPeriod] = useState<GeneralChartPeriod>('weekly')
+  const [comparisonPeriod, setComparisonPeriod] = useState<GeneralChartPeriod>('weekly')
   const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
 
+  // Branch filter state
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('')
+
   // Fetch chart data with filters
-  const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({ period: volumePeriod })
-  const { data: revenueData, isLoading: revenueLoading } = useRevenueTrend({ period: revenuePeriod })
-  const { data: currencyData, isLoading: currencyLoading } = useCurrencyDistribution({ period: currencyPeriod, limit: 5 })
-  const { data: branchData, isLoading: branchLoading } = useBranchComparison({ period: branchPeriod, metric: branchMetric, limit: 5 })
+  const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({
+    period: volumePeriod,
+    branch_id: selectedBranchId || undefined
+  })
+  const { data: revenueData, isLoading: revenueLoading } = useRevenueTrend({
+    period: revenuePeriod,
+    branch_id: selectedBranchId || undefined
+  })
+  const { data: currencyData, isLoading: currencyLoading } = useCurrencyDistribution({
+    period: currencyPeriod,
+    branch_id: selectedBranchId || undefined,
+    limit: 5
+  })
+  const { data: branchComparisonData, isLoading: branchComparisonLoading } = useBranchComparison({
+    period: comparisonPeriod,
+    metric: branchMetric,
+    limit: 5
+  })
   const { data: alertsData } = useDashboardAlerts(false)
 
   if (isLoading) {
@@ -103,14 +125,33 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to CEMS - Currency Exchange Management System</p>
-        {data.generated_at && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Last updated: {new Date(data.generated_at).toLocaleString()}
-          </p>
-        )}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome to CEMS - Currency Exchange Management System</p>
+          {data.generated_at && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {new Date(data.generated_at).toLocaleString()}
+            </p>
+          )}
+        </div>
+        {/* Branch Filter */}
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Branches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Branches</SelectItem>
+              {branchesData?.data && branchesData.data.map((branch: any) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -321,7 +362,6 @@ export default function DashboardPage() {
                   <SelectItem value="daily">Today</SelectItem>
                   <SelectItem value="weekly">This Week</SelectItem>
                   <SelectItem value="monthly">This Month</SelectItem>
-                  <SelectItem value="yearly">This Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -329,7 +369,6 @@ export default function DashboardPage() {
               {volumePeriod === 'daily' && 'Transactions today'}
               {volumePeriod === 'weekly' && 'Transactions over the past week'}
               {volumePeriod === 'monthly' && 'Transactions over the past month'}
-              {volumePeriod === 'yearly' && 'Transactions over the past year'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -392,18 +431,14 @@ export default function DashboardPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">Today</SelectItem>
-                  <SelectItem value="weekly">This Week</SelectItem>
-                  <SelectItem value="monthly">This Month</SelectItem>
-                  <SelectItem value="yearly">This Year</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <CardDescription>
-              {revenuePeriod === 'daily' && 'Revenue today'}
-              {revenuePeriod === 'weekly' && 'Revenue over the past week'}
-              {revenuePeriod === 'monthly' && 'Revenue over the past month'}
-              {revenuePeriod === 'yearly' && 'Revenue over the past year'}
+              {revenuePeriod === 'monthly' && 'Revenue over the past 12 months'}
+              {revenuePeriod === 'yearly' && 'Revenue by year'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -415,42 +450,34 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {revenueData.data && revenueData.data.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Total Revenue</p>
-                        <p className="text-lg font-bold text-green-600">
-                          ${Number(revenueData.total_revenue).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Total Expenses</p>
-                        <p className="text-lg font-bold text-red-600">
-                          ${Number(revenueData.total_expenses).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Net Profit</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          ${Number(revenueData.total_profit).toLocaleString()}
-                        </p>
-                      </div>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-green-600">
+                        ${revenueData.data.reduce((sum, item) => sum + item.revenue, 0).toLocaleString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">total revenue</p>
                     </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {revenueData.data.slice(-10).reverse().map((point) => (
-                        <div key={point.date} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {new Date(point.date).toLocaleDateString()}
-                          </span>
-                          <div className="flex gap-3">
-                            <span className="text-green-600 font-medium">
-                              ${Number(point.revenue).toLocaleString()}
-                            </span>
-                            <span className="text-blue-600 font-medium">
-                              ${Number(point.profit).toLocaleString()}
-                            </span>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {revenueData.data.slice().reverse().map((point) => {
+                        const maxRevenue = Math.max(...revenueData.data.map(d => d.revenue))
+                        const percentage = maxRevenue > 0 ? (point.revenue / maxRevenue) * 100 : 0
+
+                        return (
+                          <div key={point.period} className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{point.period}</span>
+                              <span className="font-medium text-green-600">
+                                ${point.revenue.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-600 rounded-full transition-all"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </>
                 ) : (
@@ -483,7 +510,6 @@ export default function DashboardPage() {
                   <SelectItem value="daily">Today</SelectItem>
                   <SelectItem value="weekly">This Week</SelectItem>
                   <SelectItem value="monthly">This Month</SelectItem>
-                  <SelectItem value="yearly">This Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -491,7 +517,6 @@ export default function DashboardPage() {
               {currencyPeriod === 'daily' && 'Most traded currencies today'}
               {currencyPeriod === 'weekly' && 'Most traded currencies this week'}
               {currencyPeriod === 'monthly' && 'Most traded currencies this month'}
-              {currencyPeriod === 'yearly' && 'Most traded currencies this year'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -502,44 +527,27 @@ export default function DashboardPage() {
             ) : currencyData ? (
               <div className="space-y-3">
                 {currencyData.data && currencyData.data.length > 0 ? (
-                  <>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Most Traded:</span>
-                      <Badge variant="outline">{currencyData.most_traded}</Badge>
-                    </div>
-                    <div className="space-y-3">
-                      {currencyData.data.map((currency) => (
-                        <div key={currency.currency_code} className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{currency.currency_code}</span>
-                              <span className="text-muted-foreground">{currency.currency_name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {currency.trend === 'up' && (
-                                <TrendingUp className="h-3 w-3 text-green-600" />
-                              )}
-                              {currency.trend === 'down' && (
-                                <TrendingDown className="h-3 w-3 text-red-600" />
-                              )}
-                              <span className="font-medium">{currency.percentage.toFixed(1)}%</span>
-                            </div>
-                          </div>
+                  <div className="space-y-3">
+                    {currencyData.data.map((currency) => (
+                      <div key={currency.currency} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-purple-600 rounded-full"
-                                style={{ width: `${currency.percentage}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-muted-foreground w-20 text-right">
-                              {currency.transaction_count} txns
+                            <span className="font-medium text-purple-600">{currency.currency}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {currency.count} txns
                             </span>
                           </div>
+                          <span className="font-medium">{currency.percentage.toFixed(1)}%</span>
                         </div>
-                      ))}
-                    </div>
-                  </>
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-purple-600 rounded-full transition-all"
+                            style={{ width: `${currency.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No currency distribution data available
@@ -563,7 +571,7 @@ export default function DashboardPage() {
                 <CardTitle>Branch Performance</CardTitle>
               </div>
               <div className="flex gap-2">
-                <Select value={branchPeriod} onValueChange={(v: any) => setBranchPeriod(v)}>
+                <Select value={comparisonPeriod} onValueChange={(v: any) => setComparisonPeriod(v)}>
                   <SelectTrigger className="w-[130px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -571,7 +579,6 @@ export default function DashboardPage() {
                     <SelectItem value="daily">Today</SelectItem>
                     <SelectItem value="weekly">This Week</SelectItem>
                     <SelectItem value="monthly">This Month</SelectItem>
-                    <SelectItem value="yearly">This Year</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={branchMetric} onValueChange={(v: any) => setBranchMetric(v)}>
@@ -587,66 +594,52 @@ export default function DashboardPage() {
               </div>
             </div>
             <CardDescription>
-              Top performing branches by {branchMetric} for {branchPeriod === 'daily' ? 'today' : branchPeriod === 'weekly' ? 'this week' : branchPeriod === 'monthly' ? 'this month' : 'this year'}
+              Top performing branches by {branchMetric} for {comparisonPeriod === 'daily' ? 'today' : comparisonPeriod === 'weekly' ? 'this week' : 'this month'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {branchLoading ? (
+            {branchComparisonLoading ? (
               <div className="text-center py-8 text-muted-foreground">
                 <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
               </div>
-            ) : branchData ? (
+            ) : branchComparisonData ? (
               <div className="space-y-3">
-                {branchData.data && branchData.data.length > 0 ? (
-                  <>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Top Branch:</span>
-                      <Badge variant="default">{branchData.top_branch}</Badge>
-                    </div>
-                    <div className="space-y-3">
-                      {branchData.data.map((branch) => (
-                        <div key={branch.branch_id} className="space-y-1">
+                {branchComparisonData.data && branchComparisonData.data.length > 0 ? (
+                  <div className="space-y-3">
+                    {branchComparisonData.data.map((branch, index) => {
+                      const maxValue = Math.max(...branchComparisonData.data.map(b => b.value))
+                      const percentage = maxValue > 0 ? (branch.value / maxValue) * 100 : 0
+
+                      return (
+                        <div key={branch.branch_code} className="space-y-1">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
-                                {branch.rank}
+                                {index + 1}
                               </Badge>
                               <div>
                                 <p className="text-sm font-medium">{branch.branch_name}</p>
                                 <p className="text-xs text-muted-foreground">{branch.branch_code}</p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-green-600">
-                                {branchMetric === 'transactions' ? (
-                                  `${branch.total_transactions.toLocaleString()} txns`
-                                ) : (
-                                  `$${Number(branchMetric === 'revenue' ? branch.total_revenue : branch.total_profit).toLocaleString()}`
-                                )}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {branch.active_customers} customers
-                              </p>
-                            </div>
+                            <p className="text-sm font-bold text-orange-600">
+                              {branchMetric === 'transactions' ? (
+                                `${branch.value.toLocaleString()} txns`
+                              ) : (
+                                `$${branch.value.toLocaleString()}`
+                              )}
+                            </p>
                           </div>
                           <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-orange-600 rounded-full"
-                              style={{
-                                width: `${Math.min(
-                                  branchMetric === 'transactions'
-                                    ? (branch.total_transactions / Math.max(...branchData.data.map(b => b.total_transactions))) * 100
-                                    : (Number(branchMetric === 'revenue' ? branch.total_revenue : branch.total_profit) /
-                                       Math.max(...branchData.data.map(b => Number(branchMetric === 'revenue' ? b.total_revenue : b.total_profit)))) * 100,
-                                  100
-                                )}%`
-                              }}
+                              className="h-full bg-orange-600 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
                             />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </>
+                      )
+                    })}
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No branch comparison data available

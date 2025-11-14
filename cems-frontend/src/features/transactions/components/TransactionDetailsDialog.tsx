@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
+import { useBranches } from '@/hooks/useBranches'
+import { BranchTooltip } from '@/components/BranchTooltip'
 import type { TransactionDetail } from '@/types/transaction.types'
 
 interface TransactionDetailsDialogProps {
@@ -161,8 +163,14 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
   )
 }
 
-const TransferTransactionDetails = ({ transaction }: { transaction: TransactionDetail }) => {
+const TransferTransactionDetails = ({ transaction, branches }: {
+  transaction: TransactionDetail
+  branches?: any[]
+}) => {
   if (transaction.transaction_type !== 'transfer') return null
+
+  const fromBranch = branches?.find(b => b.id === transaction.from_branch_id)
+  const toBranch = branches?.find(b => b.id === transaction.to_branch_id)
 
   return (
     <div className="space-y-4">
@@ -171,14 +179,14 @@ const TransferTransactionDetails = ({ transaction }: { transaction: TransactionD
           <div className="text-center">
             <div className="text-sm text-blue-600 font-medium">From</div>
             <div className="text-lg font-semibold text-blue-900">
-              Branch #{transaction.from_branch_id || 'N/A'}
+              <BranchTooltip branch={fromBranch} branchId={transaction.from_branch_id} />
             </div>
           </div>
           <ArrowDownLeft className="h-6 w-6 text-blue-500 rotate-90" />
           <div className="text-center">
             <div className="text-sm text-blue-600 font-medium">To</div>
             <div className="text-lg font-semibold text-blue-900">
-              Branch #{transaction.to_branch_id || 'N/A'}
+              <BranchTooltip branch={toBranch} branchId={transaction.to_branch_id} />
             </div>
           </div>
         </div>
@@ -217,6 +225,7 @@ export default function TransactionDetailsDialog({
     transactionId || '',
     !!transactionId && open
   )
+  const { data: branchesData } = useBranches()
 
   const { mutate: cancelTransaction, isPending: isCancelling } = useCancelTransaction()
   const { mutate: approveTransaction, isPending: isApproving } = useApproveTransaction()
@@ -271,7 +280,9 @@ export default function TransactionDetailsDialog({
         {transaction.transaction_type === 'exchange' && <ExchangeTransactionDetails transaction={transaction} />}
         {transaction.transaction_type === 'income' && <IncomeTransactionDetails transaction={transaction} />}
         {transaction.transaction_type === 'expense' && <ExpenseTransactionDetails transaction={transaction} />}
-        {transaction.transaction_type === 'transfer' && <TransferTransactionDetails transaction={transaction} />}
+        {transaction.transaction_type === 'transfer' && (
+          <TransferTransactionDetails transaction={transaction} branches={branchesData?.data} />
+        )}
       </>
     )
   }
