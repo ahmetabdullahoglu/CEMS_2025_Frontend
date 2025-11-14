@@ -90,8 +90,16 @@ export interface DashboardCharts {
 }
 
 // ==================== Individual Chart Endpoints ====================
-// Valid period values for dashboard endpoints: daily, weekly, monthly, yearly
-export type DashboardPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly'
+// Valid period values vary by endpoint - see individual interfaces below
+
+// Transaction Volume: daily, weekly, monthly (NOT yearly)
+export type TransactionVolumePeriod = 'daily' | 'weekly' | 'monthly'
+
+// Revenue Trend: monthly, yearly (NOT daily or weekly)
+export type RevenueTrendPeriod = 'monthly' | 'yearly'
+
+// Currency & Branch: daily, weekly, monthly
+export type GeneralChartPeriod = 'daily' | 'weekly' | 'monthly'
 
 export interface TransactionVolumeDataPoint {
   date: string // ISO date (YYYY-MM-DD)
@@ -108,54 +116,46 @@ export interface TransactionVolumeResponse {
   end_date: string
 }
 
+// Revenue Trend - actual API response structure
 export interface RevenueTrendDataPoint {
-  date: string // ISO date
-  revenue: string // Decimal as string
-  expenses: string // Decimal as string
-  profit: string // Decimal as string
-  label?: string
+  period: string // e.g., "2025-01" for monthly, "2025" for yearly
+  revenue: number
 }
 
 export interface RevenueTrendResponse {
+  period: string // "monthly" or "yearly"
+  chart_type: 'area'
   data: RevenueTrendDataPoint[]
-  total_revenue: string // Decimal as string
-  total_expenses: string // Decimal as string
-  total_profit: string // Decimal as string
-  period: string
+  generated_at: string
 }
 
+// Currency Distribution - actual API response structure
 export interface CurrencyDistributionItem {
-  currency_code: string
-  currency_name: string
-  total_amount: string // Decimal as string
-  transaction_count: number
-  percentage: number
-  trend?: 'up' | 'down' | 'stable'
+  currency: string // Currency code (e.g., "USD")
+  count: number // Transaction count
+  percentage: number // Percentage of total
 }
 
 export interface CurrencyDistributionResponse {
+  chart_type: 'pie'
+  period_days: number
   data: CurrencyDistributionItem[]
-  total_currencies: number
-  most_traded: string
-  least_traded: string
+  generated_at: string
 }
 
+// Branch Comparison - actual API response structure
 export interface BranchComparisonItem {
-  branch_id: string
   branch_name: string
   branch_code: string
-  total_transactions: number
-  total_revenue: string // Decimal as string
-  total_profit: string // Decimal as string
-  active_customers: number
-  rank: number
+  value: number // The metric value (revenue, transactions, or profit)
 }
 
 export interface BranchComparisonResponse {
+  chart_type: 'bar'
+  metric: 'revenue' | 'transactions' | 'profit'
+  period_days: number
   data: BranchComparisonItem[]
-  total_branches: number
-  top_branch: string
-  comparison_period: string
+  generated_at: string
 }
 
 // ==================== Recent Transactions Endpoint ====================

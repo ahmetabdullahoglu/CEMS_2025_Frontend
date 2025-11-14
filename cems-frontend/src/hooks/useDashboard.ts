@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api/dashboard.api'
-import type { DashboardPeriod } from '@/types/dashboard.types'
+import type {
+  TransactionVolumePeriod,
+  RevenueTrendPeriod,
+  GeneralChartPeriod,
+} from '@/types/dashboard.types'
 
 /**
  * React Query hook for dashboard overview data
@@ -74,10 +78,11 @@ export const useDashboardQuickActions = () => {
 
 /**
  * Hook for transaction volume chart data
- * Valid periods: daily, weekly, monthly, yearly
+ * Valid periods: daily, weekly, monthly (NOT yearly)
  */
 export const useTransactionVolume = (params?: {
-  period?: DashboardPeriod
+  period?: TransactionVolumePeriod
+  branch_id?: string
   start_date?: string
   end_date?: string
 }) => {
@@ -90,10 +95,11 @@ export const useTransactionVolume = (params?: {
 
 /**
  * Hook for revenue trend chart data
- * Valid periods: daily, weekly, monthly, yearly
+ * Valid periods: monthly, yearly (NOT daily or weekly)
  */
 export const useRevenueTrend = (params?: {
-  period?: DashboardPeriod
+  period?: RevenueTrendPeriod
+  branch_id?: string
   start_date?: string
   end_date?: string
 }) => {
@@ -106,10 +112,11 @@ export const useRevenueTrend = (params?: {
 
 /**
  * Hook for currency distribution chart data
- * Valid periods: daily, weekly, monthly, yearly
+ * Valid periods: daily, weekly, monthly
  */
 export const useCurrencyDistribution = (params?: {
-  period?: DashboardPeriod
+  period?: GeneralChartPeriod
+  branch_id?: string
   limit?: number
 }) => {
   return useQuery({
@@ -121,10 +128,10 @@ export const useCurrencyDistribution = (params?: {
 
 /**
  * Hook for branch comparison chart data
- * Valid periods: daily, weekly, monthly, yearly
+ * Valid periods: daily, weekly, monthly
  */
 export const useBranchComparison = (params?: {
-  period?: DashboardPeriod
+  period?: GeneralChartPeriod
   metric?: 'revenue' | 'transactions' | 'profit'
   limit?: number
 }) => {

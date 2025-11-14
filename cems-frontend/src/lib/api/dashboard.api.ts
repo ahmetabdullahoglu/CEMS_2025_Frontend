@@ -6,7 +6,9 @@ import type {
   DashboardRecentTransactions,
   DashboardAlerts,
   DashboardQuickActions,
-  DashboardPeriod,
+  TransactionVolumePeriod,
+  RevenueTrendPeriod,
+  GeneralChartPeriod,
   TransactionVolumeResponse,
   RevenueTrendResponse,
   CurrencyDistributionResponse,
@@ -64,9 +66,10 @@ export const dashboardApi = {
   // ==================== Individual Chart Endpoints ====================
 
   // Get transaction volume chart data
-  // Valid periods: daily, weekly, monthly, yearly
+  // Valid periods: daily, weekly, monthly (NOT yearly)
   getTransactionVolume: async (params?: {
-    period?: DashboardPeriod
+    period?: TransactionVolumePeriod
+    branch_id?: string
     start_date?: string
     end_date?: string
   }): Promise<TransactionVolumeResponse> => {
@@ -78,9 +81,10 @@ export const dashboardApi = {
   },
 
   // Get revenue trend chart data
-  // Valid periods: daily, weekly, monthly, yearly
+  // Valid periods: monthly, yearly (NOT daily or weekly)
   getRevenueTrend: async (params?: {
-    period?: DashboardPeriod
+    period?: RevenueTrendPeriod
+    branch_id?: string
     start_date?: string
     end_date?: string
   }): Promise<RevenueTrendResponse> => {
@@ -92,9 +96,10 @@ export const dashboardApi = {
   },
 
   // Get currency distribution chart data
-  // Valid periods: daily, weekly, monthly, yearly
+  // Valid periods: daily, weekly, monthly
   getCurrencyDistribution: async (params?: {
-    period?: DashboardPeriod
+    period?: GeneralChartPeriod
+    branch_id?: string
     limit?: number
   }): Promise<CurrencyDistributionResponse> => {
     const response = await apiClient.get<CurrencyDistributionResponse>(
@@ -105,9 +110,9 @@ export const dashboardApi = {
   },
 
   // Get branch comparison chart data
-  // Valid periods: daily, weekly, monthly, yearly
+  // Valid periods: daily, weekly, monthly
   getBranchComparison: async (params?: {
-    period?: DashboardPeriod
+    period?: GeneralChartPeriod
     metric?: 'revenue' | 'transactions' | 'profit'
     limit?: number
   }): Promise<BranchComparisonResponse> => {
