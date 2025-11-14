@@ -65,14 +65,9 @@ export default function PendingTransfers() {
   }
 
   const handleConfirmAction = () => {
-    if (!notes.trim()) {
-      alert('الرجاء إدخال الملاحظات')
-      return
-    }
-
     if (actionType === 'approve') {
       approve(
-        { id: selectedTransferId, notes },
+        { id: selectedTransferId, notes: notes.trim() || undefined },
         {
           onSuccess: () => {
             setDialogOpen(false)
@@ -82,7 +77,7 @@ export default function PendingTransfers() {
       )
     } else {
       reject(
-        { id: selectedTransferId, notes },
+        { id: selectedTransferId, notes: notes.trim() || undefined },
         {
           onSuccess: () => {
             setDialogOpen(false)
@@ -310,15 +305,13 @@ export default function PendingTransfers() {
             </DialogTitle>
             <DialogDescription>
               {actionType === 'approve'
-                ? 'الرجاء إدخال ملاحظات الموافقة. هذا الحقل إلزامي.'
-                : 'الرجاء إدخال سبب الرفض. هذا الحقل إلزامي.'}
+                ? 'يمكنك إضافة ملاحظات للموافقة (اختياري).'
+                : 'يمكنك إضافة سبب الرفض (اختياري).'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="notes">
-                الملاحظات <span className="text-red-500">*</span>
-              </Label>
+              <Label htmlFor="notes">الملاحظات</Label>
               <Textarea
                 id="notes"
                 placeholder={
@@ -347,7 +340,7 @@ export default function PendingTransfers() {
             </Button>
             <Button
               onClick={handleConfirmAction}
-              disabled={isApproving || isRejecting || !notes.trim()}
+              disabled={isApproving || isRejecting}
               variant={actionType === 'approve' ? 'default' : 'destructive'}
             >
               {isApproving || isRejecting ? (
