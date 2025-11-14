@@ -60,8 +60,8 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   } = useForm<TransferFormData>({
     resolver: zodResolver(transferSchema),
     defaultValues: {
-      from_branch_id: '',
-      to_branch_id: '',
+      from_branch_id: 'vault',
+      to_branch_id: 'vault',
       currency_code: '',
       amount: '',
       notes: '',
@@ -79,8 +79,8 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   const onSubmit = (data: TransferFormData) => {
     createTransfer(
       {
-        from_branch_id: data.from_branch_id || null,
-        to_branch_id: data.to_branch_id || null,
+        from_branch_id: data.from_branch_id === 'vault' ? null : data.from_branch_id || null,
+        to_branch_id: data.to_branch_id === 'vault' ? null : data.to_branch_id || null,
         currency_code: data.currency_code,
         amount: Number(data.amount),
         notes: data.notes || null,
@@ -124,7 +124,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
                   <SelectValue placeholder="Select branch or vault" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Vault</SelectItem>
+                  <SelectItem value="vault">Vault</SelectItem>
                   {(branchesData?.data ?? []).map((branch) => (
                     <SelectItem key={branch.id} value={branch.id.toString()}>
                       {branch.name_en ?? branch.name ?? 'N/A'}
@@ -150,7 +150,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
                 <SelectValue placeholder="Select branch or vault" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Vault</SelectItem>
+                <SelectItem value="vault">Vault</SelectItem>
                 {(branchesData?.data ?? []).map((branch) => (
                   <SelectItem key={branch.id} value={branch.id.toString()}>
                     {branch.name_en ?? branch.name ?? 'N/A'}
