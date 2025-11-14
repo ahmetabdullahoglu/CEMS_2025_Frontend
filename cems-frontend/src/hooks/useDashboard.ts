@@ -68,3 +68,64 @@ export const useDashboardQuickActions = () => {
     staleTime: 1000 * 60 * 30, // 30 minutes (rarely changes)
   })
 }
+
+// ==================== Individual Chart Hooks ====================
+
+/**
+ * Hook for transaction volume chart data
+ */
+export const useTransactionVolume = (params?: {
+  period?: 'today' | 'week' | 'month' | 'year'
+  start_date?: string
+  end_date?: string
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'transaction-volume', params],
+    queryFn: () => dashboardApi.getTransactionVolume(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for revenue trend chart data
+ */
+export const useRevenueTrend = (params?: {
+  period?: 'week' | 'month' | 'quarter' | 'year'
+  start_date?: string
+  end_date?: string
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'revenue-trend', params],
+    queryFn: () => dashboardApi.getRevenueTrend(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for currency distribution chart data
+ */
+export const useCurrencyDistribution = (params?: {
+  period?: 'today' | 'week' | 'month' | 'year'
+  limit?: number
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'currency-distribution', params],
+    queryFn: () => dashboardApi.getCurrencyDistribution(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook for branch comparison chart data
+ */
+export const useBranchComparison = (params?: {
+  period?: 'today' | 'week' | 'month' | 'year'
+  metric?: 'revenue' | 'transactions' | 'profit'
+  limit?: number
+}) => {
+  return useQuery({
+    queryKey: ['dashboard', 'charts', 'branch-comparison', params],
+    queryFn: () => dashboardApi.getBranchComparison(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}

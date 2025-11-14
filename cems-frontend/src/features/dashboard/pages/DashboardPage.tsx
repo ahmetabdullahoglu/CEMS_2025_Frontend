@@ -1,11 +1,38 @@
-import { ArrowRightLeft, DollarSign, Building2, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
-import { useDashboard } from '@/hooks/useDashboard'
+import {
+  ArrowRightLeft,
+  DollarSign,
+  Building2,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  PieChart,
+  BarChart3,
+  Activity
+} from 'lucide-react'
+import {
+  useDashboard,
+  useTransactionVolume,
+  useRevenueTrend,
+  useCurrencyDistribution,
+  useBranchComparison,
+  useDashboardAlerts
+} from '@/hooks/useDashboard'
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
+
+  // Fetch chart data
+  const { data: volumeData } = useTransactionVolume({ period: 'week' })
+  const { data: revenueData } = useRevenueTrend({ period: 'month' })
+  const { data: currencyData } = useCurrencyDistribution({ period: 'today', limit: 5 })
+  const { data: branchData } = useBranchComparison({ period: 'week', metric: 'revenue', limit: 5 })
+  const { data: alertsData } = useDashboardAlerts(false)
 
   if (isLoading) {
     return (
@@ -204,6 +231,261 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Dashboard Alerts */}
+      {alertsData && alertsData.alerts && alertsData.alerts.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xl font-semibold">System Alerts</h2>
+          <div className="grid gap-3">
+            {alertsData.alerts.slice(0, 3).map((alert) => (
+              <Alert
+                key={alert.id}
+                variant={alert.severity === 'error' || alert.severity === 'critical' ? 'destructive' : 'default'}
+              >
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{alert.title}</AlertTitle>
+                <AlertDescription>{alert.message}</AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Charts Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Transaction Volume Chart */}
+        {volumeData && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                <CardTitle>Transaction Volume</CardTitle>
+              </div>
+              <CardDescription>Transactions over the past week</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {volumeData.data && volumeData.data.length > 0 ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold">{volumeData.total_transactions}</p>
+                      <p className="text-sm text-muted-foreground">total transactions</p>
+                    </div>
+                    <div className="space-y-2">
+                      {volumeData.data.slice(-7).map((point) => (
+                        <div key={point.date} className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(point.date).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 bg-primary rounded-full" style={{
+                              width: `${Math.min((point.count / Math.max(...volumeData.data.map(d => d.count))) * 100, 100)}px`
+                            }} />
+                            <span className="text-sm font-medium w-12 text-right">{point.count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No transaction volume data available
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Revenue Trend Chart */}
+        {revenueData && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <CardTitle>Revenue Trend</CardTitle>
+              </div>
+              <CardDescription>Revenue over the past month</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {revenueData.data && revenueData.data.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Total Revenue</p>
+                        <p className="text-lg font-bold text-green-600">
+                          ${Number(revenueData.total_revenue).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Total Expenses</p>
+                        <p className="text-lg font-bold text-red-600">
+                          ${Number(revenueData.total_expenses).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Net Profit</p>
+                        <p className="text-lg font-bold text-blue-600">
+                          ${Number(revenueData.total_profit).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {revenueData.data.slice(-10).reverse().map((point) => (
+                        <div key={point.date} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {new Date(point.date).toLocaleDateString()}
+                          </span>
+                          <div className="flex gap-3">
+                            <span className="text-green-600 font-medium">
+                              ${Number(point.revenue).toLocaleString()}
+                            </span>
+                            <span className="text-blue-600 font-medium">
+                              ${Number(point.profit).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No revenue trend data available
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Currency Distribution */}
+        {currencyData && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-purple-600" />
+                <CardTitle>Currency Distribution</CardTitle>
+              </div>
+              <CardDescription>Most traded currencies today</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {currencyData.data && currencyData.data.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Most Traded:</span>
+                      <Badge variant="outline">{currencyData.most_traded}</Badge>
+                    </div>
+                    <div className="space-y-3">
+                      {currencyData.data.map((currency) => (
+                        <div key={currency.currency_code} className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{currency.currency_code}</span>
+                              <span className="text-muted-foreground">{currency.currency_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {currency.trend === 'up' && (
+                                <TrendingUp className="h-3 w-3 text-green-600" />
+                              )}
+                              {currency.trend === 'down' && (
+                                <TrendingDown className="h-3 w-3 text-red-600" />
+                              )}
+                              <span className="font-medium">{currency.percentage.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-purple-600 rounded-full"
+                                style={{ width: `${currency.percentage}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground w-20 text-right">
+                              {currency.transaction_count} txns
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No currency distribution data available
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Branch Comparison */}
+        {branchData && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-orange-600" />
+                <CardTitle>Branch Performance</CardTitle>
+              </div>
+              <CardDescription>Top performing branches this week</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {branchData.data && branchData.data.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Top Branch:</span>
+                      <Badge variant="default">{branchData.top_branch}</Badge>
+                    </div>
+                    <div className="space-y-3">
+                      {branchData.data.map((branch) => (
+                        <div key={branch.branch_id} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
+                                {branch.rank}
+                              </Badge>
+                              <div>
+                                <p className="text-sm font-medium">{branch.branch_name}</p>
+                                <p className="text-xs text-muted-foreground">{branch.branch_code}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-green-600">
+                                ${Number(branch.total_revenue).toLocaleString()}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {branch.total_transactions} txns
+                              </p>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-orange-600 rounded-full"
+                              style={{
+                                width: `${Math.min((Number(branch.total_revenue) / Math.max(...branchData.data.map(b => Number(b.total_revenue)))) * 100, 100)}%`
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No branch comparison data available
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
