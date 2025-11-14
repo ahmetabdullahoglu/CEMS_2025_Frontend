@@ -20,6 +20,7 @@ import {
   useBranchComparison,
   useDashboardAlerts
 } from '@/hooks/useDashboard'
+import type { DashboardPeriod } from '@/types/dashboard.types'
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -34,11 +35,11 @@ import {
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
 
-  // Period filters state
-  const [volumePeriod, setVolumePeriod] = useState<'today' | 'week' | 'month' | 'year'>('week')
-  const [revenuePeriod, setRevenuePeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month')
-  const [currencyPeriod, setCurrencyPeriod] = useState<'today' | 'week' | 'month' | 'year'>('today')
-  const [branchPeriod, setBranchPeriod] = useState<'today' | 'week' | 'month' | 'year'>('week')
+  // Period filters state - valid values: daily, weekly, monthly, yearly
+  const [volumePeriod, setVolumePeriod] = useState<DashboardPeriod>('weekly')
+  const [revenuePeriod, setRevenuePeriod] = useState<DashboardPeriod>('monthly')
+  const [currencyPeriod, setCurrencyPeriod] = useState<DashboardPeriod>('daily')
+  const [branchPeriod, setBranchPeriod] = useState<DashboardPeriod>('weekly')
   const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
 
   // Fetch chart data with filters
@@ -317,18 +318,18 @@ export default function DashboardPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="daily">Today</SelectItem>
+                  <SelectItem value="weekly">This Week</SelectItem>
+                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="yearly">This Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <CardDescription>
-              {volumePeriod === 'today' && 'Transactions today'}
-              {volumePeriod === 'week' && 'Transactions over the past week'}
-              {volumePeriod === 'month' && 'Transactions over the past month'}
-              {volumePeriod === 'year' && 'Transactions over the past year'}
+              {volumePeriod === 'daily' && 'Transactions today'}
+              {volumePeriod === 'weekly' && 'Transactions over the past week'}
+              {volumePeriod === 'monthly' && 'Transactions over the past month'}
+              {volumePeriod === 'yearly' && 'Transactions over the past year'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -391,18 +392,18 @@ export default function DashboardPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="quarter">This Quarter</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="daily">Today</SelectItem>
+                  <SelectItem value="weekly">This Week</SelectItem>
+                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="yearly">This Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <CardDescription>
-              {revenuePeriod === 'week' && 'Revenue over the past week'}
-              {revenuePeriod === 'month' && 'Revenue over the past month'}
-              {revenuePeriod === 'quarter' && 'Revenue over the past quarter'}
-              {revenuePeriod === 'year' && 'Revenue over the past year'}
+              {revenuePeriod === 'daily' && 'Revenue today'}
+              {revenuePeriod === 'weekly' && 'Revenue over the past week'}
+              {revenuePeriod === 'monthly' && 'Revenue over the past month'}
+              {revenuePeriod === 'yearly' && 'Revenue over the past year'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -479,18 +480,18 @@ export default function DashboardPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="daily">Today</SelectItem>
+                  <SelectItem value="weekly">This Week</SelectItem>
+                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="yearly">This Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <CardDescription>
-              {currencyPeriod === 'today' && 'Most traded currencies today'}
-              {currencyPeriod === 'week' && 'Most traded currencies this week'}
-              {currencyPeriod === 'month' && 'Most traded currencies this month'}
-              {currencyPeriod === 'year' && 'Most traded currencies this year'}
+              {currencyPeriod === 'daily' && 'Most traded currencies today'}
+              {currencyPeriod === 'weekly' && 'Most traded currencies this week'}
+              {currencyPeriod === 'monthly' && 'Most traded currencies this month'}
+              {currencyPeriod === 'yearly' && 'Most traded currencies this year'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -567,10 +568,10 @@ export default function DashboardPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                    <SelectItem value="year">This Year</SelectItem>
+                    <SelectItem value="daily">Today</SelectItem>
+                    <SelectItem value="weekly">This Week</SelectItem>
+                    <SelectItem value="monthly">This Month</SelectItem>
+                    <SelectItem value="yearly">This Year</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={branchMetric} onValueChange={(v: any) => setBranchMetric(v)}>
@@ -586,7 +587,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <CardDescription>
-              Top performing branches by {branchMetric} for {branchPeriod === 'today' ? 'today' : branchPeriod === 'week' ? 'this week' : branchPeriod === 'month' ? 'this month' : 'this year'}
+              Top performing branches by {branchMetric} for {branchPeriod === 'daily' ? 'today' : branchPeriod === 'weekly' ? 'this week' : branchPeriod === 'monthly' ? 'this month' : 'this year'}
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -6,6 +6,7 @@ import type {
   DashboardRecentTransactions,
   DashboardAlerts,
   DashboardQuickActions,
+  DashboardPeriod,
   TransactionVolumeResponse,
   RevenueTrendResponse,
   CurrencyDistributionResponse,
@@ -63,8 +64,9 @@ export const dashboardApi = {
   // ==================== Individual Chart Endpoints ====================
 
   // Get transaction volume chart data
+  // Valid periods: daily, weekly, monthly, yearly
   getTransactionVolume: async (params?: {
-    period?: 'today' | 'week' | 'month' | 'year'
+    period?: DashboardPeriod
     start_date?: string
     end_date?: string
   }): Promise<TransactionVolumeResponse> => {
@@ -76,8 +78,9 @@ export const dashboardApi = {
   },
 
   // Get revenue trend chart data
+  // Valid periods: daily, weekly, monthly, yearly
   getRevenueTrend: async (params?: {
-    period?: 'week' | 'month' | 'quarter' | 'year'
+    period?: DashboardPeriod
     start_date?: string
     end_date?: string
   }): Promise<RevenueTrendResponse> => {
@@ -89,8 +92,9 @@ export const dashboardApi = {
   },
 
   // Get currency distribution chart data
+  // Valid periods: daily, weekly, monthly, yearly
   getCurrencyDistribution: async (params?: {
-    period?: 'today' | 'week' | 'month' | 'year'
+    period?: DashboardPeriod
     limit?: number
   }): Promise<CurrencyDistributionResponse> => {
     const response = await apiClient.get<CurrencyDistributionResponse>(
@@ -101,8 +105,9 @@ export const dashboardApi = {
   },
 
   // Get branch comparison chart data
+  // Valid periods: daily, weekly, monthly, yearly
   getBranchComparison: async (params?: {
-    period?: 'today' | 'week' | 'month' | 'year'
+    period?: DashboardPeriod
     metric?: 'revenue' | 'transactions' | 'profit'
     limit?: number
   }): Promise<BranchComparisonResponse> => {

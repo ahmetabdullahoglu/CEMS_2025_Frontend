@@ -90,6 +90,9 @@ export interface DashboardCharts {
 }
 
 // ==================== Individual Chart Endpoints ====================
+// Valid period values for dashboard endpoints: daily, weekly, monthly, yearly
+export type DashboardPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
 export interface TransactionVolumeDataPoint {
   date: string // ISO date (YYYY-MM-DD)
   hour?: string // For hourly data (HH:00)

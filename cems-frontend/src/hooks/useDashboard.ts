@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api/dashboard.api'
+import type { DashboardPeriod } from '@/types/dashboard.types'
 
 /**
  * React Query hook for dashboard overview data
@@ -73,9 +74,10 @@ export const useDashboardQuickActions = () => {
 
 /**
  * Hook for transaction volume chart data
+ * Valid periods: daily, weekly, monthly, yearly
  */
 export const useTransactionVolume = (params?: {
-  period?: 'today' | 'week' | 'month' | 'year'
+  period?: DashboardPeriod
   start_date?: string
   end_date?: string
 }) => {
@@ -88,9 +90,10 @@ export const useTransactionVolume = (params?: {
 
 /**
  * Hook for revenue trend chart data
+ * Valid periods: daily, weekly, monthly, yearly
  */
 export const useRevenueTrend = (params?: {
-  period?: 'week' | 'month' | 'quarter' | 'year'
+  period?: DashboardPeriod
   start_date?: string
   end_date?: string
 }) => {
@@ -103,9 +106,10 @@ export const useRevenueTrend = (params?: {
 
 /**
  * Hook for currency distribution chart data
+ * Valid periods: daily, weekly, monthly, yearly
  */
 export const useCurrencyDistribution = (params?: {
-  period?: 'today' | 'week' | 'month' | 'year'
+  period?: DashboardPeriod
   limit?: number
 }) => {
   return useQuery({
@@ -117,9 +121,10 @@ export const useCurrencyDistribution = (params?: {
 
 /**
  * Hook for branch comparison chart data
+ * Valid periods: daily, weekly, monthly, yearly
  */
 export const useBranchComparison = (params?: {
-  period?: 'today' | 'week' | 'month' | 'year'
+  period?: DashboardPeriod
   metric?: 'revenue' | 'transactions' | 'profit'
   limit?: number
 }) => {
