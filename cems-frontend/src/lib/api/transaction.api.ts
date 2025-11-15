@@ -18,7 +18,8 @@ import type {
 const withTypeFilters = (params: TransactionQueryParams = {}, type?: TransactionType) => {
   if (!type) return params
 
-  const { transaction_type: _ignored, ...rest } = params
+  const rest: TransactionQueryParams = { ...params }
+  delete rest.transaction_type
   return rest
 }
 

@@ -6,7 +6,6 @@ import type {
   ExpenseTransactionRequest,
   TransferTransactionRequest,
   TransactionType,
-  TransactionType,
 } from '@/types/transaction.types'
 
 /**

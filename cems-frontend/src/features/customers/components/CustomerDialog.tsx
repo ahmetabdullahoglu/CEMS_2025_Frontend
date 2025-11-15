@@ -29,7 +29,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useCreateCustomer, useUpdateCustomer } from '@/hooks/useCustomers'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/useAuth'
 import type { Customer, CustomerType, RiskLevel } from '@/types/customer.types'
 
 // Schema matching CustomerCreate from API

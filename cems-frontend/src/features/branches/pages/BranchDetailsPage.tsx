@@ -87,7 +87,7 @@ export default function BranchDetailsPage() {
     setThresholdStatus('saving')
     try {
       const payload = thresholdEntries
-        .filter(([_, values]) => values.min !== '' || values.max !== '')
+        .filter(([, values]) => values.min !== '' || values.max !== '')
         .map(([currencyId, values]) => ({
           id: currencyId,
           min: values.min !== '' ? values.min : '0',
@@ -109,7 +109,7 @@ export default function BranchDetailsPage() {
         })),
       })
       setThresholdStatus('success')
-    } catch (error) {
+    } catch {
       setThresholdStatus('error')
     }
   }

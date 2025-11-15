@@ -11,7 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/useAuth'
 import { cn } from '@/lib/utils'
 
 interface MenuItem {
@@ -19,6 +19,12 @@ interface MenuItem {
   path: string
   icon: React.ElementType
   roles?: ('admin' | 'manager' | 'cashier')[]
+}
+
+type MenuRole = NonNullable<MenuItem['roles']>[number]
+
+const isMenuRole = (value: string): value is MenuRole => {
+  return value === 'admin' || value === 'manager' || value === 'cashier'
 }
 
 const menuItems: MenuItem[] = [
@@ -84,8 +90,14 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   // Filter menu items based on user roles
   const visibleMenuItems = menuItems.filter((item) => {
     if (!item.roles || !user) return true
-    // Check if user has any of the required roles
-    return user.roles.some((role) => item.roles?.includes(role.name as any))
+
+    return user.roles.some((role) => {
+      const normalizedRole = role.name.toLowerCase()
+      if (!isMenuRole(normalizedRole)) {
+        return false
+      }
+      return item.roles?.includes(normalizedRole) ?? false
+    })
   })
 
   return (

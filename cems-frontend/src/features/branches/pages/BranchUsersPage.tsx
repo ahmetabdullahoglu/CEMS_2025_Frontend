@@ -85,7 +85,7 @@ export default function BranchUsersPage() {
       await assignUser({ id: branchId, userId: selectedUserId })
       setAssignStatus('success')
       setSelectedUserId('')
-    } catch (error) {
+    } catch {
       setAssignStatus('error')
     }
   }

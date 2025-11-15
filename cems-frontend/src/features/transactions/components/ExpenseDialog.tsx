@@ -32,7 +32,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateExpense, useBranches } from '@/hooks/useTransactions'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/useAuth'
 import type { ExpenseCategory } from '@/types/transaction.types'
 
 // Schema matching ExpenseTransactionCreate from API

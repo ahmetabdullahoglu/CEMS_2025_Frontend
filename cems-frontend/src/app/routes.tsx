@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react'
+import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/features/auth/components/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthWrapper from './AuthWrapper'
+import { LazyLoadWrapper } from './LazyLoadWrapper'
 
 // Lazy load pages
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
@@ -19,21 +20,6 @@ const VaultPage = lazy(() => import('@/features/vault/pages/VaultPage'))
 const UsersPage = lazy(() => import('@/pages/users/UsersPage'))
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'))
-
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-      <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-    </div>
-  </div>
-)
-
-// Wrapper component for lazy-loaded pages
-const LazyLoadWrapper = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-)
 
 // Router configuration
 export const router = createBrowserRouter([

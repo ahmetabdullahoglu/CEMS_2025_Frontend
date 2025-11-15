@@ -211,7 +211,7 @@ export default function BranchesPage() {
       })
       resetForms()
       setIsCreateDialogOpen(false)
-    } catch (error) {
+    } catch {
       setFormError('Unable to create branch. Please check the data and retry.')
     }
   }
@@ -234,7 +234,7 @@ export default function BranchesPage() {
       })
       setIsEditDialogOpen(false)
       setEditingBranch(null)
-    } catch (error) {
+    } catch {
       setFormError('Unable to update branch. Please try again.')
     }
   }

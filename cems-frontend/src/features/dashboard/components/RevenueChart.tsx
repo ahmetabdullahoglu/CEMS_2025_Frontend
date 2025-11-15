@@ -1,6 +1,47 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import type { TooltipProps } from 'recharts/types/component/Tooltip'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { RevenueData } from '@/types/dashboard.types'
+
+type RevenueTooltipPayload = {
+  value?: number | string
+  payload?: RevenueData
+}
+
+type RevenueTooltipProps = TooltipProps<number, string> & {
+  payload?: ReadonlyArray<RevenueTooltipPayload>
+}
+
+const renderRevenueTooltip = ({ active, payload }: RevenueTooltipProps) => {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const [firstPoint] = payload
+  const revenuePoint = (firstPoint?.payload as RevenueData) ?? { date: '', revenue: 0 }
+  const value = typeof firstPoint?.value === 'number' ? firstPoint.value : Number(firstPoint?.value ?? 0)
+
+  return (
+    <div className="rounded-lg border bg-background p-2 shadow-sm">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col">
+          <span className="text-[0.70rem] uppercase text-muted-foreground">Date</span>
+          <span className="font-bold text-muted-foreground">
+            {new Date(revenuePoint.date).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[0.70rem] uppercase text-muted-foreground">Revenue</span>
+          <span className="font-bold">${value.toLocaleString()}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface RevenueChartProps {
   data: RevenueData[]
@@ -36,39 +77,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 tickMargin={8}
                 tickFormatter={(value: number) => `$${value.toLocaleString()}`}
               />
-              <Tooltip
-                content={({ active, payload }: { active?: boolean; payload?: readonly any[] }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Date
-                            </span>
-                            <span className="font-bold text-muted-foreground">
-                              {new Date(payload[0].payload.date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Revenue
-                            </span>
-                            <span className="font-bold">
-                              ${payload[0].value?.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-                  return null
-                }}
-              />
+              <Tooltip content={renderRevenueTooltip} />
               <Line
                 type="monotone"
                 dataKey="revenue"
