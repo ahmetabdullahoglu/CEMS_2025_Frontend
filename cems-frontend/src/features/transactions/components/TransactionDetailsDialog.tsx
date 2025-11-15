@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
@@ -220,6 +221,7 @@ export default function TransactionDetailsDialog({
 }: TransactionDetailsDialogProps) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showApproveConfirm, setShowApproveConfirm] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState('')
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
     transactionId || '',
@@ -233,12 +235,16 @@ export default function TransactionDetailsDialog({
   const handleCancel = () => {
     if (!transactionId) return
 
-    cancelTransaction(transactionId, {
-      onSuccess: () => {
-        setShowCancelConfirm(false)
-        onOpenChange(false)
-      },
-    })
+    cancelTransaction(
+      { id: transactionId, reason: cancellationReason || undefined },
+      {
+        onSuccess: () => {
+          setShowCancelConfirm(false)
+          setCancellationReason('')
+          onOpenChange(false)
+        },
+      }
+    )
   }
 
   const handleApprove = () => {
@@ -351,9 +357,17 @@ export default function TransactionDetailsDialog({
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2 text-sm text-destructive w-full sm:flex-1">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Are you sure you want to cancel this transaction?</span>
+                <div className="flex flex-col gap-2 text-sm w-full sm:flex-1">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Are you sure you want to cancel this transaction?</span>
+                  </div>
+                  <Textarea
+                    placeholder="Optional reason"
+                    value={cancellationReason}
+                    onChange={(event) => setCancellationReason(event.target.value)}
+                    rows={3}
+                  />
                 </div>
                 <Button
                   variant="outline"
