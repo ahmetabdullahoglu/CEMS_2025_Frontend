@@ -28,6 +28,15 @@ export const useBranchBalances = (id: string, enabled = true) => {
   })
 }
 
+export const useBranchThresholds = (id: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['branch', id, 'thresholds'],
+    queryFn: () => branchApi.getBranchThresholds(id),
+    enabled,
+    staleTime: 1000 * 60 * 10,
+  })
+}
+
 /**
  * Hook for creating a new branch
  */

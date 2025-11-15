@@ -55,3 +55,12 @@ export const useUpdateCurrencyRates = () => {
     },
   })
 }
+
+export const useCurrencyRateHistory = (currencyId?: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['currencies', currencyId, 'history'],
+    queryFn: () => currencyApi.getRateHistory(currencyId!, { limit: 30 }),
+    enabled: enabled && Boolean(currencyId),
+    staleTime: 1000 * 60 * 5,
+  })
+}

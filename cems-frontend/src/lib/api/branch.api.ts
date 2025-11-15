@@ -6,6 +6,7 @@ import type {
   BranchListResponse,
   BranchQueryParams,
   BranchBalancesResponse,
+  BranchThresholdsResponse,
 } from '@/types/branch.types'
 
 export const branchApi = {
@@ -50,6 +51,12 @@ export const branchApi = {
     thresholds: Array<{ currency_id: string; min_balance: string; max_balance?: string }>
   ): Promise<void> => {
     await apiClient.put(`/branches/${id}/thresholds`, { thresholds })
+  },
+
+  // Get branch thresholds (used for alerting)
+  getBranchThresholds: async (id: string): Promise<BranchThresholdsResponse> => {
+    const response = await apiClient.get<BranchThresholdsResponse>(`/branches/${id}/thresholds`)
+    return response.data
   },
 
   // Assign user to branch

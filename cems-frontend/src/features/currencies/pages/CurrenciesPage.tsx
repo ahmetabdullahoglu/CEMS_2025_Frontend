@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Edit, Search } from 'lucide-react'
+import { Edit, History, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table'
 import { useCurrencies } from '@/hooks/useCurrencies'
 import UpdateRateDialog from '../components/UpdateRateDialog'
+import RateHistoryDialog from '../components/RateHistoryDialog'
 import type { Currency } from '@/types/currency.types'
 
 export default function CurrenciesPage() {
@@ -24,6 +25,8 @@ export default function CurrenciesPage() {
   const [searchInput, setSearchInput] = useState('')
   const [selectedCurrency, setSelectedCurrency] = useState<Currency | null>(null)
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
+  const [historyCurrency, setHistoryCurrency] = useState<Currency | null>(null)
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false)
 
   const { data, isLoading, isError } = useCurrencies({
     skip,
@@ -50,6 +53,16 @@ export default function CurrenciesPage() {
   const handleCloseDialog = () => {
     setShowUpdateDialog(false)
     setSelectedCurrency(null)
+  }
+
+  const handleViewHistory = (currency: Currency) => {
+    setHistoryCurrency(currency)
+    setShowHistoryDialog(true)
+  }
+
+  const handleCloseHistory = () => {
+    setShowHistoryDialog(false)
+    setHistoryCurrency(null)
   }
 
   // Calculate which page numbers to show
@@ -188,14 +201,24 @@ export default function CurrenciesPage() {
                         }) : 'N/A'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleUpdateRate(currency)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleViewHistory(currency)}
+                          >
+                            <History className="w-4 h-4 mr-2" />
+                            History
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleUpdateRate(currency)}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -253,6 +276,13 @@ export default function CurrenciesPage() {
         currency={selectedCurrency}
         open={showUpdateDialog}
         onClose={handleCloseDialog}
+        onViewHistory={(currency) => handleViewHistory(currency)}
+      />
+
+      <RateHistoryDialog
+        currency={historyCurrency}
+        open={showHistoryDialog}
+        onClose={handleCloseHistory}
       />
     </div>
   )

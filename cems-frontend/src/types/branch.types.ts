@@ -42,6 +42,7 @@ export interface BranchUpdate {
 }
 
 export interface BranchBalance {
+  currency_id?: string
   currency_code: string
   currency_name: string
   balance: string // Decimal as string
@@ -60,6 +61,22 @@ export interface BranchBalancesResponse {
   branch_name: string
   balances: BranchBalance[]
   total_usd_equivalent: string // Decimal as string
+}
+
+export interface BranchThreshold {
+  currency_id: string
+  currency_code: string
+  currency_name?: string
+  min_balance?: string | null
+  max_balance?: string | null
+  alert_threshold?: string | null
+  updated_at?: string | null
+}
+
+export interface BranchThresholdsResponse {
+  branch_id: string
+  branch_name: string
+  thresholds: BranchThreshold[]
 }
 
 export interface BranchListResponse {

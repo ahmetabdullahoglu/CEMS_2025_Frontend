@@ -105,5 +105,19 @@ export interface UpdateRateResponse {
   message: string
 }
 
+export interface CurrencyRateHistoryEntry {
+  date: string
+  buy_rate: string
+  sell_rate: string
+  created_at: string
+}
+
+export interface CurrencyRateHistoryResponse {
+  currency_id: string
+  currency_code: string
+  rates: CurrencyRateHistoryEntry[]
+  total: number
+}
+
 // Backward compatibility aliases
 export type CurrencyRequest = CurrencyCreate

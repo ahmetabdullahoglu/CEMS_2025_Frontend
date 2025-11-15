@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { History } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ interface UpdateRateDialogProps {
   currency: Currency | null
   open: boolean
   onClose: () => void
+  onViewHistory?: (currency: Currency) => void
 }
 
 const rateSchema = z.object({
@@ -39,7 +41,7 @@ const rateSchema = z.object({
 
 type RateFormData = z.infer<typeof rateSchema>
 
-export default function UpdateRateDialog({ currency, open, onClose }: UpdateRateDialogProps) {
+export default function UpdateRateDialog({ currency, open, onClose, onViewHistory }: UpdateRateDialogProps) {
   const { mutate: updateRates, isPending } = useUpdateCurrencyRates()
 
   const {
@@ -93,10 +95,25 @@ export default function UpdateRateDialog({ currency, open, onClose }: UpdateRate
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Update Exchange Rates</DialogTitle>
-          <DialogDescription>
-            Update buy and sell rates for {currency.name_en} ({currency.code})
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <DialogTitle>Update Exchange Rates</DialogTitle>
+              <DialogDescription>
+                Update buy and sell rates for {currency.name_en} ({currency.code})
+              </DialogDescription>
+            </div>
+            {onViewHistory && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isPending}
+                onClick={() => onViewHistory(currency)}
+              >
+                <History className="w-4 h-4 mr-1" /> History
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

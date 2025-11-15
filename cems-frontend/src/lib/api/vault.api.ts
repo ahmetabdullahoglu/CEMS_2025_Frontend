@@ -7,6 +7,8 @@ import type {
   CreateVaultTransferRequest,
   CreateVaultTransferResponse,
   ApproveVaultTransferResponse,
+  VaultCurrencyBalanceDetails,
+  VaultReconciliationReport,
 } from '@/types/vault.types'
 
 export const vaultApi = {
@@ -59,15 +61,8 @@ export const vaultApi = {
   },
 
   // Get vault balance for specific currency
-  getCurrencyBalance: async (currencyId: string): Promise<{
-    currency_id: string
-    currency_code: string
-    balance: string
-    reserved: string
-    available: string
-    last_updated: string
-  }> => {
-    const response = await apiClient.get(`/vault/balances/${currencyId}`)
+  getCurrencyBalance: async (currencyId: string): Promise<VaultCurrencyBalanceDetails> => {
+    const response = await apiClient.get<VaultCurrencyBalanceDetails>(`/vault/balances/${currencyId}`)
     return response.data
   },
 
@@ -83,6 +78,14 @@ export const vaultApi = {
     reconciliation_id: string
   }> => {
     const response = await apiClient.post('/vault/reconciliation', data)
+    return response.data
+  },
+
+  // Get latest reconciliation report for a vault
+  getReconciliationReport: async (vaultId: string): Promise<VaultReconciliationReport> => {
+    const response = await apiClient.get<VaultReconciliationReport>('/vault/reconciliation', {
+      params: { vault_id: vaultId },
+    })
     return response.data
   },
 }
