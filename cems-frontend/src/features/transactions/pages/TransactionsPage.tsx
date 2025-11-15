@@ -80,7 +80,11 @@ export default function TransactionsPage() {
     [page, pageSize, sortBy, sortOrder]
   )
 
-  const { transaction_type: _filterType, ...filtersWithoutType } = filters
+  const filtersWithoutType = useMemo(() => {
+    const rest: TransactionFilters = { ...filters }
+    delete rest.transaction_type
+    return rest
+  }, [filters])
 
   const allParams: TransactionQueryParams = {
     ...filters,

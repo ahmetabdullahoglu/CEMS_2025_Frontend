@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateIncome, useBranches } from '@/hooks/useTransactions'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/useAuth'
 // Schema matching IncomeTransactionCreate from API
 const incomeSchema = z.object({
   branch_id: z.string().uuid('Please select a branch'),

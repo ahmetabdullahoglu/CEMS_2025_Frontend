@@ -41,7 +41,7 @@ export interface Customer {
   verified_by_id?: string | null // UUID
   created_at: string // ISO datetime
   updated_at: string // ISO datetime
-  additional_info?: Record<string, any> | null
+  additional_info?: Record<string, unknown> | null
 }
 
 // Customer Create (matches API CustomerCreate)
@@ -61,7 +61,7 @@ export interface CustomerCreate {
   customer_type: CustomerType
   risk_level?: RiskLevel // Defaults to 'low' in API
   branch_id: string // UUID
-  additional_info?: Record<string, any> | null
+  additional_info?: Record<string, unknown> | null
 }
 
 // Customer Update (matches API CustomerUpdate)
@@ -81,7 +81,7 @@ export interface CustomerUpdate {
   customer_type?: CustomerType
   risk_level?: RiskLevel
   is_active?: boolean
-  additional_info?: Record<string, any> | null
+  additional_info?: Record<string, unknown> | null
 }
 
 // Customer Detail Response (with relationships)

@@ -155,7 +155,7 @@ export default function UsersPage() {
       })
       setCreateForm(defaultUserForm)
       setCreateDialogOpen(false)
-    } catch (error) {
+    } catch {
       setFormError('Failed to create user. Please verify the data and try again.')
     }
   }
@@ -176,7 +176,7 @@ export default function UsersPage() {
       })
       setEditDialogOpen(false)
       setEditingUser(null)
-    } catch (error) {
+    } catch {
       setFormError('Unable to update user. Please try again.')
     }
   }
@@ -201,7 +201,7 @@ export default function UsersPage() {
       await resetUserPassword({ id: resetUser.id, newPassword: resetPasswordValue })
       setResetStatus('success')
       setResetPasswordValue('')
-    } catch (error) {
+    } catch {
       setResetStatus('error')
     }
   }

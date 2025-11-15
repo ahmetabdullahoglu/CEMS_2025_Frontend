@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
+import type { Branch } from '@/types/branch.types'
 import type { TransactionDetail } from '@/types/transaction.types'
 
 interface TransactionDetailsDialogProps {
@@ -166,7 +167,7 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
 
 const TransferTransactionDetails = ({ transaction, branches }: {
   transaction: TransactionDetail
-  branches?: any[]
+  branches?: Branch[]
 }) => {
   if (transaction.transaction_type !== 'transfer') return null
 

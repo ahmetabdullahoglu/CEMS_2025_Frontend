@@ -35,10 +35,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { Branch } from '@/types/branch.types'
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
   const { data: branchesData } = useBranches()
+  const branchOptions: Branch[] = branchesData?.data ?? []
 
   // Period filters state - Different periods for different endpoints
   const [volumePeriod, setVolumePeriod] = useState<TransactionVolumePeriod>('weekly')
@@ -70,6 +72,16 @@ export default function DashboardPage() {
     limit: 5
   })
   const { data: alertsData } = useDashboardAlerts(false)
+
+  const createSelectHandler = <T extends string>(setter: (value: T) => void) => {
+    return (value: string) => setter(value as T)
+  }
+
+  const handleVolumePeriodChange = createSelectHandler<TransactionVolumePeriod>(setVolumePeriod)
+  const handleRevenuePeriodChange = createSelectHandler<RevenueTrendPeriod>(setRevenuePeriod)
+  const handleCurrencyPeriodChange = createSelectHandler<GeneralChartPeriod>(setCurrencyPeriod)
+  const handleComparisonPeriodChange = createSelectHandler<GeneralChartPeriod>(setComparisonPeriod)
+  const handleBranchMetricChange = createSelectHandler<'revenue' | 'transactions' | 'profit'>(setBranchMetric)
 
   if (isLoading) {
     return (
@@ -144,9 +156,9 @@ export default function DashboardPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Branches</SelectItem>
-              {branchesData?.data && branchesData.data.map((branch: any) => (
+              {branchOptions.map((branch) => (
                 <SelectItem key={branch.id} value={branch.id}>
-                  {branch.name}
+                  {branch.name_en ?? branch.name ?? branch.code}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -354,7 +366,7 @@ export default function DashboardPage() {
                 <Activity className="h-5 w-5 text-primary" />
                 <CardTitle>Transaction Volume</CardTitle>
               </div>
-              <Select value={volumePeriod} onValueChange={(v: any) => setVolumePeriod(v)}>
+              <Select value={volumePeriod} onValueChange={handleVolumePeriodChange}>
                 <SelectTrigger className="w-[130px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -426,7 +438,7 @@ export default function DashboardPage() {
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 <CardTitle>Revenue Trend</CardTitle>
               </div>
-              <Select value={revenuePeriod} onValueChange={(v: any) => setRevenuePeriod(v)}>
+              <Select value={revenuePeriod} onValueChange={handleRevenuePeriodChange}>
                 <SelectTrigger className="w-[130px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -502,7 +514,7 @@ export default function DashboardPage() {
                 <PieChart className="h-5 w-5 text-purple-600" />
                 <CardTitle>Currency Distribution</CardTitle>
               </div>
-              <Select value={currencyPeriod} onValueChange={(v: any) => setCurrencyPeriod(v)}>
+              <Select value={currencyPeriod} onValueChange={handleCurrencyPeriodChange}>
                 <SelectTrigger className="w-[130px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -571,7 +583,7 @@ export default function DashboardPage() {
                 <CardTitle>Branch Performance</CardTitle>
               </div>
               <div className="flex gap-2">
-                <Select value={comparisonPeriod} onValueChange={(v: any) => setComparisonPeriod(v)}>
+                <Select value={comparisonPeriod} onValueChange={handleComparisonPeriodChange}>
                   <SelectTrigger className="w-[130px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -581,7 +593,7 @@ export default function DashboardPage() {
                     <SelectItem value="monthly">This Month</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={branchMetric} onValueChange={(v: any) => setBranchMetric(v)}>
+                <Select value={branchMetric} onValueChange={handleBranchMetricChange}>
                   <SelectTrigger className="w-[130px]">
                     <SelectValue />
                   </SelectTrigger>
