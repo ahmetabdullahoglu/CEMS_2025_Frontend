@@ -2,12 +2,22 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useNavigate } from 'react-router-dom'
 import * as authApi from '@/lib/api/auth.api'
 import { tokenManager } from '@/lib/api/client'
-import type { User, LoginRequest, AuthState } from '@/types/auth.types'
+import type {
+  User,
+  LoginRequest,
+  AuthState,
+  ChangePasswordRequest,
+  PasswordResetRequest,
+  PasswordResetConfirm,
+} from '@/types/auth.types'
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginRequest) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  changePassword: (payload: ChangePasswordRequest) => Promise<void>
+  requestPasswordReset: (payload: PasswordResetRequest) => Promise<void>
+  resetPassword: (payload: PasswordResetConfirm) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -76,6 +86,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [logout])
 
+  const changePassword = useCallback(async (payload: ChangePasswordRequest) => {
+    await authApi.changePassword(payload)
+  }, [])
+
+  const requestPasswordReset = useCallback(async (payload: PasswordResetRequest) => {
+    await authApi.requestPasswordReset(payload)
+  }, [])
+
+  const resetPassword = useCallback(async (payload: PasswordResetConfirm) => {
+    await authApi.resetPassword(payload)
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(async () => {
+      try {
+        await authApi.refreshTokens()
+      } catch (error) {
+        await logout()
+      }
+    }, 10 * 60 * 1000) // refresh every 10 minutes
+
+    return () => clearInterval(interval)
+  }, [logout, user])
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
@@ -83,6 +119,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     refreshUser,
+    changePassword,
+    requestPasswordReset,
+    resetPassword,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
