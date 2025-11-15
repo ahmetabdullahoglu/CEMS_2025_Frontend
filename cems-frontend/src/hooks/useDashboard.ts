@@ -9,10 +9,10 @@ import type {
 /**
  * React Query hook for dashboard overview data
  */
-export const useDashboard = () => {
+export const useDashboard = (params?: { branch_id?: string }) => {
   return useQuery({
-    queryKey: ['dashboard', 'overview'],
-    queryFn: dashboardApi.getOverview,
+    queryKey: ['dashboard', 'overview', params?.branch_id ?? 'all'],
+    queryFn: () => dashboardApi.getOverview(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
   })
@@ -54,10 +54,10 @@ export const useDashboardRecentTransactions = (limit: number = 10) => {
 /**
  * Hook for dashboard alerts
  */
-export const useDashboardAlerts = (unreadOnly: boolean = false) => {
+export const useDashboardAlerts = (params?: { unreadOnly?: boolean; branch_id?: string }) => {
   return useQuery({
-    queryKey: ['dashboard', 'alerts', unreadOnly],
-    queryFn: () => dashboardApi.getAlerts(unreadOnly),
+    queryKey: ['dashboard', 'alerts', params?.unreadOnly ?? false, params?.branch_id ?? 'all'],
+    queryFn: () => dashboardApi.getAlerts(params),
     staleTime: 1000 * 60 * 1, // 1 minute (alerts need frequent updates)
     refetchInterval: 1000 * 60 * 1, // Refetch every minute
   })
@@ -134,6 +134,7 @@ export const useBranchComparison = (params?: {
   period?: GeneralChartPeriod
   metric?: 'revenue' | 'transactions' | 'profit'
   limit?: number
+  branch_id?: string
 }) => {
   return useQuery({
     queryKey: ['dashboard', 'charts', 'branch-comparison', params],

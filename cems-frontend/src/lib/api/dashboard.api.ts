@@ -17,8 +17,10 @@ import type {
 
 export const dashboardApi = {
   // Get dashboard overview (main dashboard data)
-  getOverview: async (): Promise<DashboardOverviewResponse> => {
-    const response = await apiClient.get<DashboardOverviewResponse>('/dashboard/overview')
+  getOverview: async (params?: { branch_id?: string }): Promise<DashboardOverviewResponse> => {
+    const response = await apiClient.get<DashboardOverviewResponse>('/dashboard/overview', {
+      params,
+    })
     return response.data
   },
 
@@ -50,9 +52,9 @@ export const dashboardApi = {
   },
 
   // Get dashboard alerts
-  getAlerts: async (unread_only?: boolean): Promise<DashboardAlerts> => {
+  getAlerts: async (params?: { unread_only?: boolean; branch_id?: string }): Promise<DashboardAlerts> => {
     const response = await apiClient.get<DashboardAlerts>('/dashboard/alerts', {
-      params: unread_only ? { unread_only } : undefined,
+      params,
     })
     return response.data
   },
@@ -115,6 +117,7 @@ export const dashboardApi = {
     period?: GeneralChartPeriod
     metric?: 'revenue' | 'transactions' | 'profit'
     limit?: number
+    branch_id?: string
   }): Promise<BranchComparisonResponse> => {
     const response = await apiClient.get<BranchComparisonResponse>(
       '/dashboard/charts/branch-comparison',
