@@ -5,16 +5,51 @@ import type {
   IncomeTransactionRequest,
   ExpenseTransactionRequest,
   TransferTransactionRequest,
+  TransactionType,
 } from '@/types/transaction.types'
 
 /**
  * React Query hook for transactions list with filters and pagination
  */
-export const useTransactions = (params: TransactionQueryParams) => {
+export const useTransactions = (params: TransactionQueryParams, options?: { enabled?: boolean }) => {
+  const { enabled = true } = options || {}
+
   return useQuery({
-    queryKey: ['transactions', params],
+    queryKey: ['transactions', 'all', params],
     queryFn: () => transactionApi.getTransactions(params),
+    enabled,
     staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+
+const useTransactionsWithType = (
+  type: TransactionType,
+  params: TransactionQueryParams,
+  enabled = true
+) => {
+  return useQuery({
+    queryKey: ['transactions', type, params],
+    queryFn: () => transactionApi.getTransactionsByType(type, params),
+    enabled,
+    staleTime: 1000 * 60 * 2,
+  })
+}
+
+export const useTransactionsByType = (
+  type: TransactionType,
+  params: TransactionQueryParams,
+  enabled = true
+) => useTransactionsWithType(type, params, enabled)
+
+export const usePendingApprovalTransactions = (
+  params: TransactionQueryParams,
+  enabled = true
+) => {
+  return useQuery({
+    queryKey: ['transactions', 'pending-approvals', params],
+    queryFn: () => transactionApi.getPendingApprovalTransactions(params),
+    enabled,
+    staleTime: 1000 * 60 * 2,
   })
 }
 
@@ -90,8 +125,9 @@ export const useCancelTransaction = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => transactionApi.cancelTransaction(id),
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      transactionApi.cancelTransaction(id, reason ? { cancellation_reason: reason } : undefined),
+    onSuccess: (_, { id }) => {
       // Invalidate both the transaction details and the transactions list
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })

@@ -1,6 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, ChevronDown, ArrowLeftRight, TrendingUp, TrendingDown, Move } from 'lucide-react'
-import { useTransactions } from '@/hooks/useTransactions'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  useTransactions,
+  useTransactionsByType,
+  usePendingApprovalTransactions,
+} from '@/hooks/useTransactions'
 import TransactionFiltersComponent from '../components/TransactionFilters'
 import TransactionTable from '../components/TransactionTable'
 import ExchangeDialog from '../components/ExchangeDialog'
@@ -18,7 +23,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { TransactionFilters, TransactionQueryParams } from '@/types/transaction.types'
+import {
+  ExpenseTransactionsList,
+  ExchangeTransactionsList,
+  IncomeTransactionsList,
+  TransferTransactionsList,
+} from '../components/TransactionTypeViews'
+import type {
+  TransactionFilters,
+  TransactionQueryParams,
+  ExchangeTransactionResponse,
+  IncomeTransactionResponse,
+  ExpenseTransactionResponse,
+  TransferTransactionResponse,
+} from '@/types/transaction.types'
+
+type TransactionsTab = 'all' | 'exchange' | 'income' | 'expense' | 'transfer' | 'approvals'
+
+const LoadingCard = ({ message }: { message: string }) => (
+  <Card>
+    <CardContent className="py-10 text-center text-sm text-muted-foreground">{message}</CardContent>
+  </Card>
+)
+
+const ErrorCard = ({ title, description }: { title: string; description: string }) => (
+  <Card>
+    <CardContent className="py-10 text-center">
+      <p className="text-destructive font-semibold">{title}</p>
+      <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    </CardContent>
+  </Card>
+)
 
 export default function TransactionsPage() {
   const [page, setPage] = useState(1)
@@ -26,6 +61,7 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState<string>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<TransactionFilters>({})
+  const [activeTab, setActiveTab] = useState<TransactionsTab>('all')
   const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false)
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
@@ -33,15 +69,34 @@ export default function TransactionsPage() {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
-  const queryParams: TransactionQueryParams = {
+  const paginationParams = useMemo(
+    () => ({
+      skip: (page - 1) * pageSize,
+      limit: pageSize,
+      sort_by: sortBy,
+      sort_order: sortOrder,
+    }),
+    [page, pageSize, sortBy, sortOrder]
+  )
+
+  const { transaction_type: _filterType, ...filtersWithoutType } = filters
+
+  const allParams: TransactionQueryParams = {
     ...filters,
-    skip: (page - 1) * pageSize,
-    limit: pageSize,
-    sort_by: sortBy,
-    sort_order: sortOrder,
+    ...paginationParams,
   }
 
-  const { data, isLoading, isError, error } = useTransactions(queryParams)
+  const typeSpecificParams: TransactionQueryParams = {
+    ...filtersWithoutType,
+    ...paginationParams,
+  }
+
+  const allQuery = useTransactions(allParams, { enabled: activeTab === 'all' })
+  const exchangeQuery = useTransactionsByType('exchange', typeSpecificParams, activeTab === 'exchange')
+  const incomeQuery = useTransactionsByType('income', typeSpecificParams, activeTab === 'income')
+  const expenseQuery = useTransactionsByType('expense', typeSpecificParams, activeTab === 'expense')
+  const transferQuery = useTransactionsByType('transfer', typeSpecificParams, activeTab === 'transfer')
+  const approvalsQuery = usePendingApprovalTransactions(typeSpecificParams, activeTab === 'approvals')
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -62,33 +117,16 @@ export default function TransactionsPage() {
     setPage(1)
   }
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as TransactionsTab)
+    setPage(1)
+  }
+
   const handleViewDetails = (transactionId: string) => {
     setSelectedTransactionId(transactionId)
     setIsDetailsDialogOpen(true)
   }
-
-  if (isError) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Transactions</h1>
-          <p className="text-muted-foreground">Manage and view all currency exchange transactions</p>
-        </div>
-        <Card>
-          <CardContent className="py-10">
-            <div className="text-center">
-              <p className="text-destructive font-semibold">Error Loading Transactions</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {error instanceof Error ? error.message : 'Failed to load transactions'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  const totalPages = Math.ceil((data?.total || 0) / pageSize)
+  const totalPages = Math.ceil((allQuery.data?.total || 0) / pageSize)
 
   return (
     <div className="space-y-6">
@@ -137,86 +175,206 @@ export default function TransactionsPage() {
         onReset={handleResetFilters}
       />
 
-      {/* Results Summary */}
-      {data && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            Showing {data.transactions.length > 0 ? (page - 1) * pageSize + 1 : 0} to{' '}
-            {Math.min(page * pageSize, data.total)} of {data.total} transactions
-          </div>
-        </div>
-      )}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="flex flex-wrap gap-2">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="exchange">Exchange</TabsTrigger>
+          <TabsTrigger value="income">Income</TabsTrigger>
+          <TabsTrigger value="expense">Expense</TabsTrigger>
+          <TabsTrigger value="transfer">Transfer</TabsTrigger>
+          <TabsTrigger value="approvals">Pending Approvals</TabsTrigger>
+        </TabsList>
 
-      {/* Table */}
-      <TransactionTable
-        transactions={data?.transactions || []}
-        sortBy={sortBy}
-        onSort={handleSort}
-        onViewDetails={handleViewDetails}
-        isLoading={isLoading}
-      />
-
-      {/* Pagination */}
-      {data && totalPages > 1 && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </Button>
-
-                {/* Page Numbers */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number
-                    if (totalPages <= 5) {
-                      pageNum = i + 1
-                    } else if (page <= 3) {
-                      pageNum = i + 1
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i
-                    } else {
-                      pageNum = page - 2 + i
-                    }
-
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setPage(pageNum)}
-                        className="w-8"
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  })}
+        <TabsContent value="all" className="space-y-4">
+          {allQuery.isError ? (
+            <ErrorCard
+              title="Error Loading Transactions"
+              description={
+                allQuery.error instanceof Error
+                  ? allQuery.error.message
+                  : 'Failed to load transactions'
+              }
+            />
+          ) : (
+            <>
+              {allQuery.data && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div>
+                    Showing {allQuery.data.transactions.length > 0 ? (page - 1) * pageSize + 1 : 0} to{' '}
+                    {Math.min(page * pageSize, allQuery.data.total)} of {allQuery.data.total} transactions
+                  </div>
                 </div>
+              )}
+              <TransactionTable
+                transactions={allQuery.data?.transactions || []}
+                sortBy={sortBy}
+                onSort={handleSort}
+                onViewDetails={handleViewDetails}
+                isLoading={allQuery.isLoading}
+              />
+              {allQuery.data && totalPages > 1 && (
+                <Card>
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Page {page} of {totalPages}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(page - 1)}
+                          disabled={page === 1}
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          Previous
+                        </Button>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum: number
+                            if (totalPages <= 5) {
+                              pageNum = i + 1
+                            } else if (page <= 3) {
+                              pageNum = i + 1
+                            } else if (page >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i
+                            } else {
+                              pageNum = page - 2 + i
+                            }
+
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={page === pageNum ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setPage(pageNum)}
+                                className="w-8"
+                              >
+                                {pageNum}
+                              </Button>
+                            )
+                          })}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(page + 1)}
+                          disabled={page === totalPages}
+                        >
+                          Next
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="exchange" className="space-y-4">
+          {exchangeQuery.isLoading ? (
+            <LoadingCard message="Loading exchange transactions..." />
+          ) : exchangeQuery.isError ? (
+            <ErrorCard
+              title="Failed to load exchange transactions"
+              description={
+                exchangeQuery.error instanceof Error
+                  ? exchangeQuery.error.message
+                  : 'Please try again later'
+              }
+            />
+          ) : (
+            <ExchangeTransactionsList
+              transactions={(exchangeQuery.data?.transactions || []) as ExchangeTransactionResponse[]}
+              onViewDetails={handleViewDetails}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="income" className="space-y-4">
+          {incomeQuery.isLoading ? (
+            <LoadingCard message="Loading income transactions..." />
+          ) : incomeQuery.isError ? (
+            <ErrorCard
+              title="Failed to load income transactions"
+              description={
+                incomeQuery.error instanceof Error
+                  ? incomeQuery.error.message
+                  : 'Please try again later'
+              }
+            />
+          ) : (
+            <IncomeTransactionsList
+              transactions={(incomeQuery.data?.transactions || []) as IncomeTransactionResponse[]}
+              onViewDetails={handleViewDetails}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="expense" className="space-y-4">
+          {expenseQuery.isLoading ? (
+            <LoadingCard message="Loading expense transactions..." />
+          ) : expenseQuery.isError ? (
+            <ErrorCard
+              title="Failed to load expense transactions"
+              description={
+                expenseQuery.error instanceof Error
+                  ? expenseQuery.error.message
+                  : 'Please try again later'
+              }
+            />
+          ) : (
+            <ExpenseTransactionsList
+              transactions={(expenseQuery.data?.transactions || []) as ExpenseTransactionResponse[]}
+              onViewDetails={handleViewDetails}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="transfer" className="space-y-4">
+          {transferQuery.isLoading ? (
+            <LoadingCard message="Loading transfer transactions..." />
+          ) : transferQuery.isError ? (
+            <ErrorCard
+              title="Failed to load transfer transactions"
+              description={
+                transferQuery.error instanceof Error
+                  ? transferQuery.error.message
+                  : 'Please try again later'
+              }
+            />
+          ) : (
+            <TransferTransactionsList
+              transactions={(transferQuery.data?.transactions || []) as TransferTransactionResponse[]}
+              onViewDetails={handleViewDetails}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="approvals" className="space-y-4">
+          {approvalsQuery.isLoading ? (
+            <LoadingCard message="Loading pending approvals..." />
+          ) : approvalsQuery.isError ? (
+            <ErrorCard
+              title="Failed to load pending approvals"
+              description={
+                approvalsQuery.error instanceof Error
+                  ? approvalsQuery.error.message
+                  : 'Please try again later'
+              }
+            />
+          ) : (
+            <ExpenseTransactionsList
+              transactions={(approvalsQuery.data?.transactions || []) as ExpenseTransactionResponse[]}
+              onViewDetails={handleViewDetails}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Transaction Dialogs */}
       <ExchangeDialog open={isExchangeDialogOpen} onOpenChange={setIsExchangeDialogOpen} />

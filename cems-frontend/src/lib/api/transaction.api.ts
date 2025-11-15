@@ -11,7 +11,16 @@ import type {
   TransactionListResponse,
   TransactionQueryParams,
   CancelTransactionResponse,
+  TransactionCancelRequest,
+  TransactionType,
 } from '@/types/transaction.types'
+
+const withTypeFilters = (params: TransactionQueryParams = {}, type?: TransactionType) => {
+  if (!type) return params
+
+  const { transaction_type: _ignored, ...rest } = params
+  return rest
+}
 
 export const transactionApi = {
   // Create income transaction
@@ -55,6 +64,51 @@ export const transactionApi = {
     return response.data
   },
 
+  // Get transactions filtered by type using dedicated endpoints
+  getTransactionsByType: async (
+    type: TransactionType,
+    params: TransactionQueryParams = {}
+  ): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>(`/transactions/${type}`, {
+      params: withTypeFilters(params, type),
+    })
+    return response.data
+  },
+
+  getIncomeTransactions: async (
+    params: TransactionQueryParams = {}
+  ): Promise<TransactionListResponse> => {
+    return transactionApi.getTransactionsByType('income', params)
+  },
+
+  getExpenseTransactions: async (
+    params: TransactionQueryParams = {}
+  ): Promise<TransactionListResponse> => {
+    return transactionApi.getTransactionsByType('expense', params)
+  },
+
+  getExchangeTransactions: async (
+    params: TransactionQueryParams = {}
+  ): Promise<TransactionListResponse> => {
+    return transactionApi.getTransactionsByType('exchange', params)
+  },
+
+  getTransferTransactions: async (
+    params: TransactionQueryParams = {}
+  ): Promise<TransactionListResponse> => {
+    return transactionApi.getTransactionsByType('transfer', params)
+  },
+
+  // Pending approvals helper (filters expense endpoint to pending status)
+  getPendingApprovalTransactions: async (
+    params: TransactionQueryParams = {}
+  ): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>('/transactions/expense', {
+      params: { ...withTypeFilters(params, 'expense'), status: 'pending' },
+    })
+    return response.data
+  },
+
   // Get transaction details by ID
   getTransactionDetails: async (id: string): Promise<TransactionDetail> => {
     const response = await apiClient.get<TransactionDetail>(`/transactions/${id}`)
@@ -62,8 +116,14 @@ export const transactionApi = {
   },
 
   // Cancel transaction
-  cancelTransaction: async (id: string): Promise<CancelTransactionResponse> => {
-    const response = await apiClient.put<CancelTransactionResponse>(`/transactions/${id}/cancel`)
+  cancelTransaction: async (
+    id: string,
+    payload?: TransactionCancelRequest
+  ): Promise<CancelTransactionResponse> => {
+    const response = await apiClient.put<CancelTransactionResponse>(
+      `/transactions/${id}/cancel`,
+      payload
+    )
     return response.data
   },
 
