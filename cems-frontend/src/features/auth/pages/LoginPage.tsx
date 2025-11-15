@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -93,6 +94,12 @@ export default function LoginPage() {
                   {error}
                 </div>
               )}
+
+              <div className="text-right text-sm">
+                <Link to="/forgot-password" className="text-primary underline-offset-2 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign In'}

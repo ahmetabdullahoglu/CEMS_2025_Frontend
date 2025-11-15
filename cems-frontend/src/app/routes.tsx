@@ -16,6 +16,8 @@ const BranchDetailsPage = lazy(() => import('@/features/branches/pages/BranchDet
 const ReportsPage = lazy(() => import('@/features/reports/pages/ReportsPage'))
 const VaultPage = lazy(() => import('@/features/vault/pages/VaultPage'))
 const UsersPage = lazy(() => import('@/pages/users/UsersPage'))
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -42,6 +44,22 @@ export const router = createBrowserRouter([
         element: (
           <LazyLoadWrapper>
             <LoginPage />
+          </LazyLoadWrapper>
+        ),
+      },
+      {
+        path: '/forgot-password',
+        element: (
+          <LazyLoadWrapper>
+            <ForgotPasswordPage />
+          </LazyLoadWrapper>
+        ),
+      },
+      {
+        path: '/reset-password',
+        element: (
+          <LazyLoadWrapper>
+            <ResetPasswordPage />
           </LazyLoadWrapper>
         ),
       },
@@ -132,9 +150,11 @@ export const router = createBrowserRouter([
       {
         path: 'users',
         element: (
-          <LazyLoadWrapper>
-            <UsersPage />
-          </LazyLoadWrapper>
+          <ProtectedRoute allowedRoles={['admin']}>
+            <LazyLoadWrapper>
+              <UsersPage />
+            </LazyLoadWrapper>
+          </ProtectedRoute>
         ),
       },
         ],
