@@ -9,7 +9,8 @@ import {
   TrendingUp,
   PieChart,
   BarChart3,
-  Activity
+  Activity,
+  ShieldAlert,
 } from 'lucide-react'
 import {
   useDashboard,
@@ -20,6 +21,7 @@ import {
   useDashboardAlerts
 } from '@/hooks/useDashboard'
 import { useBranches } from '@/hooks/useBranches'
+import { useLowBalanceAlerts } from '@/hooks/useReports'
 import type {
   TransactionVolumePeriod,
   RevenueTrendPeriod,
@@ -37,7 +39,11 @@ import {
 } from '@/components/ui/select'
 
 export default function DashboardPage() {
-  const { data, isLoading, isError, error } = useDashboard()
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('all')
+
+  const branchFilter = selectedBranchId === 'all' ? undefined : selectedBranchId
+
+  const { data, isLoading, isError, error } = useDashboard({ branch_id: branchFilter })
   const { data: branchesData } = useBranches()
 
   // Period filters state - Different periods for different endpoints
@@ -47,29 +53,34 @@ export default function DashboardPage() {
   const [comparisonPeriod, setComparisonPeriod] = useState<GeneralChartPeriod>('weekly')
   const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
 
-  // Branch filter state
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('all')
-
   // Fetch chart data with filters
   const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({
     period: volumePeriod,
-    branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId
+    branch_id: branchFilter
   })
   const { data: revenueData, isLoading: revenueLoading } = useRevenueTrend({
     period: revenuePeriod,
-    branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId
+    branch_id: branchFilter
   })
   const { data: currencyData, isLoading: currencyLoading } = useCurrencyDistribution({
     period: currencyPeriod,
-    branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId,
+    branch_id: branchFilter,
     limit: 5
   })
   const { data: branchComparisonData, isLoading: branchComparisonLoading } = useBranchComparison({
     period: comparisonPeriod,
     metric: branchMetric,
-    limit: 5
+    limit: 5,
+    branch_id: branchFilter
   })
-  const { data: alertsData } = useDashboardAlerts(false)
+  const { data: alertsData } = useDashboardAlerts({
+    unreadOnly: false,
+    branch_id: branchFilter,
+  })
+  const { data: criticalBalanceData, isLoading: criticalAlertsLoading } = useLowBalanceAlerts({
+    severity: 'critical',
+    branchId: branchFilter,
+  })
 
   if (isLoading) {
     return (
@@ -217,6 +228,44 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-red-600" />
+            <CardTitle>Critical Liquidity Alerts</CardTitle>
+          </div>
+          <CardDescription>Live feed from detailed reports</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {criticalAlertsLoading ? (
+            <p className="text-sm text-muted-foreground">Checking balances...</p>
+          ) : criticalBalanceData && criticalBalanceData.alerts.length > 0 ? (
+            <div className="space-y-3">
+              {criticalBalanceData.alerts.slice(0, 4).map((alert) => (
+                <div key={`${alert.branch_id}-${alert.currency_id}`} className="flex flex-col gap-1 rounded-lg border p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">{alert.branch_name}</p>
+                      <p className="text-xs text-muted-foreground">{alert.currency_code}</p>
+                    </div>
+                    <Badge variant="destructive" className="capitalize">
+                      {alert.severity}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Current ${Number(alert.current_balance).toLocaleString()} vs threshold $
+                    {Number(alert.threshold).toLocaleString()} — shortage $
+                    {Number(alert.shortage).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No critical balance alerts detected.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Top Currencies and Quick Stats */}
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
