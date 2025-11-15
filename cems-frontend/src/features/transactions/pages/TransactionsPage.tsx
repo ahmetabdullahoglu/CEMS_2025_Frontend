@@ -15,7 +15,6 @@ import TransferDialog from '../components/TransferDialog'
 import TransactionDetailsDialog from '../components/TransactionDetailsDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +36,7 @@ import type {
   IncomeTransactionResponse,
   ExpenseTransactionResponse,
   TransferTransactionResponse,
+  TransactionType,
 } from '@/types/transaction.types'
 
 type TransactionsTab = 'all' | 'exchange' | 'income' | 'expense' | 'transfer' | 'approvals'
@@ -176,17 +176,6 @@ export default function TransactionsPage() {
         onFiltersChange={handleFiltersChange}
         onReset={handleResetFilters}
       />
-
-      {/* Type Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="exchange">Exchange</TabsTrigger>
-          <TabsTrigger value="income">Income</TabsTrigger>
-          <TabsTrigger value="expense">Expense</TabsTrigger>
-          <TabsTrigger value="transfer">Transfer</TabsTrigger>
-        </TabsList>
-      </Tabs>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="flex flex-wrap gap-2">

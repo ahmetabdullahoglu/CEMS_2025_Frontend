@@ -222,6 +222,7 @@ export default function TransactionDetailsDialog({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showApproveConfirm, setShowApproveConfirm] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
     transactionId || '',
