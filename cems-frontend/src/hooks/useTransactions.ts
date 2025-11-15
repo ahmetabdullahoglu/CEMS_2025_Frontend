@@ -5,6 +5,7 @@ import type {
   IncomeTransactionRequest,
   ExpenseTransactionRequest,
   TransferTransactionRequest,
+  TransactionType,
 } from '@/types/transaction.types'
 
 /**
@@ -14,6 +15,30 @@ export const useTransactions = (params: TransactionQueryParams) => {
   return useQuery({
     queryKey: ['transactions', params],
     queryFn: () => transactionApi.getTransactions(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+
+export const useTransactionsByType = (
+  type: 'all' | TransactionType,
+  params: TransactionQueryParams
+) => {
+  return useQuery({
+    queryKey: ['transactions', type, params],
+    queryFn: () => {
+      switch (type) {
+        case 'income':
+          return transactionApi.getIncomeTransactions(params)
+        case 'expense':
+          return transactionApi.getExpenseTransactions(params)
+        case 'exchange':
+          return transactionApi.getExchangeTransactions(params)
+        case 'transfer':
+          return transactionApi.getTransferTransactions(params)
+        default:
+          return transactionApi.getTransactions(params)
+      }
+    },
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
 }

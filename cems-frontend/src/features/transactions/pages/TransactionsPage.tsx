@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, ChevronDown, ArrowLeftRight, TrendingUp, TrendingDown, Move } from 'lucide-react'
-import { useTransactions } from '@/hooks/useTransactions'
+import { useTransactionsByType } from '@/hooks/useTransactions'
 import TransactionFiltersComponent from '../components/TransactionFilters'
 import TransactionTable from '../components/TransactionTable'
 import ExchangeDialog from '../components/ExchangeDialog'
@@ -10,6 +10,7 @@ import TransferDialog from '../components/TransferDialog'
 import TransactionDetailsDialog from '../components/TransactionDetailsDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +19,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { TransactionFilters, TransactionQueryParams } from '@/types/transaction.types'
+import {
+  type TransactionFilters,
+  type TransactionQueryParams,
+  type TransactionType,
+  type ExchangeTransactionResponse,
+  type IncomeTransactionResponse,
+  type ExpenseTransactionResponse,
+  type TransferTransactionResponse,
+} from '@/types/transaction.types'
+import {
+  ExchangeTransactionsView,
+  IncomeTransactionsView,
+  ExpenseTransactionsView,
+  TransferTransactionsView,
+} from '../components/TransactionTypeViews'
 
 export default function TransactionsPage() {
   const [page, setPage] = useState(1)
@@ -26,6 +41,7 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState<string>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<TransactionFilters>({})
+  const [activeTab, setActiveTab] = useState<'all' | TransactionType>('all')
   const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false)
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
@@ -41,7 +57,7 @@ export default function TransactionsPage() {
     sort_order: sortOrder,
   }
 
-  const { data, isLoading, isError, error } = useTransactions(queryParams)
+  const { data, isLoading, isError, error } = useTransactionsByType(activeTab, queryParams)
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -54,17 +70,88 @@ export default function TransactionsPage() {
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters)
+    setActiveTab((newFilters.transaction_type as TransactionType) || 'all')
     setPage(1) // Reset to first page when filters change
   }
 
   const handleResetFilters = () => {
     setFilters({})
+    setActiveTab('all')
+    setPage(1)
+  }
+
+  const handleTabChange = (value: string) => {
+    const nextTab = value as 'all' | TransactionType
+    setActiveTab(nextTab)
+    setFilters((prev) => ({
+      ...prev,
+      transaction_type: nextTab === 'all' ? undefined : (nextTab as TransactionType),
+    }))
     setPage(1)
   }
 
   const handleViewDetails = (transactionId: string) => {
     setSelectedTransactionId(transactionId)
     setIsDetailsDialogOpen(true)
+  }
+
+  const renderTransactionView = () => {
+    if (!data && isLoading) {
+      return (
+        <TransactionTable
+          transactions={[]}
+          sortBy={sortBy}
+          onSort={handleSort}
+          onViewDetails={handleViewDetails}
+          isLoading
+        />
+      )
+    }
+
+    switch (activeTab) {
+      case 'exchange':
+        return (
+          <ExchangeTransactionsView
+            transactions={(data?.transactions as ExchangeTransactionResponse[]) || []}
+            isLoading={isLoading}
+            onViewDetails={handleViewDetails}
+          />
+        )
+      case 'income':
+        return (
+          <IncomeTransactionsView
+            transactions={(data?.transactions as IncomeTransactionResponse[]) || []}
+            isLoading={isLoading}
+            onViewDetails={handleViewDetails}
+          />
+        )
+      case 'expense':
+        return (
+          <ExpenseTransactionsView
+            transactions={(data?.transactions as ExpenseTransactionResponse[]) || []}
+            isLoading={isLoading}
+            onViewDetails={handleViewDetails}
+          />
+        )
+      case 'transfer':
+        return (
+          <TransferTransactionsView
+            transactions={(data?.transactions as TransferTransactionResponse[]) || []}
+            isLoading={isLoading}
+            onViewDetails={handleViewDetails}
+          />
+        )
+      default:
+        return (
+          <TransactionTable
+            transactions={data?.transactions || []}
+            sortBy={sortBy}
+            onSort={handleSort}
+            onViewDetails={handleViewDetails}
+            isLoading={isLoading}
+          />
+        )
+    }
   }
 
   if (isError) {
@@ -137,6 +224,17 @@ export default function TransactionsPage() {
         onReset={handleResetFilters}
       />
 
+      {/* Type Tabs */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="exchange">Exchange</TabsTrigger>
+          <TabsTrigger value="income">Income</TabsTrigger>
+          <TabsTrigger value="expense">Expense</TabsTrigger>
+          <TabsTrigger value="transfer">Transfer</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Results Summary */}
       {data && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -147,14 +245,8 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* Table */}
-      <TransactionTable
-        transactions={data?.transactions || []}
-        sortBy={sortBy}
-        onSort={handleSort}
-        onViewDetails={handleViewDetails}
-        isLoading={isLoading}
-      />
+      {/* Table / Type Views */}
+      {renderTransactionView()}
 
       {/* Pagination */}
       {data && totalPages > 1 && (

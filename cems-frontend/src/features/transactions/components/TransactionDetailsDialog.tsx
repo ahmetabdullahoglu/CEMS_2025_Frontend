@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Loader2, AlertCircle, ArrowRightLeft, ArrowDownLeft } from 'lucide-react'
 import {
@@ -220,6 +220,7 @@ export default function TransactionDetailsDialog({
 }: TransactionDetailsDialogProps) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showApproveConfirm, setShowApproveConfirm] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
     transactionId || '',
@@ -230,13 +231,27 @@ export default function TransactionDetailsDialog({
   const { mutate: cancelTransaction, isPending: isCancelling } = useCancelTransaction()
   const { mutate: approveTransaction, isPending: isApproving } = useApproveTransaction()
 
+  useEffect(() => {
+    if (!open) {
+      setShowApproveConfirm(false)
+      setShowCancelConfirm(false)
+      setActionError(null)
+    }
+  }, [open])
+
   const handleCancel = () => {
     if (!transactionId) return
 
+    setActionError(null)
     cancelTransaction(transactionId, {
       onSuccess: () => {
         setShowCancelConfirm(false)
+        setActionError(null)
         onOpenChange(false)
+      },
+      onError: (err) => {
+        const message = err instanceof Error ? err.message : 'Failed to cancel transaction'
+        setActionError(message)
       },
     })
   }
@@ -244,10 +259,16 @@ export default function TransactionDetailsDialog({
   const handleApprove = () => {
     if (!transactionId) return
 
+    setActionError(null)
     approveTransaction(transactionId, {
       onSuccess: () => {
         setShowApproveConfirm(false)
+        setActionError(null)
         onOpenChange(false)
+      },
+      onError: (err) => {
+        const message = err instanceof Error ? err.message : 'Failed to approve transaction'
+        setActionError(message)
       },
     })
   }
@@ -303,8 +324,13 @@ export default function TransactionDetailsDialog({
               <>
                 {transaction.status === 'pending' && transaction.transaction_type === 'expense' && (
                   <Button
-                    onClick={() => setShowApproveConfirm(true)}
+                    onClick={() => {
+                      setActionError(null)
+                      setShowCancelConfirm(false)
+                      setShowApproveConfirm(true)
+                    }}
                     className="w-full sm:w-auto"
+                    disabled={isApproving}
                   >
                     Approve Transaction
                   </Button>
@@ -312,8 +338,13 @@ export default function TransactionDetailsDialog({
                 {transaction.status === 'pending' && (
                   <Button
                     variant="destructive"
-                    onClick={() => setShowCancelConfirm(true)}
+                    onClick={() => {
+                      setActionError(null)
+                      setShowApproveConfirm(false)
+                      setShowCancelConfirm(true)
+                    }}
                     className="w-full sm:w-auto"
+                    disabled={isCancelling}
                   >
                     Cancel Transaction
                   </Button>
@@ -328,13 +359,22 @@ export default function TransactionDetailsDialog({
               </>
             ) : showApproveConfirm ? (
               <>
+                {actionError && (
+                  <div className="flex items-center gap-2 text-sm text-destructive w-full">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{actionError}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm text-green-600 w-full sm:flex-1">
                   <AlertCircle className="h-4 w-4" />
                   <span>Are you sure you want to approve this transaction?</span>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setShowApproveConfirm(false)}
+                  onClick={() => {
+                    setActionError(null)
+                    setShowApproveConfirm(false)
+                  }}
                   disabled={isApproving}
                   className="w-full sm:w-auto"
                 >
@@ -351,13 +391,22 @@ export default function TransactionDetailsDialog({
               </>
             ) : (
               <>
+                {actionError && (
+                  <div className="flex items-center gap-2 text-sm text-destructive w-full">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{actionError}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm text-destructive w-full sm:flex-1">
                   <AlertCircle className="h-4 w-4" />
                   <span>Are you sure you want to cancel this transaction?</span>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setShowCancelConfirm(false)}
+                  onClick={() => {
+                    setActionError(null)
+                    setShowCancelConfirm(false)
+                  }}
                   disabled={isCancelling}
                   className="w-full sm:w-auto"
                 >

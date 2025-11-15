@@ -55,6 +55,43 @@ export const transactionApi = {
     return response.data
   },
 
+  // Get filtered lists by transaction type
+  getIncomeTransactions: async (
+    params: TransactionQueryParams
+  ): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>('/transactions/income', {
+      params,
+    })
+    return response.data
+  },
+
+  getExpenseTransactions: async (
+    params: TransactionQueryParams
+  ): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>('/transactions/expense', {
+      params,
+    })
+    return response.data
+  },
+
+  getExchangeTransactions: async (
+    params: TransactionQueryParams
+  ): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>('/transactions/exchange', {
+      params,
+    })
+    return response.data
+  },
+
+  getTransferTransactions: async (
+    params: TransactionQueryParams
+  ): Promise<TransactionListResponse> => {
+    const response = await apiClient.get<TransactionListResponse>('/transactions/transfer', {
+      params,
+    })
+    return response.data
+  },
+
   // Get transaction details by ID
   getTransactionDetails: async (id: string): Promise<TransactionDetail> => {
     const response = await apiClient.get<TransactionDetail>(`/transactions/${id}`)
@@ -63,13 +100,13 @@ export const transactionApi = {
 
   // Cancel transaction
   cancelTransaction: async (id: string): Promise<CancelTransactionResponse> => {
-    const response = await apiClient.put<CancelTransactionResponse>(`/transactions/${id}/cancel`)
+    const response = await apiClient.post<CancelTransactionResponse>(`/transactions/${id}/cancel`)
     return response.data
   },
 
   // Approve transaction
   approveTransaction: async (id: string): Promise<TransactionDetail> => {
-    const response = await apiClient.put<TransactionDetail>(`/transactions/${id}/approve`)
+    const response = await apiClient.post<TransactionDetail>(`/transactions/expense/${id}/approve`)
     return response.data
   },
 }
