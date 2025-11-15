@@ -69,3 +69,11 @@ export const useToggleLockUser = () => {
     },
   })
 }
+
+// Reset password mutation
+export const useResetUserPassword = () => {
+  return useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      userApi.resetPassword(id, newPassword),
+  })
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, MapPin, Phone, Mail, Building2, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -14,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useBranch, useBranchBalances } from '@/hooks/useBranches'
+import { useBranch, useBranchBalances, useSetBranchThresholds } from '@/hooks/useBranches'
 import { useTransactions } from '@/hooks/useTransactions'
 import BranchBalances from '../components/BranchBalances'
 import type {
@@ -53,12 +55,64 @@ export default function BranchDetailsPage() {
   const { data: branch, isLoading: branchLoading, isError: branchError } = useBranch(branchId, !!branchId)
   const { data: balancesData, isLoading: balancesLoading } = useBranchBalances(branchId, !!branchId)
 
+  const [thresholds, setThresholds] = useState<Record<string, { min: string; max: string }>>({})
+  const [thresholdStatus, setThresholdStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+  const { mutateAsync: setBranchThresholds, isPending: savingThresholds } = useSetBranchThresholds()
+
+  useEffect(() => {
+    if (!balancesData) return
+    const next: Record<string, { min: string; max: string }> = {}
+    balancesData.balances.forEach((balance) => {
+      const key = balance.currency_id ?? balance.currency_code
+      next[key] = {
+        min: balance.minimum_threshold ?? '',
+        max: balance.maximum_threshold ?? '',
+      }
+    })
+    setThresholds(next)
+  }, [balancesData])
+
   // Fetch transactions filtered by branch ID
   const { data: transactionsData, isLoading: transactionsLoading } = useTransactions({
     skip: transactionsSkip,
     limit: transactionsPageSize,
     branch_id: branchId,
   })
+
+  const thresholdEntries = useMemo(() => Object.entries(thresholds), [thresholds])
+
+  const handleThresholdSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!branchId || thresholdEntries.length === 0) return
+    setThresholdStatus('saving')
+    try {
+      const payload = thresholdEntries
+        .filter(([_, values]) => values.min !== '' || values.max !== '')
+        .map(([currencyId, values]) => ({
+          id: currencyId,
+          min: values.min !== '' ? values.min : '0',
+          max: values.max !== '' ? values.max : undefined,
+        }))
+        .filter((entry) => entry.id)
+
+      if (payload.length === 0) {
+        setThresholdStatus('success')
+        return
+      }
+
+      await setBranchThresholds({
+        id: branchId,
+        thresholds: payload.map((entry) => ({
+          currency_id: entry.id,
+          min_balance: entry.min,
+          max_balance: entry.max,
+        })),
+      })
+      setThresholdStatus('success')
+    } catch (error) {
+      setThresholdStatus('error')
+    }
+  }
 
   if (branchLoading) {
     return (
@@ -259,17 +313,99 @@ export default function BranchDetailsPage() {
         </TabsContent>
 
         <TabsContent value="balances">
-          {balancesData ? (
-            <BranchBalances data={balancesData} isLoading={balancesLoading} />
-          ) : (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-muted-foreground">
-                  {balancesLoading ? 'Loading balances...' : 'No balance data available'}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <div className="space-y-6">
+            {balancesData ? (
+              <BranchBalances data={balancesData} isLoading={balancesLoading} />
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8 text-muted-foreground">
+                    {balancesLoading ? 'Loading balances...' : 'No balance data available'}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {balancesData && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Adjust Balance Thresholds</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Define the minimum and maximum balance levels for each currency to trigger alerts.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleThresholdSubmit} className="space-y-6">
+                    <div className="grid gap-4">
+                      {balancesData.balances.map((balance) => {
+                        const key = balance.currency_id ?? balance.currency_code
+                        const values = thresholds[key] ?? { min: '', max: '' }
+                        return (
+                          <div
+                            key={key}
+                            className="grid gap-4 rounded-lg border p-4 md:grid-cols-[1.5fr,1fr,1fr]"
+                          >
+                            <div>
+                              <Label className="text-xs uppercase text-muted-foreground">Currency</Label>
+                              <p className="font-medium">{balance.currency_name}</p>
+                              <p className="text-sm text-muted-foreground">{balance.currency_code}</p>
+                            </div>
+                            <div>
+                              <Label htmlFor={`min-${key}`}>Minimum</Label>
+                              <Input
+                                id={`min-${key}`}
+                                type="number"
+                                value={values.min}
+                                disabled={savingThresholds}
+                                onChange={(e) =>
+                                  setThresholds((prev) => ({
+                                    ...prev,
+                                    [key]: { ...values, min: e.target.value },
+                                  }))
+                                }
+                                placeholder="0.00"
+                                step="0.01"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`max-${key}`}>Maximum</Label>
+                              <Input
+                                id={`max-${key}`}
+                                type="number"
+                                value={values.max}
+                                disabled={savingThresholds}
+                                onChange={(e) =>
+                                  setThresholds((prev) => ({
+                                    ...prev,
+                                    [key]: { ...values, max: e.target.value },
+                                  }))
+                                }
+                                placeholder="Unlimited"
+                                step="0.01"
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {thresholdStatus === 'error' && (
+                      <p className="text-sm text-destructive">Failed to update thresholds. Please retry.</p>
+                    )}
+                    {thresholdStatus === 'success' && (
+                      <p className="text-sm text-green-600">Thresholds saved successfully.</p>
+                    )}
+
+                    <div className="flex justify-end">
+                      <Button type="submit" disabled={savingThresholds}>
+                        {savingThresholds ? 'Saving...' : 'Save Thresholds'}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="transactions">

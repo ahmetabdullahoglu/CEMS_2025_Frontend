@@ -41,6 +41,7 @@ export interface UserQueryParams {
   search?: string
   is_active?: boolean
   role?: string
+  branch_id?: string
 }
 
 // User Create Request
