@@ -129,7 +129,7 @@ export const transactionApi = {
 
   // Approve transaction
   approveTransaction: async (id: string): Promise<TransactionDetail> => {
-    const response = await apiClient.put<TransactionDetail>(`/transactions/${id}/approve`)
+    const response = await apiClient.post<TransactionDetail>(`/transactions/expense/${id}/approve`)
     return response.data
   },
 }
