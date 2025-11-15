@@ -1,9 +1,28 @@
 import { useState } from 'react'
-import { Search, Shield, Lock, User as UserIcon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { KeyRound, Lock, PencilLine, Plus, Search, Shield, User as UserIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -12,21 +31,81 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useUsers } from '@/hooks/useUsers'
+import {
+  useCreateUser,
+  useResetUserPassword,
+  useToggleLockUser,
+  useUpdateUser,
+  useUsers,
+} from '@/hooks/useUsers'
+import { useBranches } from '@/hooks/useBranches'
+import type { User } from '@/types/user.types'
 import { format } from 'date-fns'
 
+type UserFormState = {
+  username: string
+  email: string
+  password: string
+  full_name: string
+  phone_number: string
+}
+
+const defaultUserForm: UserFormState = {
+  username: '',
+  email: '',
+  password: '',
+  full_name: '',
+  phone_number: '',
+}
+
+type UserUpdateFormState = {
+  email: string
+  full_name: string
+  phone_number: string
+  is_active: boolean
+}
+
+const defaultUpdateForm: UserUpdateFormState = {
+  email: '',
+  full_name: '',
+  phone_number: '',
+  is_active: true,
+}
+
 export default function UsersPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
   const skip = (page - 1) * pageSize
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [branchFilter, setBranchFilter] = useState('all')
+
+  const { data: branchesData } = useBranches({ limit: 100 })
+  const branchFilterLabel = branchesData?.data?.find((branch) => branch.id === branchFilter)?.name_en
 
   const { data, isLoading, isError } = useUsers({
     skip,
     limit: pageSize,
     search,
+    branch_id: branchFilter === 'all' ? undefined : branchFilter,
   })
+
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [createForm, setCreateForm] = useState<UserFormState>(defaultUserForm)
+  const [editForm, setEditForm] = useState<UserUpdateFormState>(defaultUpdateForm)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [resetUser, setResetUser] = useState<User | null>(null)
+  const [resetPasswordValue, setResetPasswordValue] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
+  const [resetStatus, setResetStatus] = useState<'idle' | 'error' | 'success'>('idle')
+
+  const { mutateAsync: createUser, isPending: creatingUser } = useCreateUser()
+  const { mutateAsync: updateUser, isPending: updatingUser } = useUpdateUser()
+  const { mutate: toggleLockUser, isPending: lockingUser } = useToggleLockUser()
+  const { mutateAsync: resetUserPassword, isPending: resettingPassword } = useResetUserPassword()
 
   const handleSearch = () => {
     setSearch(searchInput)
@@ -63,6 +142,81 @@ export default function UsersPage() {
     return pages
   }
 
+  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setFormError(null)
+    try {
+      await createUser({
+        username: createForm.username,
+        email: createForm.email,
+        password: createForm.password,
+        full_name: createForm.full_name,
+        phone_number: createForm.phone_number || undefined,
+      })
+      setCreateForm(defaultUserForm)
+      setCreateDialogOpen(false)
+    } catch (error) {
+      setFormError('Failed to create user. Please verify the data and try again.')
+    }
+  }
+
+  const handleEditUser = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!editingUser) return
+    setFormError(null)
+    try {
+      await updateUser({
+        id: editingUser.id,
+        data: {
+          email: editForm.email,
+          full_name: editForm.full_name,
+          phone_number: editForm.phone_number || undefined,
+          is_active: editForm.is_active,
+        },
+      })
+      setEditDialogOpen(false)
+      setEditingUser(null)
+    } catch (error) {
+      setFormError('Unable to update user. Please try again.')
+    }
+  }
+
+  const openEditDialog = (user: User) => {
+    setEditingUser(user)
+    setEditForm({
+      email: user.email ?? '',
+      full_name: user.full_name ?? '',
+      phone_number: user.phone_number ?? '',
+      is_active: user.is_active,
+    })
+    setFormError(null)
+    setEditDialogOpen(true)
+  }
+
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!resetUser || !resetPasswordValue) return
+    try {
+      setResetStatus('idle')
+      await resetUserPassword({ id: resetUser.id, newPassword: resetPasswordValue })
+      setResetStatus('success')
+      setResetPasswordValue('')
+    } catch (error) {
+      setResetStatus('error')
+    }
+  }
+
+  const openResetDialog = (user: User) => {
+    setResetUser(user)
+    setResetPasswordValue('')
+    setResetStatus('idle')
+    setResetDialogOpen(true)
+  }
+
+  const handleToggleLock = (user: User) => {
+    toggleLockUser({ id: user.id, lock: !user.is_locked })
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -73,23 +227,136 @@ export default function UsersPage() {
       {/* Search */}
       <Card>
         <CardHeader>
-          <CardTitle>Search Users</CardTitle>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <CardTitle>Search Users</CardTitle>
+            <Dialog
+              open={createDialogOpen}
+              onOpenChange={(open) => {
+                setCreateDialogOpen(open)
+                if (!open) {
+                  setCreateForm(defaultUserForm)
+                  setFormError(null)
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                  <DialogHeader>
+                    <DialogTitle>Create User</DialogTitle>
+                    <DialogDescription>Invite a new teammate to CEMS.</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4">
+                    <div>
+                      <Label htmlFor="create-username">Username</Label>
+                      <Input
+                        id="create-username"
+                        value={createForm.username}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, username: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="create-email">Email</Label>
+                      <Input
+                        id="create-email"
+                        type="email"
+                        value={createForm.email}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="create-password">Temporary Password</Label>
+                      <Input
+                        id="create-password"
+                        type="password"
+                        value={createForm.password}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="create-name">Full Name</Label>
+                      <Input
+                        id="create-name"
+                        value={createForm.full_name}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, full_name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="create-phone">Phone Number</Label>
+                      <Input
+                        id="create-phone"
+                        value={createForm.phone_number}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, phone_number: e.target.value }))}
+                        placeholder="Optional"
+                      />
+                    </div>
+                  </div>
+                  {formError && <p className="text-sm text-destructive">{formError}</p>}
+                  <DialogFooter>
+                    <Button type="submit" disabled={creatingUser}>
+                      {creatingUser ? 'Saving...' : 'Create User'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search by username, email, or full name..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-              />
+          <div className="flex flex-col gap-4 md:flex-row">
+            <Input
+              placeholder="Search by username, email, or full name..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <div className="flex gap-2">
+              <Select
+                value={branchFilter}
+                onValueChange={(value) => {
+                  setBranchFilter(value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Filter by branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All branches</SelectItem>
+                  {(branchesData?.data ?? []).map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name_en ?? branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleSearch}>
+                <Search className="w-4 h-4 mr-2" />
+                Apply
+              </Button>
             </div>
-            <Button onClick={handleSearch}>
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
           </div>
+          {branchFilter !== 'all' && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Viewing users assigned to {branchFilterLabel ?? 'selected branch'}.{' '}
+              <Button
+                variant="link"
+                className="px-0"
+                onClick={() => navigate(`/branches/${branchFilter}/users`)}
+              >
+                Manage assignments
+              </Button>
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -201,9 +468,23 @@ export default function UsersPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" disabled>
-                          View
-                        </Button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => openEditDialog(user)}>
+                            <PencilLine className="w-4 h-4 mr-1" /> Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleToggleLock(user)}
+                            disabled={lockingUser}
+                          >
+                            <Lock className="w-4 h-4 mr-1" />
+                            {user.is_locked ? 'Unlock' : 'Lock'}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => openResetDialog(user)}>
+                            <KeyRound className="w-4 h-4 mr-1" /> Reset
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -256,6 +537,118 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open)
+          if (!open) {
+            setEditingUser(null)
+            setEditForm(defaultUpdateForm)
+            setFormError(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleEditUser} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update profile information for {editingUser?.full_name ?? editingUser?.username}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, full_name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-phone">Phone Number</Label>
+                <Input
+                  id="edit-phone"
+                  value={editForm.phone_number}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, phone_number: e.target.value }))}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-active"
+                  checked={editForm.is_active}
+                  onCheckedChange={(checked) =>
+                    setEditForm((prev) => ({ ...prev, is_active: checked === true }))
+                  }
+                />
+                <Label htmlFor="edit-active">Active</Label>
+              </div>
+            </div>
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
+            <DialogFooter>
+              <Button type="submit" disabled={updatingUser}>
+                {updatingUser ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={resetDialogOpen}
+        onOpenChange={(open) => {
+          setResetDialogOpen(open)
+          if (!open) {
+            setResetUser(null)
+            setResetPasswordValue('')
+            setResetStatus('idle')
+          }
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Issue a one-time password for {resetUser?.full_name ?? resetUser?.username}
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor="reset-password">New Password</Label>
+              <Input
+                id="reset-password"
+                type="password"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                required
+              />
+            </div>
+            {resetStatus === 'success' && (
+              <p className="text-sm text-green-600">Password reset successfully.</p>
+            )}
+            {resetStatus === 'error' && (
+              <p className="text-sm text-destructive">Unable to reset password. Please try again.</p>
+            )}
+            <DialogFooter>
+              <Button type="submit" disabled={resettingPassword}>
+                {resettingPassword ? 'Resetting...' : 'Reset Password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -42,6 +42,7 @@ export interface BranchUpdate {
 }
 
 export interface BranchBalance {
+  currency_id?: string
   currency_code: string
   currency_name: string
   balance: string // Decimal as string
