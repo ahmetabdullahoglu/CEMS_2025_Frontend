@@ -13,6 +13,24 @@ export const useVaultBalances = () => {
   })
 }
 
+export const useVaultCurrencyBalance = (currencyId?: string) => {
+  return useQuery({
+    queryKey: ['vault', 'currency-balance', currencyId],
+    queryFn: () => vaultApi.getCurrencyBalance(currencyId!),
+    enabled: Boolean(currencyId),
+    staleTime: 1000 * 60, // 1 minute per currency
+  })
+}
+
+export const useVaultReconciliationReport = (vaultId?: string) => {
+  return useQuery({
+    queryKey: ['vault', 'reconciliation', vaultId],
+    queryFn: () => vaultApi.getReconciliationReport(vaultId!),
+    enabled: Boolean(vaultId),
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
 export const useVaultTransfers = (params?: VaultTransferQueryParams) => {
   return useQuery({
     queryKey: ['vault', 'transfers', params],

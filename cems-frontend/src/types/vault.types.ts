@@ -1,5 +1,6 @@
 // Vault Balance Types
 export interface VaultBalance {
+  currency_id?: string // UUID - optional because some legacy payloads omit it
   currency_code: string
   currency_name: string
   balance: string // Decimal as string
@@ -25,6 +26,45 @@ export interface VaultDetailsResponse {
   balances: VaultBalance[]
   created_at: string
   updated_at: string
+}
+
+export interface VaultCurrencyBalanceDetails {
+  currency_id: string
+  currency_code: string
+  currency_name?: string
+  balance: string
+  reserved: string
+  available: string
+  last_updated: string
+  branch_allocations?: Array<{
+    branch_id: string
+    branch_name: string
+    balance: string
+    reserved?: string | null
+    last_updated?: string | null
+  }>
+}
+
+export interface VaultReconciliationResult {
+  vault_id: string
+  vault_code: string
+  currency_id: string
+  currency_code: string
+  system_balance: string
+  physical_count: string | null
+  discrepancy: string | null
+  last_reconciled_at: string | null
+  reconciled_by: string | null
+}
+
+export interface VaultReconciliationReport {
+  vault_id: string
+  vault_code: string
+  vault_name: string
+  reconciliation_date: string
+  results: VaultReconciliationResult[]
+  total_discrepancies: number
+  notes: string | null
 }
 
 // Vault Transfer Types

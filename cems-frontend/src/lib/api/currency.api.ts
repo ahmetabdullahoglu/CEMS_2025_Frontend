@@ -8,6 +8,7 @@ import type {
   CurrencyQueryParams,
   UpdateRateRequest,
   UpdateRateResponse,
+  CurrencyRateHistoryResponse,
 } from '@/types/currency.types'
 
 export const currencyApi = {
@@ -59,18 +60,8 @@ export const currencyApi = {
       end_date?: string
       limit?: number
     }
-  ): Promise<{
-    currency_id: string
-    currency_code: string
-    rates: Array<{
-      date: string
-      buy_rate: string
-      sell_rate: string
-      created_at: string
-    }>
-    total: number
-  }> => {
-    const response = await apiClient.get(`/currencies/${currencyId}/rates`, { params })
+  ): Promise<CurrencyRateHistoryResponse> => {
+    const response = await apiClient.get<CurrencyRateHistoryResponse>(`/currencies/${currencyId}/rates`, { params })
     return response.data
   },
 }

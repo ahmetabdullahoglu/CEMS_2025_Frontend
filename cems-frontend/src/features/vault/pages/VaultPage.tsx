@@ -2,15 +2,22 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useVaultBalances } from '@/hooks/useVault'
+import { useVaultBalances, useVaultReconciliationReport } from '@/hooks/useVault'
 import VaultBalances from '../components/VaultBalances'
 import PendingTransfers from '../components/PendingTransfers'
 import TransferDialog from '../components/TransferDialog'
+import VaultReconciliationTable from '../components/VaultReconciliationTable'
 
 export default function VaultPage() {
   const [showTransferDialog, setShowTransferDialog] = useState(false)
 
   const { data: balancesData, isLoading: balancesLoading } = useVaultBalances()
+  const {
+    data: reconciliationReport,
+    isLoading: reconciliationLoading,
+    isFetching: reconciliationFetching,
+    refetch: refetchReconciliation,
+  } = useVaultReconciliationReport(balancesData?.id)
 
   return (
     <div className="space-y-6">
@@ -29,6 +36,7 @@ export default function VaultPage() {
         <TabsList>
           <TabsTrigger value="balances">Balances</TabsTrigger>
           <TabsTrigger value="transfers">Pending Transfers</TabsTrigger>
+          <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="balances">
@@ -43,6 +51,15 @@ export default function VaultPage() {
 
         <TabsContent value="transfers">
           <PendingTransfers />
+        </TabsContent>
+
+        <TabsContent value="reconciliation">
+          <VaultReconciliationTable
+            report={reconciliationReport}
+            isLoading={reconciliationLoading}
+            isFetching={reconciliationFetching}
+            onRefresh={() => refetchReconciliation()}
+          />
         </TabsContent>
       </Tabs>
 
