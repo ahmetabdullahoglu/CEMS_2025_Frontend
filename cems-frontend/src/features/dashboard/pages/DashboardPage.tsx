@@ -48,20 +48,20 @@ export default function DashboardPage() {
   const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
 
   // Branch filter state
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('')
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('all')
 
   // Fetch chart data with filters
   const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({
     period: volumePeriod,
-    branch_id: selectedBranchId || undefined
+    branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId
   })
   const { data: revenueData, isLoading: revenueLoading } = useRevenueTrend({
     period: revenuePeriod,
-    branch_id: selectedBranchId || undefined
+    branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId
   })
   const { data: currencyData, isLoading: currencyLoading } = useCurrencyDistribution({
     period: currencyPeriod,
-    branch_id: selectedBranchId || undefined,
+    branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId,
     limit: 5
   })
   const { data: branchComparisonData, isLoading: branchComparisonLoading } = useBranchComparison({
@@ -143,7 +143,7 @@ export default function DashboardPage() {
               <SelectValue placeholder="All Branches" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Branches</SelectItem>
+              <SelectItem value="all">All Branches</SelectItem>
               {branchesData?.data && branchesData.data.map((branch: any) => (
                 <SelectItem key={branch.id} value={branch.id}>
                   {branch.name}
