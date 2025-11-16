@@ -20,6 +20,12 @@ import type {
   TransferReceiptRequest,
 } from '@/types/transaction.types'
 
+const detailEndpointMap: Partial<Record<TransactionType, string>> = {
+  exchange: '/transactions/exchange',
+  income: '/transactions/income',
+  transfer: '/transactions/transfer',
+}
+
 const withTypeFilters = (params: TransactionQueryParams = {}, type?: TransactionType) => {
   if (!type) return params
 
@@ -116,8 +122,11 @@ export const transactionApi = {
   },
 
   // Get transaction details by ID
-  getTransactionDetails: async (id: string): Promise<TransactionDetail> => {
-    const response = await apiClient.get<TransactionDetail>(`/transactions/${id}`)
+  getTransactionDetails: async (id: string, type?: TransactionType): Promise<TransactionDetail> => {
+    const detailEndpoint = type ? detailEndpointMap[type] : undefined
+    const endpoint = detailEndpoint ? `${detailEndpoint}/${id}` : `/transactions/${id}`
+
+    const response = await apiClient.get<TransactionDetail>(endpoint)
     return response.data
   },
 

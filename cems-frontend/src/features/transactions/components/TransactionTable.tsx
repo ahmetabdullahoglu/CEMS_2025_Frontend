@@ -2,14 +2,21 @@ import { ArrowUpDown, Eye } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import type { AnyTransactionResponse, IncomeTransactionResponse, ExpenseTransactionResponse, TransferTransactionResponse, ExchangeTransactionResponse } from '@/types/transaction.types'
+import type {
+  AnyTransactionResponse,
+  IncomeTransactionResponse,
+  ExpenseTransactionResponse,
+  TransferTransactionResponse,
+  ExchangeTransactionResponse,
+  TransactionType,
+} from '@/types/transaction.types'
 import { cn } from '@/lib/utils'
 
 interface TransactionTableProps {
   transactions: AnyTransactionResponse[]
   sortBy?: string
   onSort: (field: string) => void
-  onViewDetails?: (transactionId: string) => void
+  onViewDetails?: (transactionId: string, transactionType?: TransactionType) => void
   isLoading?: boolean
 }
 
@@ -215,7 +222,7 @@ export default function TransactionTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onViewDetails?.(transaction.id)}
+                      onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
                       title="View Details"
                     >
                       <Eye className="w-4 h-4" />

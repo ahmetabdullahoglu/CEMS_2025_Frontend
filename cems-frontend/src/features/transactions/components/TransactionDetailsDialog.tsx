@@ -15,10 +15,11 @@ import { useTransactionDetails, useCancelTransaction, useApproveTransaction } fr
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
 import type { Branch } from '@/types/branch.types'
-import type { TransactionDetail } from '@/types/transaction.types'
+import type { TransactionDetail, TransactionType } from '@/types/transaction.types'
 
 interface TransactionDetailsDialogProps {
   transactionId: string | null
+  transactionType?: TransactionType
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -217,6 +218,7 @@ const TransferTransactionDetails = ({ transaction, branches }: {
 
 export default function TransactionDetailsDialog({
   transactionId,
+  transactionType,
   open,
   onOpenChange,
 }: TransactionDetailsDialogProps) {
@@ -227,6 +229,7 @@ export default function TransactionDetailsDialog({
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
     transactionId || '',
+    transactionType,
     !!transactionId && open
   )
   const { data: branchesData } = useBranches()

@@ -67,7 +67,10 @@ export default function TransactionsPage() {
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
+  const [selectedTransaction, setSelectedTransaction] = useState<{
+    id: string
+    type?: TransactionType
+  } | null>(null)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
   const paginationParams = useMemo(
@@ -128,9 +131,16 @@ export default function TransactionsPage() {
     setPage(1)
   }
 
-  const handleViewDetails = (transactionId: string) => {
-    setSelectedTransactionId(transactionId)
+  const handleViewDetails = (transactionId: string, transactionType?: TransactionType) => {
+    setSelectedTransaction({ id: transactionId, type: transactionType })
     setIsDetailsDialogOpen(true)
+  }
+
+  const handleDetailsDialogChange = (open: boolean) => {
+    setIsDetailsDialogOpen(open)
+    if (!open) {
+      setSelectedTransaction(null)
+    }
   }
   const totalPages = Math.ceil((allQuery.data?.total || 0) / pageSize)
 
@@ -388,9 +398,10 @@ export default function TransactionsPage() {
       <ExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} />
       <TransferDialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen} />
       <TransactionDetailsDialog
-        transactionId={selectedTransactionId}
+        transactionId={selectedTransaction?.id ?? null}
+        transactionType={selectedTransaction?.type}
         open={isDetailsDialogOpen}
-        onOpenChange={setIsDetailsDialogOpen}
+        onOpenChange={handleDetailsDialogChange}
       />
     </div>
   )
