@@ -8,12 +8,13 @@ import type {
   IncomeTransactionResponse,
   ExpenseTransactionResponse,
   TransferTransactionResponse,
+  TransactionType,
 } from '@/types/transaction.types'
 import { cn } from '@/lib/utils'
 
 interface BaseTypeListProps<T> {
   transactions: T[]
-  onViewDetails?: (id: string) => void
+  onViewDetails?: (id: string, transactionType?: TransactionType) => void
 }
 
 const EmptyState = ({ message }: { message: string }) => (
@@ -90,7 +91,11 @@ export const ExchangeTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button variant="outline" size="sm" onClick={() => onViewDetails?.(transaction.id)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
+            >
               View Details
             </Button>
           </CardFooter>
@@ -137,7 +142,11 @@ export const IncomeTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button variant="outline" size="sm" onClick={() => onViewDetails?.(transaction.id)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
+            >
               View Details
             </Button>
           </CardFooter>
@@ -184,7 +193,11 @@ export const ExpenseTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button size="sm" variant="outline" onClick={() => onViewDetails?.(transaction.id)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
+            >
               Review Details
             </Button>
           </CardFooter>
@@ -239,7 +252,11 @@ export const TransferTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button size="sm" variant="outline" onClick={() => onViewDetails?.(transaction.id)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
+            >
               Inspect Transfer
             </Button>
           </CardFooter>

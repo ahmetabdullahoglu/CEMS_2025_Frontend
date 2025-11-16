@@ -113,10 +113,10 @@ export const useCreateTransfer = () => {
 /**
  * Hook for getting transaction details by ID
  */
-export const useTransactionDetails = (id: string, enabled = true) => {
+export const useTransactionDetails = (id: string, type?: TransactionType, enabled = true) => {
   return useQuery({
-    queryKey: ['transaction', id],
-    queryFn: () => transactionApi.getTransactionDetails(id),
+    queryKey: ['transaction', id, type ?? 'any'],
+    queryFn: () => transactionApi.getTransactionDetails(id, type),
     enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
