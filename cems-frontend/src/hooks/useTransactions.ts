@@ -6,6 +6,10 @@ import type {
   ExpenseTransactionRequest,
   TransferTransactionRequest,
   TransactionType,
+  ExchangeCalculationRequest,
+  ExchangeCalculationResponse,
+  TransactionSummaryQueryParams,
+  TransferReceiptRequest,
 } from '@/types/transaction.types'
 
 /**
@@ -125,8 +129,8 @@ export const useCancelTransaction = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      transactionApi.cancelTransaction(id, reason ? { cancellation_reason: reason } : undefined),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      transactionApi.cancelTransaction(id, { reason }),
     onSuccess: (_, { id }) => {
       // Invalidate both the transaction details and the transactions list
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })
@@ -148,5 +152,37 @@ export const useApproveTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
+  })
+}
+
+export const useExchangeRatePreview = () => {
+  return useMutation({
+    mutationFn: (payload: ExchangeCalculationRequest): Promise<ExchangeCalculationResponse> =>
+      transactionApi.previewExchangeRate(payload),
+  })
+}
+
+export const useReceiveTransfer = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload?: TransferReceiptRequest }) =>
+      transactionApi.receiveTransfer(id, payload ?? {}),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['transaction', id] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}
+
+export const useTransactionSummary = (
+  params: TransactionSummaryQueryParams = {},
+  enabled = true
+) => {
+  return useQuery({
+    queryKey: ['transactions', 'summary', params],
+    queryFn: () => transactionApi.getTransactionSummary(params),
+    enabled,
+    staleTime: 1000 * 60 * 5,
   })
 }

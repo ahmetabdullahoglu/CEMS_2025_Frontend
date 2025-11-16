@@ -34,7 +34,7 @@ export default function CustomAnalytics() {
   const { data, isLoading, isFetching } = useCustomReport(submittedParams, !!submittedParams)
   const exportMutation = useReportExport()
 
-  const handleChange = (key: keyof CustomReportParams, value: any) => {
+  const handleChange = <K extends keyof CustomReportParams>(key: K, value: CustomReportParams[K]) => {
     setFormState((prev) => ({
       ...prev,
       [key]: value,
