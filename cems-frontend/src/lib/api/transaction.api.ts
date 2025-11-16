@@ -13,6 +13,11 @@ import type {
   CancelTransactionResponse,
   TransactionCancelRequest,
   TransactionType,
+  ExchangeCalculationRequest,
+  ExchangeCalculationResponse,
+  TransactionSummary,
+  TransactionSummaryQueryParams,
+  TransferReceiptRequest,
 } from '@/types/transaction.types'
 
 const withTypeFilters = (params: TransactionQueryParams = {}, type?: TransactionType) => {
@@ -119,9 +124,9 @@ export const transactionApi = {
   // Cancel transaction
   cancelTransaction: async (
     id: string,
-    payload?: TransactionCancelRequest
+    payload: TransactionCancelRequest
   ): Promise<CancelTransactionResponse> => {
-    const response = await apiClient.put<CancelTransactionResponse>(
+    const response = await apiClient.post<CancelTransactionResponse>(
       `/transactions/${id}/cancel`,
       payload
     )
@@ -131,6 +136,34 @@ export const transactionApi = {
   // Approve transaction
   approveTransaction: async (id: string): Promise<TransactionDetail> => {
     const response = await apiClient.post<TransactionDetail>(`/transactions/expense/${id}/approve`)
+    return response.data
+  },
+
+  previewExchangeRate: async (
+    payload: ExchangeCalculationRequest
+  ): Promise<ExchangeCalculationResponse> => {
+    const response = await apiClient.post<ExchangeCalculationResponse>(
+      '/transactions/exchange/rate-preview',
+      payload
+    )
+    return response.data
+  },
+
+  receiveTransfer: async (
+    id: string,
+    payload: TransferReceiptRequest = {}
+  ): Promise<TransferTransactionResponse> => {
+    const response = await apiClient.post<TransferTransactionResponse>(
+      `/transactions/transfer/${id}/receive`,
+      payload
+    )
+    return response.data
+  },
+
+  getTransactionSummary: async (
+    params?: TransactionSummaryQueryParams
+  ): Promise<TransactionSummary> => {
+    const response = await apiClient.get<TransactionSummary>('/transactions/stats/summary', { params })
     return response.data
   },
 }

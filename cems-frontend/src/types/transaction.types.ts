@@ -97,6 +97,27 @@ export interface ExchangeTransactionResponse extends BaseTransactionResponse {
   total_cost: string // Total including commission
 }
 
+export interface ExchangeCalculationRequest {
+  from_currency_id: string // UUID
+  to_currency_id: string // UUID
+  from_amount: number | string
+  commission_percentage?: number | string | null
+}
+
+export interface ExchangeCalculationResponse {
+  from_currency_id: string // UUID
+  from_currency_code: string
+  to_currency_id: string // UUID
+  to_currency_code: string
+  from_amount: string
+  to_amount: string
+  exchange_rate: string
+  commission_percentage: string
+  commission_amount: string
+  total_cost: string
+  effective_rate: string
+}
+
 // Transfer Transaction Types
 export interface TransferTransactionCreate {
   from_branch_id: string // UUID
@@ -119,6 +140,10 @@ export interface TransferTransactionResponse extends Omit<BaseTransactionRespons
   is_received: boolean
   is_pending_receipt: boolean
   branch_id?: never // Transfer doesn't have branch_id in base
+}
+
+export interface TransferReceiptRequest {
+  receipt_notes?: string | null
 }
 
 // Union type for all transaction responses
@@ -156,22 +181,22 @@ export interface TransactionQueryParams extends TransactionFilters {
 
 // Transaction Cancel Request
 export interface TransactionCancelRequest {
-  cancellation_reason?: string
+  reason: string
 }
 
 // Transaction Summary/Stats
 export interface TransactionSummary {
-  total_transactions: number
-  total_income: string
-  total_expense: string
-  total_exchange: string
-  total_transfer: string
-  by_status: {
-    pending: number
-    completed: number
-    cancelled: number
-    failed: number
-  }
+  total_count: number
+  total_amount: string
+  by_status: Record<string, number>
+  by_type: Record<string, number>
+  date_range: Record<string, string>
+}
+
+export interface TransactionSummaryQueryParams {
+  branch_id?: string | null
+  date_from?: string | null
+  date_to?: string | null
 }
 
 // Transaction Cancel Response
