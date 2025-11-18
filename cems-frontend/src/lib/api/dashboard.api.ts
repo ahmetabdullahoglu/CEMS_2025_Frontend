@@ -9,6 +9,7 @@ import type {
   TransactionVolumePeriod,
   RevenueTrendPeriod,
   GeneralChartPeriod,
+  BranchComparisonMetric,
   TransactionVolumeResponse,
   RevenueTrendResponse,
   CurrencyDistributionResponse,
@@ -115,7 +116,7 @@ export const dashboardApi = {
   // Valid periods: daily, weekly, monthly
   getBranchComparison: async (params?: {
     period?: GeneralChartPeriod
-    metric?: 'revenue' | 'transactions' | 'profit'
+    metric?: BranchComparisonMetric
     limit?: number
     branch_id?: string
   }): Promise<BranchComparisonResponse> => {

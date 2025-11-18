@@ -102,18 +102,23 @@ export type RevenueTrendPeriod = 'monthly' | 'yearly'
 export type GeneralChartPeriod = 'daily' | 'weekly' | 'monthly'
 
 export interface TransactionVolumeDataPoint {
-  date: string // ISO date (YYYY-MM-DD)
+  // Daily responses use `date`; weekly/monthly responses use `period`
+  date?: string // ISO date (YYYY-MM-DD)
+  period?: string // e.g., "2025-W37" (weekly) or "2025-11" (monthly)
   hour?: string // For hourly data (HH:00)
-  count: number
+  count?: number // Legacy field
+  value?: number // Current API field
   label?: string
 }
 
 export interface TransactionVolumeResponse {
   data: TransactionVolumeDataPoint[]
-  total_transactions: number
-  period: string
-  start_date: string
-  end_date: string
+  total_transactions?: number
+  period: TransactionVolumePeriod
+  chart_type: 'line'
+  start_date?: string
+  end_date?: string
+  generated_at?: string
 }
 
 // Revenue Trend - actual API response structure
@@ -143,16 +148,18 @@ export interface CurrencyDistributionResponse {
   generated_at: string
 }
 
+export type BranchComparisonMetric = 'revenue' | 'transactions' | 'efficiency'
+
 // Branch Comparison - actual API response structure
 export interface BranchComparisonItem {
   branch_name: string
   branch_code: string
-  value: number // The metric value (revenue, transactions, or profit)
+  value: number // The metric value (revenue, transactions, or efficiency)
 }
 
 export interface BranchComparisonResponse {
   chart_type: 'bar'
-  metric: 'revenue' | 'transactions' | 'profit'
+  metric: BranchComparisonMetric
   period_days: number
   data: BranchComparisonItem[]
   generated_at: string
