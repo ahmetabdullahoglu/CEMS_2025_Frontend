@@ -26,6 +26,7 @@ import type {
   TransactionVolumePeriod,
   RevenueTrendPeriod,
   GeneralChartPeriod,
+  BranchComparisonMetric,
 } from '@/types/dashboard.types'
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -53,7 +54,7 @@ export default function DashboardPage() {
   const [revenuePeriod, setRevenuePeriod] = useState<RevenueTrendPeriod>('monthly')
   const [currencyPeriod, setCurrencyPeriod] = useState<GeneralChartPeriod>('weekly')
   const [comparisonPeriod, setComparisonPeriod] = useState<GeneralChartPeriod>('weekly')
-  const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
+  const [branchMetric, setBranchMetric] = useState<BranchComparisonMetric>('revenue')
 
   // Fetch chart data with filters
   const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({
@@ -92,7 +93,13 @@ export default function DashboardPage() {
   const handleRevenuePeriodChange = createSelectHandler<RevenueTrendPeriod>(setRevenuePeriod)
   const handleCurrencyPeriodChange = createSelectHandler<GeneralChartPeriod>(setCurrencyPeriod)
   const handleComparisonPeriodChange = createSelectHandler<GeneralChartPeriod>(setComparisonPeriod)
-  const handleBranchMetricChange = createSelectHandler<'revenue' | 'transactions' | 'profit'>(setBranchMetric)
+  const handleBranchMetricChange = createSelectHandler<BranchComparisonMetric>(setBranchMetric)
+
+  const branchMetricLabels: Record<BranchComparisonMetric, string> = {
+    revenue: 'revenue',
+    transactions: 'transactions',
+    efficiency: 'transactions per staff',
+  }
 
   if (isLoading) {
     return (
@@ -649,13 +656,14 @@ export default function DashboardPage() {
                   <SelectContent>
                     <SelectItem value="revenue">By Revenue</SelectItem>
                     <SelectItem value="transactions">By Transactions</SelectItem>
-                    <SelectItem value="profit">By Profit</SelectItem>
+                    <SelectItem value="efficiency">By Efficiency</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <CardDescription>
-              Top performing branches by {branchMetric} for {comparisonPeriod === 'daily' ? 'today' : comparisonPeriod === 'weekly' ? 'this week' : 'this month'}
+              Top performing branches by {branchMetricLabels[branchMetric]} for{' '}
+              {comparisonPeriod === 'daily' ? 'today' : comparisonPeriod === 'weekly' ? 'this week' : 'this month'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -684,11 +692,14 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <p className="text-sm font-bold text-orange-600">
-                              {branchMetric === 'transactions' ? (
-                                `${branch.value.toLocaleString()} txns`
-                              ) : (
-                                `$${branch.value.toLocaleString()}`
-                              )}
+                              {branchMetric === 'transactions'
+                                ? `${branch.value.toLocaleString()} txns`
+                                : branchMetric === 'efficiency'
+                                  ? `${branch.value.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })} txns/staff`
+                                  : `$${branch.value.toLocaleString()}`}
                             </p>
                           </div>
                           <div className="h-1.5 bg-secondary rounded-full overflow-hidden">

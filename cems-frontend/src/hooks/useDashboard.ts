@@ -4,6 +4,7 @@ import type {
   TransactionVolumePeriod,
   RevenueTrendPeriod,
   GeneralChartPeriod,
+  BranchComparisonMetric,
 } from '@/types/dashboard.types'
 
 /**
@@ -132,7 +133,7 @@ export const useCurrencyDistribution = (params?: {
  */
 export const useBranchComparison = (params?: {
   period?: GeneralChartPeriod
-  metric?: 'revenue' | 'transactions' | 'profit'
+  metric?: BranchComparisonMetric
   limit?: number
   branch_id?: string
 }) => {
