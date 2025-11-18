@@ -26,6 +26,7 @@ import type {
   TransactionVolumePeriod,
   RevenueTrendPeriod,
   GeneralChartPeriod,
+  BranchComparisonMetric,
 } from '@/types/dashboard.types'
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,11 +50,11 @@ export default function DashboardPage() {
   const branchOptions: Branch[] = branchesData?.data ?? []
 
   // Period filters state - Different periods for different endpoints
-  const [volumePeriod, setVolumePeriod] = useState<TransactionVolumePeriod>('weekly')
+  const [volumePeriod, setVolumePeriod] = useState<TransactionVolumePeriod>('daily')
   const [revenuePeriod, setRevenuePeriod] = useState<RevenueTrendPeriod>('monthly')
   const [currencyPeriod, setCurrencyPeriod] = useState<GeneralChartPeriod>('weekly')
   const [comparisonPeriod, setComparisonPeriod] = useState<GeneralChartPeriod>('weekly')
-  const [branchMetric, setBranchMetric] = useState<'revenue' | 'transactions' | 'profit'>('revenue')
+  const [branchMetric, setBranchMetric] = useState<BranchComparisonMetric>('revenue')
 
   // Fetch chart data with filters
   const { data: volumeData, isLoading: volumeLoading } = useTransactionVolume({
@@ -92,7 +93,13 @@ export default function DashboardPage() {
   const handleRevenuePeriodChange = createSelectHandler<RevenueTrendPeriod>(setRevenuePeriod)
   const handleCurrencyPeriodChange = createSelectHandler<GeneralChartPeriod>(setCurrencyPeriod)
   const handleComparisonPeriodChange = createSelectHandler<GeneralChartPeriod>(setComparisonPeriod)
-  const handleBranchMetricChange = createSelectHandler<'revenue' | 'transactions' | 'profit'>(setBranchMetric)
+  const handleBranchMetricChange = createSelectHandler<BranchComparisonMetric>(setBranchMetric)
+
+  const branchMetricLabels: Record<BranchComparisonMetric, string> = {
+    revenue: 'revenue',
+    transactions: 'transactions',
+    efficiency: 'transactions per staff',
+  }
 
   if (isLoading) {
     return (
@@ -416,20 +423,20 @@ export default function DashboardPage() {
                 <CardTitle>Transaction Volume</CardTitle>
               </div>
               <Select value={volumePeriod} onValueChange={handleVolumePeriodChange}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">Today</SelectItem>
-                  <SelectItem value="weekly">This Week</SelectItem>
-                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="daily">Last 30 days</SelectItem>
+                  <SelectItem value="weekly">Last 12 weeks</SelectItem>
+                  <SelectItem value="monthly">Last 12 months</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <CardDescription>
-              {volumePeriod === 'daily' && 'Transactions today'}
-              {volumePeriod === 'weekly' && 'Transactions over the past week'}
-              {volumePeriod === 'monthly' && 'Transactions over the past month'}
+              {volumePeriod === 'daily' && 'Transactions over the past 30 days'}
+              {volumePeriod === 'weekly' && 'Transactions over the past 12 weeks'}
+              {volumePeriod === 'monthly' && 'Transactions over the past 12 months'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -446,19 +453,26 @@ export default function DashboardPage() {
                       <p className="text-sm text-muted-foreground">total transactions</p>
                     </div>
                     <div className="space-y-2">
-                      {volumeData.data.slice(-7).map((point) => (
-                        <div key={point.date} className="flex items-center justify-between">
+                      {volumeData.data.map((point) => (
+                        <div key={`${point.date}-${point.label ?? ''}`} className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
-                            {new Date(point.date).toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
+                            {point.label ??
+                              new Date(point.date).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
                           </span>
                           <div className="flex items-center gap-2">
-                            <div className="h-2 bg-primary rounded-full" style={{
-                              width: `${Math.min((point.count / Math.max(...volumeData.data.map(d => d.count))) * 100, 100)}px`
-                            }} />
+                            <div
+                              className="h-2 bg-primary rounded-full"
+                              style={{
+                                width: `${Math.min(
+                                  (point.count / Math.max(...volumeData.data.map((d) => d.count))) * 100,
+                                  100
+                                )}px`,
+                              }}
+                            />
                             <span className="text-sm font-medium w-12 text-right">{point.count}</span>
                           </div>
                         </div>
@@ -649,13 +663,14 @@ export default function DashboardPage() {
                   <SelectContent>
                     <SelectItem value="revenue">By Revenue</SelectItem>
                     <SelectItem value="transactions">By Transactions</SelectItem>
-                    <SelectItem value="profit">By Profit</SelectItem>
+                    <SelectItem value="efficiency">By Efficiency</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <CardDescription>
-              Top performing branches by {branchMetric} for {comparisonPeriod === 'daily' ? 'today' : comparisonPeriod === 'weekly' ? 'this week' : 'this month'}
+              Top performing branches by {branchMetricLabels[branchMetric]} for{' '}
+              {comparisonPeriod === 'daily' ? 'today' : comparisonPeriod === 'weekly' ? 'this week' : 'this month'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -684,11 +699,14 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <p className="text-sm font-bold text-orange-600">
-                              {branchMetric === 'transactions' ? (
-                                `${branch.value.toLocaleString()} txns`
-                              ) : (
-                                `$${branch.value.toLocaleString()}`
-                              )}
+                              {branchMetric === 'transactions'
+                                ? `${branch.value.toLocaleString()} txns`
+                                : branchMetric === 'efficiency'
+                                  ? `${branch.value.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })} txns/staff`
+                                  : `$${branch.value.toLocaleString()}`}
                             </p>
                           </div>
                           <div className="h-1.5 bg-secondary rounded-full overflow-hidden">

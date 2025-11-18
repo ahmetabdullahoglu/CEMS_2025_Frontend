@@ -143,16 +143,18 @@ export interface CurrencyDistributionResponse {
   generated_at: string
 }
 
+export type BranchComparisonMetric = 'revenue' | 'transactions' | 'efficiency'
+
 // Branch Comparison - actual API response structure
 export interface BranchComparisonItem {
   branch_name: string
   branch_code: string
-  value: number // The metric value (revenue, transactions, or profit)
+  value: number // The metric value (revenue, transactions, or efficiency)
 }
 
 export interface BranchComparisonResponse {
   chart_type: 'bar'
-  metric: 'revenue' | 'transactions' | 'profit'
+  metric: BranchComparisonMetric
   period_days: number
   data: BranchComparisonItem[]
   generated_at: string
