@@ -102,18 +102,23 @@ export type RevenueTrendPeriod = 'monthly' | 'yearly'
 export type GeneralChartPeriod = 'daily' | 'weekly' | 'monthly'
 
 export interface TransactionVolumeDataPoint {
-  date: string // ISO date (YYYY-MM-DD)
+  // Daily responses use `date`; weekly/monthly responses use `period`
+  date?: string // ISO date (YYYY-MM-DD)
+  period?: string // e.g., "2025-W37" (weekly) or "2025-11" (monthly)
   hour?: string // For hourly data (HH:00)
-  count: number
+  count?: number // Legacy field
+  value?: number // Current API field
   label?: string
 }
 
 export interface TransactionVolumeResponse {
   data: TransactionVolumeDataPoint[]
-  total_transactions: number
-  period: string
-  start_date: string
-  end_date: string
+  total_transactions?: number
+  period: TransactionVolumePeriod
+  chart_type: 'line'
+  start_date?: string
+  end_date?: string
+  generated_at?: string
 }
 
 // Revenue Trend - actual API response structure

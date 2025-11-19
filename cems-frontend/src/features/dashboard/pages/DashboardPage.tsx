@@ -27,6 +27,7 @@ import type {
   RevenueTrendPeriod,
   GeneralChartPeriod,
   BranchComparisonMetric,
+  TransactionVolumeDataPoint,
 } from '@/types/dashboard.types'
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -100,6 +101,97 @@ export default function DashboardPage() {
     transactions: 'transactions',
     efficiency: 'transactions per staff',
   }
+
+  const normalizeWeeklyPeriod = (period: string) => {
+    const match = period.match(/^(\d{4})-W(\d{1,2})$/)
+    if (!match) return 0
+
+    const [, yearStr, weekStr] = match
+    const year = Number(yearStr)
+    const week = Number(weekStr)
+
+    // Start from the first day of the year, then add weeks to approximate chronological order
+    const firstDayOfYear = new Date(Date.UTC(year, 0, 1))
+    const dayOffset = firstDayOfYear.getUTCDay() === 0 ? -6 : 1 - firstDayOfYear.getUTCDay()
+    const weekStart = new Date(firstDayOfYear)
+    weekStart.setUTCDate(firstDayOfYear.getUTCDate() + dayOffset + (week - 1) * 7)
+
+    return weekStart.getTime()
+  }
+
+  const getVolumeSortValue = (
+    point: TransactionVolumeDataPoint,
+    periodSelection: TransactionVolumePeriod
+  ) => {
+    const reference = point.date ?? point.period ?? ''
+
+    if (periodSelection === 'weekly' && point.period) {
+      return normalizeWeeklyPeriod(point.period)
+    }
+
+    if (periodSelection === 'monthly' && reference) {
+      const periodDate = new Date(reference.length === 7 ? `${reference}-01` : reference)
+      return Number.isNaN(periodDate.getTime()) ? 0 : periodDate.getTime()
+    }
+
+    if (reference) {
+      const dateValue = new Date(reference)
+      return Number.isNaN(dateValue.getTime()) ? 0 : dateValue.getTime()
+    }
+
+    return 0
+  }
+
+  const getVolumeLabel = (
+    point: TransactionVolumeDataPoint,
+    periodSelection: TransactionVolumePeriod
+  ): string => {
+    if (point.label) return point.label
+
+    if (periodSelection === 'daily') {
+      const dateValue = point.date ?? point.period
+      if (dateValue) {
+        const parsed = new Date(dateValue)
+        if (!Number.isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        }
+      }
+    }
+
+    if (periodSelection === 'monthly') {
+      const periodValue = point.period ?? point.date?.slice(0, 7)
+      if (periodValue) {
+        const parsed = new Date(`${periodValue}-01`)
+        if (!Number.isNaN(parsed.getTime())) {
+          return parsed.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        }
+        return periodValue
+      }
+    }
+
+    if (periodSelection === 'weekly' && point.period) {
+      return point.period
+    }
+
+    return point.date ?? point.period ?? 'Unknown'
+  }
+
+  const effectiveVolumePeriod = (volumeData?.period as TransactionVolumePeriod) ?? volumePeriod
+  const normalizedVolumePoints = [...(volumeData?.data ?? [])]
+    .map((point, index) => {
+      const count = point.count ?? point.value ?? 0
+      return {
+        key: point.date ?? point.period ?? point.label ?? `${effectiveVolumePeriod}-${index}`,
+        label: getVolumeLabel(point, effectiveVolumePeriod),
+        count,
+        sortValue: getVolumeSortValue(point, effectiveVolumePeriod),
+      }
+    })
+    .sort((a, b) => a.sortValue - b.sortValue)
+
+  const maxVolumeCount = normalizedVolumePoints.reduce((max, point) => Math.max(max, point.count), 0)
+  const totalTransactions =
+    volumeData?.total_transactions ?? normalizedVolumePoints.reduce((sum, point) => sum + point.count, 0)
 
   if (isLoading) {
     return (
@@ -446,31 +538,21 @@ export default function DashboardPage() {
               </div>
             ) : volumeData ? (
               <div className="space-y-3">
-                {volumeData.data && volumeData.data.length > 0 ? (
+                {normalizedVolumePoints.length > 0 ? (
                   <>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-bold">{volumeData.total_transactions}</p>
+                      <p className="text-3xl font-bold">{totalTransactions}</p>
                       <p className="text-sm text-muted-foreground">total transactions</p>
                     </div>
                     <div className="space-y-2">
-                      {volumeData.data.map((point) => (
-                        <div key={`${point.date}-${point.label ?? ''}`} className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            {point.label ??
-                              new Date(point.date).toLocaleDateString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                          </span>
+                      {normalizedVolumePoints.map((point) => (
+                        <div key={point.key} className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">{point.label}</span>
                           <div className="flex items-center gap-2">
                             <div
                               className="h-2 bg-primary rounded-full"
                               style={{
-                                width: `${Math.min(
-                                  (point.count / Math.max(...volumeData.data.map((d) => d.count))) * 100,
-                                  100
-                                )}px`,
+                                width: `${maxVolumeCount ? (point.count / maxVolumeCount) * 100 : 0}%`,
                               }}
                             />
                             <span className="text-sm font-medium w-12 text-right">{point.count}</span>
