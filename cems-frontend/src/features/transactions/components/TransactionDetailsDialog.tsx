@@ -63,25 +63,25 @@ const ExchangeTransactionDetails = ({ transaction }: { transaction: TransactionD
         <div className="flex items-center justify-center gap-3 text-lg font-semibold">
           <span>
             {transaction.from_amount ? Number(transaction.from_amount).toFixed(2) : 'N/A'}{' '}
-            {transaction.from_currency?.code || 'N/A'}
+            {transaction.from_currency?.code || transaction.from_currency_name || 'N/A'}
           </span>
           <ArrowRightLeft className="h-5 w-5 text-muted-foreground" />
           <span>
             {transaction.to_amount ? Number(transaction.to_amount).toFixed(2) : 'N/A'}{' '}
-            {transaction.to_currency?.code || 'N/A'}
+            {transaction.to_currency?.code || transaction.to_currency_name || 'N/A'}
           </span>
         </div>
         <div className="text-center text-sm text-muted-foreground mt-2">
-          Exchange Rate: 1 {transaction.from_currency?.code || 'N/A'} ={' '}
+          Exchange Rate: 1 {transaction.from_currency?.code || transaction.from_currency_name || 'N/A'} ={' '}
           {transaction.exchange_rate_used ? Number(transaction.exchange_rate_used).toFixed(4) : 'N/A'}{' '}
-          {transaction.to_currency?.code || 'N/A'}
+          {transaction.to_currency?.code || transaction.to_currency_name || 'N/A'}
         </div>
       </div>
 
       <div className="space-y-1">
         <DetailRow label="Transaction Number" value={transaction.transaction_number} />
         <DetailRow label="Customer Name" value={transaction.customer?.name} />
-        <DetailRow label="Branch" value={transaction.branch?.name} />
+        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -102,13 +102,13 @@ const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDet
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-green-50 p-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-green-700">
-            {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
-            {transaction.currency?.code || 'N/A'}
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-700">
+              {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
+              {transaction.currency?.code || transaction.currency_name || 'N/A'}
+            </div>
+            <div className="text-sm text-green-600 mt-1">Income</div>
           </div>
-          <div className="text-sm text-green-600 mt-1">Income</div>
-        </div>
       </div>
 
       <div className="space-y-1">
@@ -116,7 +116,7 @@ const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDet
         <DetailRow label="Category" value={transaction.income_category} />
         <DetailRow label="Source" value={transaction.income_source} />
         <DetailRow label="Notes" value={transaction.notes} />
-        <DetailRow label="Branch" value={transaction.branch?.name} />
+        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -137,13 +137,13 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-red-50 p-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-red-700">
-            {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
-            {transaction.currency?.code || 'N/A'}
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-700">
+              {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
+              {transaction.currency?.code || transaction.currency_name || 'N/A'}
+            </div>
+            <div className="text-sm text-red-600 mt-1">Expense</div>
           </div>
-          <div className="text-sm text-red-600 mt-1">Expense</div>
-        </div>
       </div>
 
       <div className="space-y-1">
@@ -151,7 +151,7 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
         <DetailRow label="Category" value={transaction.expense_category} />
         <DetailRow label="Payee" value={transaction.expense_to} />
         <DetailRow label="Notes" value={transaction.notes} />
-        <DetailRow label="Branch" value={transaction.branch?.name} />
+        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -175,6 +175,11 @@ const TransferTransactionDetails = ({ transaction, branches }: {
   const fromBranch = branches?.find(b => b.id === transaction.from_branch_id)
   const toBranch = branches?.find(b => b.id === transaction.to_branch_id)
 
+  const fromBranchLabel =
+    fromBranch?.name || transaction.from_branch_name || `Branch #${transaction.from_branch_id ?? 'Unknown'}`
+  const toBranchLabel =
+    toBranch?.name || transaction.to_branch_name || `Branch #${transaction.to_branch_id ?? 'Unknown'}`
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-blue-50 p-4">
@@ -182,20 +187,32 @@ const TransferTransactionDetails = ({ transaction, branches }: {
           <div className="text-center">
             <div className="text-sm text-blue-600 font-medium">From</div>
             <div className="text-lg font-semibold text-blue-900">
-              <BranchTooltip branch={fromBranch} branchId={transaction.from_branch_id} />
+              {fromBranch ? (
+                <BranchTooltip branch={fromBranch} branchId={transaction.from_branch_id}>
+                  {fromBranchLabel}
+                </BranchTooltip>
+              ) : (
+                <span className="text-muted-foreground">{fromBranchLabel}</span>
+              )}
             </div>
           </div>
           <ArrowDownLeft className="h-6 w-6 text-blue-500 rotate-90" />
           <div className="text-center">
             <div className="text-sm text-blue-600 font-medium">To</div>
             <div className="text-lg font-semibold text-blue-900">
-              <BranchTooltip branch={toBranch} branchId={transaction.to_branch_id} />
+              {toBranch ? (
+                <BranchTooltip branch={toBranch} branchId={transaction.to_branch_id}>
+                  {toBranchLabel}
+                </BranchTooltip>
+              ) : (
+                <span className="text-muted-foreground">{toBranchLabel}</span>
+              )}
             </div>
           </div>
         </div>
         <div className="text-center text-xl font-bold text-blue-700 mt-3">
           {transaction.amount ? Number(transaction.amount).toFixed(2) : 'N/A'}{' '}
-          {transaction.currency?.code || 'N/A'}
+          {transaction.currency?.code || transaction.currency_name || 'N/A'}
         </div>
       </div>
 
