@@ -23,6 +23,7 @@ import type {
 const detailEndpointMap: Partial<Record<TransactionType, string>> = {
   exchange: '/transactions/exchange',
   income: '/transactions/income',
+  expense: '/transactions/expense',
   transfer: '/transactions/transfer',
 }
 

@@ -13,11 +13,19 @@ interface BaseTransactionResponse {
   transaction_type: TransactionType
   status: TransactionStatus
   branch_id: string // UUID
+  branch_name?: string
   customer_id?: string | null // UUID
   user_id: string // UUID
   reference_number?: string | null
   notes?: string | null
   transaction_date: string // ISO datetime
+  currency_name?: string
+  from_branch_id?: string
+  from_branch_name?: string
+  to_branch_id?: string
+  to_branch_name?: string
+  from_currency_name?: string
+  to_currency_name?: string
   completed_at?: string | null // ISO datetime
   cancelled_at?: string | null // ISO datetime
   cancelled_by_id?: string | null // UUID
@@ -88,6 +96,9 @@ export interface ExchangeTransactionCreate {
 export interface ExchangeTransactionResponse extends BaseTransactionResponse {
   from_currency_id: string // UUID
   to_currency_id: string // UUID
+  currency_name?: string
+  from_currency_name?: string
+  to_currency_name?: string
   from_amount: string // Decimal as string
   to_amount: string // Decimal as string
   exchange_rate_used: string // Decimal as string
@@ -230,6 +241,12 @@ export interface TransactionDetail extends BaseTransactionResponse {
     code: string
     name: string
   }
+  branch_name?: string
+  from_branch_name?: string
+  to_branch_name?: string
+  currency_name?: string
+  from_currency_name?: string
+  to_currency_name?: string
 
   // Fields that vary by transaction type (all optional as they depend on type)
   amount?: string // For income, expense, transfer

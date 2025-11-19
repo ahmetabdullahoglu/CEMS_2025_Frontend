@@ -70,6 +70,25 @@ const getTransactionAmount = (transaction: AnyTransactionResponse): string | und
   }
 }
 
+const getTransactionCurrency = (transaction: AnyTransactionResponse): string => {
+  switch (transaction.transaction_type) {
+    case 'exchange': {
+      const exchange = transaction as ExchangeTransactionResponse
+      return `${exchange.from_currency_name || exchange.from_currency_id || 'N/A'} → ${
+        exchange.to_currency_name || exchange.to_currency_id || 'N/A'
+      }`
+    }
+    case 'transfer':
+      return (transaction as TransferTransactionResponse).currency_name || transaction.currency_id || 'N/A'
+    case 'expense':
+      return (transaction as ExpenseTransactionResponse).currency_name || transaction.currency_id || 'N/A'
+    case 'income':
+      return (transaction as IncomeTransactionResponse).currency_name || transaction.currency_id || 'N/A'
+    default:
+      return 'N/A'
+  }
+}
+
 export default function CustomerTransactions({ customerId }: CustomerTransactionsProps) {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
@@ -162,7 +181,7 @@ export default function CustomerTransactions({ customerId }: CustomerTransaction
                     <TableCell className="font-medium">
                       ${amount ? Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'N/A'}
                     </TableCell>
-                    <TableCell>N/A</TableCell>
+                    <TableCell>{getTransactionCurrency(transaction)}</TableCell>
                     <TableCell>
                       <span
                         className={cn(

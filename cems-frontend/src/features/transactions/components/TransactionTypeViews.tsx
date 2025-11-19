@@ -74,7 +74,9 @@ export const ExchangeTransactionsList = ({
             <div className="flex flex-col gap-2 rounded-md border p-3 text-sm">
               <div className="flex items-center justify-between font-medium">
                 <span>From</span>
-                <span>{formatAmount(transaction.from_amount, transaction.from_currency_id)}</span>
+                <span>
+                  {formatAmount(transaction.from_amount, transaction.from_currency_name || transaction.from_currency_id)}
+                </span>
               </div>
               <div className="flex items-center justify-center text-muted-foreground">
                 <ArrowRightLeft className="mr-2 h-4 w-4" />
@@ -82,7 +84,7 @@ export const ExchangeTransactionsList = ({
               </div>
               <div className="flex items-center justify-between font-medium">
                 <span>To</span>
-                <span>{formatAmount(transaction.to_amount, transaction.to_currency_id)}</span>
+                <span>{formatAmount(transaction.to_amount, transaction.to_currency_name || transaction.to_currency_id)}</span>
               </div>
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
@@ -132,12 +134,12 @@ export const IncomeTransactionsList = ({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-2xl font-bold text-green-700">
-              {formatAmount(transaction.amount, transaction.currency_id)}
+              {formatAmount(transaction.amount, transaction.currency_name || transaction.currency_id)}
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               <div>Category: {transaction.income_category}</div>
               <div>Source: {transaction.income_source ?? '—'}</div>
-              <div>Branch: {transaction.branch_id}</div>
+              <div>Branch: {transaction.branch_name || transaction.branch_id}</div>
               <div>Reference: {transaction.reference_number ?? '—'}</div>
             </div>
           </CardContent>
@@ -183,7 +185,7 @@ export const ExpenseTransactionsList = ({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-2xl font-bold text-red-700">
-              {formatAmount(transaction.amount, transaction.currency_id)}
+              {formatAmount(transaction.amount, transaction.currency_name || transaction.currency_id)}
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               <div>Category: {transaction.expense_category}</div>
@@ -236,19 +238,19 @@ export const TransferTransactionsList = ({
             <div className="rounded-md border p-3 text-sm text-foreground">
               <div className="flex items-center justify-between">
                 <span>From Branch</span>
-                <span>{transaction.from_branch_id}</span>
+                <span>{transaction.from_branch_name || transaction.from_branch_id}</span>
               </div>
               <div className="flex items-center justify-center py-2 text-muted-foreground">
                 <MoveRight className="h-4 w-4" />
               </div>
               <div className="flex items-center justify-between">
                 <span>To Branch</span>
-                <span>{transaction.to_branch_id}</span>
+                <span>{transaction.to_branch_name || transaction.to_branch_id}</span>
               </div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div>Transfer Type: {transaction.transfer_type}</div>
-              <div>Amount: {formatAmount(transaction.amount, transaction.currency_id)}</div>
+              <div>Amount: {formatAmount(transaction.amount, transaction.currency_name || transaction.currency_id)}</div>
             </div>
           </CardContent>
           <CardFooter className="justify-end">

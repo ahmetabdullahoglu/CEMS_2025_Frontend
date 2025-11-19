@@ -63,19 +63,21 @@ const getCurrencyDisplay = (transaction: AnyTransactionResponse): string => {
   const type = transaction.transaction_type
   if (type === 'exchange') {
     const ex = transaction as ExchangeTransactionResponse
-    return `${ex.from_amount ?? 'N/A'} → ${ex.to_amount ?? 'N/A'}`
+    const fromCurrency = ex.from_currency_name || ex.from_currency_id || ''
+    const toCurrency = ex.to_currency_name || ex.to_currency_id || ''
+    return `${ex.from_amount ?? 'N/A'} ${fromCurrency} → ${ex.to_amount ?? 'N/A'} ${toCurrency}`.trim()
   }
   if (type === 'transfer') {
     const tr = transaction as TransferTransactionResponse
-    return tr.transfer_type === 'branch_to_branch' ? 'Branch Transfer' : 'Vault Transfer'
+    return tr.currency_name || tr.currency_id || 'N/A'
   }
   if (type === 'expense') {
     const exp = transaction as ExpenseTransactionResponse
-    return exp.expense_category ? exp.expense_category.toUpperCase() : 'N/A'
+    return exp.currency_name || exp.currency_id || 'N/A'
   }
   if (type === 'income') {
     const inc = transaction as IncomeTransactionResponse
-    return inc.income_category ? inc.income_category.toUpperCase() : 'N/A'
+    return inc.currency_name || inc.currency_id || 'N/A'
   }
   return 'N/A'
 }
@@ -84,19 +86,21 @@ const getCurrencyDisplay = (transaction: AnyTransactionResponse): string => {
 const getPartyInfo = (transaction: AnyTransactionResponse): string => {
   const type = transaction.transaction_type
   if (type === 'exchange') {
-    return 'Exchange'
+    return (transaction.branch_name || transaction.branch_id || 'Exchange').toString()
   }
   if (type === 'transfer') {
     const tr = transaction as TransferTransactionResponse
-    return tr.reference_number ?? 'Transfer'
+    const fromBranch = tr.from_branch_name || tr.from_branch_id || 'From'
+    const toBranch = tr.to_branch_name || tr.to_branch_id || 'To'
+    return `${fromBranch} → ${toBranch}`
   }
   if (type === 'expense') {
     const exp = transaction as ExpenseTransactionResponse
-    return exp.expense_to ?? 'Expense'
+    return exp.expense_to ?? exp.branch_name ?? 'Expense'
   }
   if (type === 'income') {
     const inc = transaction as IncomeTransactionResponse
-    return inc.income_source ?? 'Income'
+    return inc.income_source ?? inc.branch_name ?? 'Income'
   }
   return 'N/A'
 }
