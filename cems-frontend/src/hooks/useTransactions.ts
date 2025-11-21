@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { transactionApi } from '@/lib/api/transaction.api'
+import { branchApi } from '@/lib/api/branch.api'
 import type {
   TransactionQueryParams,
   IncomeTransactionRequest,
@@ -11,6 +12,7 @@ import type {
   TransactionSummaryQueryParams,
   TransferReceiptRequest,
 } from '@/types/transaction.types'
+import type { Branch, BranchListResponse } from '@/types/branch.types'
 
 /**
  * React Query hook for transactions list with filters and pagination
@@ -61,10 +63,11 @@ export const usePendingApprovalTransactions = (
  * Hook for getting branches list
  */
 export const useBranches = () => {
-  return useQuery({
+  return useQuery<BranchListResponse, Error, Branch[]>({
     queryKey: ['branches'],
-    queryFn: transactionApi.getBranches,
+    queryFn: branchApi.getBranches,
     staleTime: 1000 * 60 * 10, // 10 minutes
+    select: (response) => response?.data ?? [],
   })
 }
 

@@ -323,7 +323,7 @@ export default function TransactionDetailsDialog({
         {transaction.transaction_type === 'income' && <IncomeTransactionDetails transaction={transaction} />}
         {transaction.transaction_type === 'expense' && <ExpenseTransactionDetails transaction={transaction} />}
         {transaction.transaction_type === 'transfer' && (
-          <TransferTransactionDetails transaction={transaction} branches={branchesData?.data} />
+          <TransferTransactionDetails transaction={transaction} branches={branchesData} />
         )}
       </>
     )
