@@ -41,7 +41,9 @@ export const BranchProvider = ({ children }: { children: React.ReactNode }) => {
     return branchResponse?.data ?? []
   }, [branchResponse?.data, user?.branches])
 
-  const [currentBranchId, setCurrentBranchId] = useState<string | null>(null)
+  const [currentBranchId, setCurrentBranchId] = useState<string | null>(() => {
+    return sessionStorage.getItem(BRANCH_STORAGE_KEY)
+  })
 
   // Hydrate branch selection from storage or user preference
   useEffect(() => {
@@ -51,19 +53,22 @@ export const BranchProvider = ({ children }: { children: React.ReactNode }) => {
       return
     }
 
+    // Wait until we know the available branches before reconciling the selection
+    if (!availableBranches.length) return
+
     const storedBranchId = sessionStorage.getItem(BRANCH_STORAGE_KEY)
     const primaryBranchId =
       user.branches?.find((branch) => branch.is_primary)?.id || user.branches?.[0]?.id
 
-    const initialBranchId =
+    const preferredBranchId =
       (storedBranchId && availableBranches.some((branch) => branch.id === storedBranchId)
         ? storedBranchId
-        : undefined) || primaryBranchId || null
+        : undefined) || primaryBranchId || availableBranches[0]?.id || null
 
-    setCurrentBranchId(initialBranchId)
+    setCurrentBranchId(preferredBranchId)
 
-    if (initialBranchId) {
-      sessionStorage.setItem(BRANCH_STORAGE_KEY, initialBranchId)
+    if (preferredBranchId) {
+      sessionStorage.setItem(BRANCH_STORAGE_KEY, preferredBranchId)
     } else {
       sessionStorage.removeItem(BRANCH_STORAGE_KEY)
     }
