@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
+import { formatBranchLabel } from '@/utils/branch'
 import type { Branch } from '@/types/branch.types'
 import type { TransactionDetail, TransactionType } from '@/types/transaction.types'
 
@@ -81,7 +82,10 @@ const ExchangeTransactionDetails = ({ transaction }: { transaction: TransactionD
       <div className="space-y-1">
         <DetailRow label="Transaction Number" value={transaction.transaction_number} />
         <DetailRow label="Customer Name" value={transaction.customer?.name} />
-        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
+        <DetailRow
+          label="Branch"
+          value={formatBranchLabel(transaction.branch, transaction.branch_name, transaction.branch_id)}
+        />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -116,7 +120,10 @@ const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDet
         <DetailRow label="Category" value={transaction.income_category} />
         <DetailRow label="Source" value={transaction.income_source} />
         <DetailRow label="Notes" value={transaction.notes} />
-        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
+        <DetailRow
+          label="Branch"
+          value={formatBranchLabel(transaction.branch, transaction.branch_name, transaction.branch_id)}
+        />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -151,7 +158,10 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
         <DetailRow label="Category" value={transaction.expense_category} />
         <DetailRow label="Payee" value={transaction.expense_to} />
         <DetailRow label="Notes" value={transaction.notes} />
-        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
+        <DetailRow
+          label="Branch"
+          value={formatBranchLabel(transaction.branch, transaction.branch_name, transaction.branch_id)}
+        />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -175,10 +185,12 @@ const TransferTransactionDetails = ({ transaction, branches }: {
   const fromBranch = branches?.find(b => b.id === transaction.from_branch_id)
   const toBranch = branches?.find(b => b.id === transaction.to_branch_id)
 
-  const fromBranchLabel =
-    fromBranch?.name || transaction.from_branch_name || `Branch #${transaction.from_branch_id ?? 'Unknown'}`
-  const toBranchLabel =
-    toBranch?.name || transaction.to_branch_name || `Branch #${transaction.to_branch_id ?? 'Unknown'}`
+  const fromBranchLabel = formatBranchLabel(
+    fromBranch,
+    transaction.from_branch_name,
+    transaction.from_branch_id
+  )
+  const toBranchLabel = formatBranchLabel(toBranch, transaction.to_branch_name, transaction.to_branch_id)
 
   return (
     <div className="space-y-4">
@@ -323,7 +335,7 @@ export default function TransactionDetailsDialog({
         {transaction.transaction_type === 'income' && <IncomeTransactionDetails transaction={transaction} />}
         {transaction.transaction_type === 'expense' && <ExpenseTransactionDetails transaction={transaction} />}
         {transaction.transaction_type === 'transfer' && (
-          <TransferTransactionDetails transaction={transaction} branches={branchesData} />
+          <TransferTransactionDetails transaction={transaction} branches={branchesData?.data} />
         )}
       </>
     )

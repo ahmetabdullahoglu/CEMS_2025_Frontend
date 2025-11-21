@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useBranches } from '@/hooks/useBranches'
 import { useCreateVaultTransfer } from '@/hooks/useVault'
+import { formatBranchLabel } from '@/utils/branch'
 
 interface TransferDialogProps {
   open: boolean
@@ -127,7 +128,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
                   <SelectItem value="vault">Vault</SelectItem>
                   {(branchesData?.data ?? []).map((branch) => (
                     <SelectItem key={branch.id} value={branch.id.toString()}>
-                      {branch.name_en ?? branch.name ?? 'N/A'}
+                      {formatBranchLabel(branch)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -153,7 +154,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
                 <SelectItem value="vault">Vault</SelectItem>
                 {(branchesData?.data ?? []).map((branch) => (
                   <SelectItem key={branch.id} value={branch.id.toString()}>
-                    {branch.name_en ?? branch.name ?? 'N/A'}
+                    {formatBranchLabel(branch)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateIncome, useBranches } from '@/hooks/useTransactions'
 import { useAuth } from '@/contexts/useAuth'
+import { formatBranchLabel } from '@/utils/branch'
 // Schema matching IncomeTransactionCreate from API
 const incomeSchema = z.object({
   branch_id: z.string().uuid('Please select a branch'),
@@ -121,7 +122,7 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
                       ) : (
                         branches?.map((branch) => (
                           <SelectItem key={branch.id} value={branch.id}>
-                            {branch.code} - {branch.name}
+                            {formatBranchLabel(branch)}
                           </SelectItem>
                         ))
                       )}

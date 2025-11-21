@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useBranches, useCreateTransfer } from '@/hooks/useTransactions'
+import { formatBranchLabel } from '@/utils/branch'
 
 // Schema matching TransferTransactionCreate from API
 const transferSchema = z.object({
@@ -129,7 +130,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                             value={branch.id}
                             disabled={branch.id === toBranchId}
                           >
-                            {branch.name} ({branch.code})
+                            {formatBranchLabel(branch)}
                           </SelectItem>
                         ))
                       )}
@@ -172,7 +173,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                             value={branch.id}
                             disabled={branch.id === fromBranchId}
                           >
-                            {branch.name} ({branch.code})
+                            {formatBranchLabel(branch)}
                           </SelectItem>
                         ))
                       )}

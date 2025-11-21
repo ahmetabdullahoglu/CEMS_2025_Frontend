@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import { useCreateExpense, useBranches } from '@/hooks/useTransactions'
 import { useAuth } from '@/contexts/useAuth'
+import { formatBranchLabel } from '@/utils/branch'
 import type { ExpenseCategory } from '@/types/transaction.types'
 
 // Schema matching ExpenseTransactionCreate from API
@@ -136,7 +137,7 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
                       ) : (
                         branches?.map((branch) => (
                           <SelectItem key={branch.id} value={branch.id}>
-                            {branch.code} - {branch.name}
+                            {formatBranchLabel(branch)}
                           </SelectItem>
                         ))
                       )}
