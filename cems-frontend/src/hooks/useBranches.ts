@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { branchApi } from '@/lib/api/branch.api'
 import type { BranchQueryParams, BranchCreate, BranchUpdate } from '@/types/branch.types'
 
-export const useBranches = (params?: BranchQueryParams) => {
+export const useBranches = (params?: BranchQueryParams, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['branches', params],
     queryFn: () => branchApi.getBranches(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: options?.enabled ?? true,
   })
 }
 

@@ -56,11 +56,16 @@ export interface ExchangeRate {
 // Note: ExchangeTransaction types are in transaction.types.ts
 // Keeping these for backward compatibility if used elsewhere
 export interface ExchangeTransactionRequest {
-  from_currency_code: string
-  to_currency_code: string
+  branch_id: string // UUID
+  commission_percentage?: number | string | null
+  customer_id?: string | null
+  description?: string | null
+  exchange_rate?: number | string | null
   from_amount: number | string
-  customer_name?: string
-  branch_id?: string // UUID
+  from_currency_id: string // UUID
+  to_currency_id: string // UUID
+  notes?: string | null
+  reference_number?: string | null
 }
 
 export interface ExchangeTransactionResponse {

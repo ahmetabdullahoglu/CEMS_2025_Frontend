@@ -22,9 +22,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
-import { useBranches } from '@/hooks/useBranches'
 import { useCreateVaultTransfer } from '@/hooks/useVault'
 import { formatBranchLabel } from '@/utils/branch'
+import { useBranchSelection } from '@/contexts/BranchContext'
 
 interface TransferDialogProps {
   open: boolean
@@ -48,7 +48,8 @@ type TransferFormData = z.infer<typeof transferSchema>
 
 export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
-  const { data: branchesData, isLoading: branchesLoading } = useBranches({ skip: 0, limit: 100 })
+  const { availableBranches: branches, currentBranchId, isLoading: branchesLoading } =
+    useBranchSelection()
   const { mutate: createTransfer, isPending } = useCreateVaultTransfer()
 
   const {
@@ -61,8 +62,8 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   } = useForm<TransferFormData>({
     resolver: zodResolver(transferSchema),
     defaultValues: {
-      from_branch_id: 'vault',
-      to_branch_id: 'vault',
+      from_branch_id: currentBranchId ?? 'vault',
+      to_branch_id: currentBranchId ?? 'vault',
       currency_code: '',
       amount: '',
       notes: '',
@@ -76,6 +77,13 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
       reset()
     }
   }, [open, reset])
+
+  useEffect(() => {
+    if (open && currentBranchId) {
+      setValue('from_branch_id', currentBranchId)
+      setValue('to_branch_id', currentBranchId)
+    }
+  }, [currentBranchId, open, setValue])
 
   const onSubmit = (data: TransferFormData) => {
     createTransfer(
@@ -126,7 +134,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="vault">Vault</SelectItem>
-                  {(branchesData?.data ?? []).map((branch) => (
+                  {branches.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id.toString()}>
                       {formatBranchLabel(branch)}
                     </SelectItem>
@@ -152,7 +160,7 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="vault">Vault</SelectItem>
-                {(branchesData?.data ?? []).map((branch) => (
+                {branches.map((branch) => (
                   <SelectItem key={branch.id} value={branch.id.toString()}>
                     {formatBranchLabel(branch)}
                   </SelectItem>

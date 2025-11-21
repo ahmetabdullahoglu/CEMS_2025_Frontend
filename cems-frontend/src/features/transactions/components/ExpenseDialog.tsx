@@ -31,8 +31,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
-import { useCreateExpense, useBranches } from '@/hooks/useTransactions'
-import { useAuth } from '@/contexts/useAuth'
+import { useCreateExpense } from '@/hooks/useTransactions'
+import { useBranchSelection } from '@/contexts/BranchContext'
 import { formatBranchLabel } from '@/utils/branch'
 import type { ExpenseCategory } from '@/types/transaction.types'
 
@@ -67,17 +67,14 @@ const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
 
 export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
-  const { data: branches, isLoading: branchesLoading } = useBranches()
+  const { availableBranches: branches, currentBranchId, isLoading: branchesLoading } =
+    useBranchSelection()
   const { mutate: createExpense, isPending: isCreating } = useCreateExpense()
-  const { user } = useAuth()
-
-  // Get user's primary branch as default
-  const defaultBranchId = user?.branches?.find(b => b.is_primary)?.id || user?.branches?.[0]?.id || ''
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      branch_id: defaultBranchId,
+      branch_id: currentBranchId ?? '',
       currency_id: '',
       amount: 0,
       expense_category: 'other',
@@ -94,6 +91,12 @@ export default function ExpenseDialog({ open, onOpenChange }: ExpenseDialogProps
       form.reset()
     }
   }, [open, form])
+
+  useEffect(() => {
+    if (open && currentBranchId) {
+      form.setValue('branch_id', currentBranchId)
+    }
+  }, [currentBranchId, form, open])
 
   const onSubmit = (data: ExpenseFormData) => {
     createExpense(data, {

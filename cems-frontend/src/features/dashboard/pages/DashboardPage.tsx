@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRightLeft,
   DollarSign,
@@ -20,8 +20,8 @@ import {
   useBranchComparison,
   useDashboardAlerts
 } from '@/hooks/useDashboard'
-import { useBranches } from '@/hooks/useBranches'
 import { useLowBalanceAlerts } from '@/hooks/useReports'
+import { useBranchSelection } from '@/contexts/BranchContext'
 import type {
   TransactionVolumePeriod,
   RevenueTrendPeriod,
@@ -39,16 +39,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Branch } from '@/types/branch.types'
+import { formatBranchLabel } from '@/utils/branch'
 
 export default function DashboardPage() {
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('all')
+  const { availableBranches: branchOptions, currentBranchId } = useBranchSelection()
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(currentBranchId ?? 'all')
+  const hasInitializedBranch = useRef(false)
 
   const branchFilter = selectedBranchId === 'all' ? undefined : selectedBranchId
 
   const { data, isLoading, isError, error } = useDashboard({ branch_id: branchFilter })
-  const { data: branchesData } = useBranches()
-  const branchOptions: Branch[] = branchesData?.data ?? []
+
+  useEffect(() => {
+    if (currentBranchId && !hasInitializedBranch.current) {
+      setSelectedBranchId(currentBranchId)
+      hasInitializedBranch.current = true
+    }
+  }, [currentBranchId])
 
   // Period filters state - Different periods for different endpoints
   const [volumePeriod, setVolumePeriod] = useState<TransactionVolumePeriod>('daily')
@@ -268,7 +275,7 @@ export default function DashboardPage() {
               <SelectItem value="all">All Branches</SelectItem>
               {branchOptions.map((branch) => (
                 <SelectItem key={branch.id} value={branch.id}>
-                  {branch.name_en ?? branch.name ?? branch.code}
+                  {formatBranchLabel(branch, branch.name, branch.id)}
                 </SelectItem>
               ))}
             </SelectContent>

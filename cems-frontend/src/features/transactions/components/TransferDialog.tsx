@@ -30,8 +30,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
-import { useBranches, useCreateTransfer } from '@/hooks/useTransactions'
+import { useCreateTransfer } from '@/hooks/useTransactions'
 import { formatBranchLabel } from '@/utils/branch'
+import { useBranchSelection } from '@/contexts/BranchContext'
 
 // Schema matching TransferTransactionCreate from API
 const transferSchema = z.object({
@@ -52,13 +53,14 @@ interface TransferDialogProps {
 
 export default function TransferDialog({ open, onOpenChange }: TransferDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
-  const { data: branches, isLoading: branchesLoading } = useBranches()
+  const { availableBranches: branches, currentBranchId, isLoading: branchesLoading } =
+    useBranchSelection()
   const { mutate: createTransfer, isPending: isCreating } = useCreateTransfer()
 
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferSchema),
     defaultValues: {
-      from_branch_id: '',
+      from_branch_id: currentBranchId ?? '',
       to_branch_id: '',
       currency_id: '',
       amount: 0,
@@ -76,6 +78,12 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
       form.reset()
     }
   }, [open, form])
+
+  useEffect(() => {
+    if (open && currentBranchId) {
+      form.setValue('from_branch_id', currentBranchId)
+    }
+  }, [currentBranchId, form, open])
 
   const onSubmit = (data: TransferFormData) => {
     if (data.from_branch_id === data.to_branch_id) {

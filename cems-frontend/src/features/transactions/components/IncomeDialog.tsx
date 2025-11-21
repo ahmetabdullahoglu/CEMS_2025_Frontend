@@ -30,8 +30,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
-import { useCreateIncome, useBranches } from '@/hooks/useTransactions'
-import { useAuth } from '@/contexts/useAuth'
+import { useCreateIncome } from '@/hooks/useTransactions'
+import { useBranchSelection } from '@/contexts/BranchContext'
 import { formatBranchLabel } from '@/utils/branch'
 // Schema matching IncomeTransactionCreate from API
 const incomeSchema = z.object({
@@ -53,17 +53,14 @@ interface IncomeDialogProps {
 
 export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
-  const { data: branches, isLoading: branchesLoading } = useBranches()
+  const { availableBranches: branches, currentBranchId, isLoading: branchesLoading } =
+    useBranchSelection()
   const { mutate: createIncome, isPending: isCreating } = useCreateIncome()
-  const { user } = useAuth()
-
-  // Get user's primary branch as default
-  const defaultBranchId = user?.branches?.find(b => b.is_primary)?.id || user?.branches?.[0]?.id || ''
 
   const form = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
     defaultValues: {
-      branch_id: defaultBranchId,
+      branch_id: currentBranchId ?? '',
       currency_id: '',
       amount: 0,
       income_category: 'other',
@@ -79,6 +76,12 @@ export default function IncomeDialog({ open, onOpenChange }: IncomeDialogProps) 
       form.reset()
     }
   }, [open, form])
+
+  useEffect(() => {
+    if (open && currentBranchId) {
+      form.setValue('branch_id', currentBranchId)
+    }
+  }, [currentBranchId, form, open])
 
   const onSubmit = (data: IncomeFormData) => {
     createIncome(data, {
