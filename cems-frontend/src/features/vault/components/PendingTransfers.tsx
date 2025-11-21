@@ -98,8 +98,10 @@ export default function PendingTransfers() {
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       pending: 'secondary',
       approved: 'default',
+      in_transit: 'outline',
       completed: 'outline',
       rejected: 'destructive',
+      cancelled: 'destructive',
     }
     return <Badge variant={variants[status] || 'outline'}>{status}</Badge>
   }
@@ -174,28 +176,31 @@ export default function PendingTransfers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(data.data ?? []).map((transfer) => (
-                  <TableRow key={transfer.id}>
+                {(data.data ?? []).map((transfer) => {
+                  const source =
+                    transfer.transfer_type === 'branch_to_vault'
+                      ? transfer.to_branch_code ?? 'Branch'
+                      : transfer.from_vault_code ?? 'Vault'
+                  const destination =
+                    transfer.transfer_type === 'vault_to_branch'
+                      ? transfer.to_branch_code ?? 'Branch'
+                      : transfer.to_vault_code ?? 'Vault'
+
+                  return (
+                    <TableRow key={transfer.id}>
                     <TableCell>
                       {transfer.created_at ? format(new Date(transfer.created_at), 'MMM dd, yyyy') : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm">
-                          {transfer.from_branch?.name || transfer.from_branch_name || 'Vault'}
-                        </span>
+                        <span className="text-sm">{source}</span>
                         <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-sm">
-                          {transfer.to_branch?.name || transfer.to_branch_name || 'Vault'}
-                        </span>
+                        <span className="text-sm">{destination}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <div>{transfer.currency_code ?? 'N/A'}</div>
-                        {transfer.currency_name && (
-                          <div className="text-xs text-muted-foreground">{transfer.currency_name}</div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
@@ -206,7 +211,7 @@ export default function PendingTransfers() {
                     </TableCell>
                     <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {transfer.created_by?.username || transfer.requested_by || '-'}
+                      {transfer.initiated_by_name || transfer.initiated_by || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -246,7 +251,8 @@ export default function PendingTransfers() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
 

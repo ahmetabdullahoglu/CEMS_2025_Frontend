@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
-import { useCreateVaultTransfer } from '@/hooks/useVault'
+import { useCreateVaultTransfer, useVaultBalances } from '@/hooks/useVault'
 import { formatBranchLabel } from '@/utils/branch'
 import { useBranchSelection } from '@/contexts/BranchContext'
 
@@ -31,23 +31,38 @@ interface TransferDialogProps {
   onClose: () => void
 }
 
-const transferSchema = z.object({
-  from_branch_id: z.string().optional(),
-  to_branch_id: z.string().optional(),
-  currency_code: z.string().min(1, 'Currency is required'),
-  amount: z
-    .string()
-    .min(1, 'Amount is required')
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: 'Amount must be a positive number',
-    }),
-  notes: z.string().optional(),
-})
+const transferSchema = z
+  .object({
+    from_branch_id: z.string().optional(),
+    to_branch_id: z.string().optional(),
+    currency_id: z.string().min(1, 'Currency is required'),
+    amount: z
+      .string()
+      .min(1, 'Amount is required')
+      .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+        message: 'Amount must be a positive number',
+      }),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (values) => {
+      const fromIsBranch = values.from_branch_id && values.from_branch_id !== 'vault'
+      const toIsBranch = values.to_branch_id && values.to_branch_id !== 'vault'
+
+      // Only one side of the transfer can be a branch
+      return fromIsBranch !== toIsBranch
+    },
+    {
+      path: ['to_branch_id'],
+      message: 'Please choose a valid transfer direction',
+    }
+  )
 
 type TransferFormData = z.infer<typeof transferSchema>
 
 export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
+  const { data: vaultDetails } = useVaultBalances()
   const { availableBranches: branches, currentBranchId, isLoading: branchesLoading } =
     useBranchSelection()
   const { mutate: createTransfer, isPending } = useCreateVaultTransfer()
@@ -64,13 +79,13 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
     defaultValues: {
       from_branch_id: currentBranchId ?? 'vault',
       to_branch_id: currentBranchId ?? 'vault',
-      currency_code: '',
+      currency_id: '',
       amount: '',
       notes: '',
     },
   })
 
-  const currencyCode = watch('currency_code')
+  const currencyId = watch('currency_id')
 
   useEffect(() => {
     if (!open) {
@@ -86,21 +101,59 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
   }, [currentBranchId, open, setValue])
 
   const onSubmit = (data: TransferFormData) => {
-    createTransfer(
-      {
-        from_branch_id: data.from_branch_id === 'vault' ? null : data.from_branch_id || null,
-        to_branch_id: data.to_branch_id === 'vault' ? null : data.to_branch_id || null,
-        currency_code: data.currency_code,
-        amount: Number(data.amount),
-        notes: data.notes || null,
-      },
-      {
-        onSuccess: () => {
-          onClose()
-          reset()
+    const vaultId = vaultDetails?.id
+
+    if (!vaultId) {
+      return
+    }
+
+    const fromBranch = data.from_branch_id === 'vault' ? null : data.from_branch_id || null
+    const toBranch = data.to_branch_id === 'vault' ? null : data.to_branch_id || null
+    const amount = data.amount
+
+    if (fromBranch && toBranch) {
+      // Unsupported combination
+      return
+    }
+
+    if (!fromBranch && toBranch) {
+      createTransfer(
+        {
+          transfer_type: 'vault_to_branch',
+          vault_id: vaultId,
+          branch_id: toBranch,
+          currency_id: data.currency_id,
+          amount,
+          notes: data.notes || null,
         },
-      }
-    )
+        {
+          onSuccess: () => {
+            onClose()
+            reset()
+          },
+        }
+      )
+      return
+    }
+
+    if (fromBranch && !toBranch) {
+      createTransfer(
+        {
+          transfer_type: 'branch_to_vault',
+          branch_id: fromBranch,
+          vault_id: vaultId,
+          currency_id: data.currency_id,
+          amount,
+          notes: data.notes || null,
+        },
+        {
+          onSuccess: () => {
+            onClose()
+            reset()
+          },
+        }
+      )
+    }
   }
 
   const handleClose = () => {
@@ -174,8 +227,8 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
               Currency <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={currencyCode}
-              onValueChange={(value) => setValue('currency_code', value)}
+              value={currencyId}
+              onValueChange={(value) => setValue('currency_id', value)}
               disabled={isPending || currenciesLoading}
             >
               <SelectTrigger>
@@ -183,14 +236,14 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
               </SelectTrigger>
               <SelectContent>
                 {currencies?.map((currency) => (
-                  <SelectItem key={currency.code} value={currency.code}>
+                  <SelectItem key={currency.id} value={currency.id}>
                     {currency.code} - {currency.name_en}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.currency_code && (
-              <p className="text-sm text-red-500">{errors.currency_code.message}</p>
+            {errors.currency_id && (
+              <p className="text-sm text-red-500">{errors.currency_id.message}</p>
             )}
           </div>
 
