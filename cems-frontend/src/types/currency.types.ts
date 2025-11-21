@@ -47,10 +47,20 @@ export interface CurrencyUpdate {
 }
 
 export interface ExchangeRate {
-  from_currency: string
-  to_currency: string
+  id: string
+  from_currency_id: string // UUID
+  to_currency_id: string // UUID
+  from_currency?: Currency
+  to_currency?: Currency
   rate: string // Decimal as string
+  buy_rate?: string | null
+  sell_rate?: string | null
+  effective_from?: string
+  effective_to?: string | null
+  is_current?: boolean
+  created_at: string // ISO datetime
   updated_at: string // ISO datetime
+  notes?: string | null
 }
 
 // Note: ExchangeTransaction types are in transaction.types.ts
@@ -110,18 +120,10 @@ export interface UpdateRateResponse {
   message: string
 }
 
-export interface CurrencyRateHistoryEntry {
-  date: string
-  buy_rate: string
-  sell_rate: string
-  created_at: string
-}
-
 export interface CurrencyRateHistoryResponse {
-  currency_id: string
-  currency_code: string
-  rates: CurrencyRateHistoryEntry[]
+  data: ExchangeRate[]
   total: number
+  success?: boolean
 }
 
 // Backward compatibility aliases
