@@ -178,19 +178,19 @@ export interface TransactionListResponse {
 // Transaction Filters and Query Params
 export interface TransactionFilters {
   transaction_type?: TransactionType
-  status?: TransactionStatus
   branch_id?: string // UUID
   customer_id?: string // UUID
-  from_date?: string // ISO date (renamed from date_from to match API)
-  to_date?: string // ISO date (renamed from date_to to match API)
-  search?: string
+  status_filter?: TransactionStatus
+  currency_id?: string // UUID
+  amount_min?: number
+  amount_max?: number
+  date_from?: string // ISO date
+  date_to?: string // ISO date
 }
 
 export interface TransactionQueryParams extends TransactionFilters {
-  skip?: number // Offset for pagination (replaces page)
-  limit?: number // Number of items per page (replaces page_size)
-  sort_by?: string
-  sort_order?: 'asc' | 'desc'
+  skip?: number // Offset for pagination
+  limit?: number // Number of items per page
 }
 
 // Transaction Cancel Request

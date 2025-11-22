@@ -27,12 +27,27 @@ const detailEndpointMap: Partial<Record<TransactionType, string>> = {
   transfer: '/transactions/transfer',
 }
 
-const withTypeFilters = (params: TransactionQueryParams = {}, type?: TransactionType) => {
-  if (!type) return params
+const allowedParams = [
+  'transaction_type',
+  'branch_id',
+  'customer_id',
+  'status_filter',
+  'currency_id',
+  'amount_min',
+  'amount_max',
+  'date_from',
+  'date_to',
+  'skip',
+  'limit',
+] as const
 
-  const rest: TransactionQueryParams = { ...params }
-  delete rest.transaction_type
-  return rest
+const sanitizeParams = (params: TransactionQueryParams = {}) => {
+  return Object.fromEntries(
+    Object.entries(params).filter(([key, value]) =>
+      // @ts-expect-error narrow keys against whitelist
+      allowedParams.includes(key) && value !== undefined && value !== null && value !== ''
+    )
+  ) as TransactionQueryParams
 }
 
 export const transactionApi = {
@@ -73,7 +88,9 @@ export const transactionApi = {
 
   // Get transactions list with filters and pagination
   getTransactions: async (params: TransactionQueryParams): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>('/transactions', { params })
+    const response = await apiClient.get<TransactionListResponse>('/transactions', {
+      params: sanitizeParams(params),
+    })
     return response.data
   },
 
@@ -82,10 +99,7 @@ export const transactionApi = {
     type: TransactionType,
     params: TransactionQueryParams = {}
   ): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>(`/transactions/${type}`, {
-      params: withTypeFilters(params, type),
-    })
-    return response.data
+    return transactionApi.getTransactions({ ...params, transaction_type: type })
   },
 
   getIncomeTransactions: async (
@@ -116,10 +130,11 @@ export const transactionApi = {
   getPendingApprovalTransactions: async (
     params: TransactionQueryParams = {}
   ): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>('/transactions/transfer', {
-      params: { ...withTypeFilters(params, 'transfer'), status: 'pending' },
+    return transactionApi.getTransactions({
+      ...params,
+      transaction_type: 'transfer',
+      status_filter: 'pending',
     })
-    return response.data
   },
 
   // Get transaction details by ID

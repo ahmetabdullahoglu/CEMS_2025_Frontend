@@ -1,8 +1,11 @@
-import { Search, Filter, X } from 'lucide-react'
+import { Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import type { TransactionFilters } from '@/types/transaction.types'
+import { useBranchSelection } from '@/contexts/BranchContext'
+import { useActiveCurrencies } from '@/hooks/useCurrencies'
+import { formatBranchLabel } from '@/utils/branch'
 
 interface TransactionFiltersProps {
   filters: TransactionFilters
@@ -15,10 +18,13 @@ export default function TransactionFiltersComponent({
   onFiltersChange,
   onReset,
 }: TransactionFiltersProps) {
-  const handleFilterChange = (key: keyof TransactionFilters, value: string) => {
+  const { availableBranches, currentBranchId } = useBranchSelection()
+  const { data: currencies } = useActiveCurrencies()
+
+  const handleFilterChange = (key: keyof TransactionFilters, value: string | number | undefined) => {
     onFiltersChange({
       ...filters,
-      [key]: value || undefined,
+      [key]: value === '' ? undefined : value,
     })
   }
 
@@ -39,20 +45,6 @@ export default function TransactionFiltersComponent({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          {/* Search */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Customer, ID..."
-                value={filters.search || ''}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
           {/* Type */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Type</label>
@@ -73,8 +65,8 @@ export default function TransactionFiltersComponent({
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
             <select
-              value={filters.status || ''}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              value={filters.status_filter || ''}
+              onChange={(e) => handleFilterChange('status_filter', e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">All Status</option>
@@ -84,13 +76,57 @@ export default function TransactionFiltersComponent({
             </select>
           </div>
 
+          {/* Branch */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Branch</label>
+            <select
+              value={filters.branch_id || ''}
+              onChange={(e) => handleFilterChange('branch_id', e.target.value || currentBranchId || '')}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">All Branches</option>
+              {availableBranches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {formatBranchLabel({ id: branch.id, code: branch.code ?? '', name: branch.name ?? branch.code ?? '' })}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Currency */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Currency</label>
+            <select
+              value={filters.currency_id || ''}
+              onChange={(e) => handleFilterChange('currency_id', e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">All Currencies</option>
+              {currencies?.data?.map((currency) => (
+                <option key={currency.id} value={currency.id}>
+                  {currency.code} - {currency.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Customer */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Customer ID</label>
+            <Input
+              placeholder="Customer UUID"
+              value={filters.customer_id || ''}
+              onChange={(e) => handleFilterChange('customer_id', e.target.value)}
+            />
+          </div>
+
           {/* Date From */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Date From</label>
             <Input
               type="date"
-              value={filters.from_date || ''}
-              onChange={(e) => handleFilterChange('from_date', e.target.value)}
+              value={filters.date_from || ''}
+              onChange={(e) => handleFilterChange('date_from', e.target.value)}
             />
           </div>
 
@@ -99,8 +135,33 @@ export default function TransactionFiltersComponent({
             <label className="text-sm font-medium">Date To</label>
             <Input
               type="date"
-              value={filters.to_date || ''}
-              onChange={(e) => handleFilterChange('to_date', e.target.value)}
+              value={filters.date_to || ''}
+              onChange={(e) => handleFilterChange('date_to', e.target.value)}
+            />
+          </div>
+
+          {/* Amount Range */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Amount Min</label>
+            <Input
+              type="number"
+              min={0}
+              value={filters.amount_min ?? ''}
+              onChange={(e) =>
+                handleFilterChange('amount_min', e.target.value ? Number(e.target.value) : '')
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Amount Max</label>
+            <Input
+              type="number"
+              min={0}
+              value={filters.amount_max ?? ''}
+              onChange={(e) =>
+                handleFilterChange('amount_max', e.target.value ? Number(e.target.value) : '')
+              }
             />
           </div>
         </div>

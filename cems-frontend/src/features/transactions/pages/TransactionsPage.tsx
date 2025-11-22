@@ -56,14 +56,14 @@ const ErrorCard = ({ title, description }: { title: string; description: string 
 export default function TransactionsPage() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
-  const [sortBy, setSortBy] = useState<string>('created_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [activeTab, setActiveTab] = useState<TransactionsTab>('all')
   const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false)
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
+  const [sortBy, setSortBy] = useState<string>('created_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedTransaction, setSelectedTransaction] = useState<{
     id: string
     type?: TransactionType
@@ -74,10 +74,8 @@ export default function TransactionsPage() {
     () => ({
       skip: (page - 1) * pageSize,
       limit: pageSize,
-      sort_by: sortBy,
-      sort_order: sortOrder,
     }),
-    [page, pageSize, sortBy, sortOrder]
+    [page, pageSize]
   )
 
   const filtersWithoutType = useMemo(() => {
