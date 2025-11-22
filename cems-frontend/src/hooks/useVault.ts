@@ -107,7 +107,7 @@ export const useCancelVaultTransfer = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       vaultApi.cancelVaultTransfer(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })

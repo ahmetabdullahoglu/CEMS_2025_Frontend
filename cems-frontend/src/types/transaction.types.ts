@@ -195,7 +195,7 @@ export interface TransactionQueryParams extends TransactionFilters {
 
 // Transaction Cancel Request
 export interface TransactionCancelRequest {
-  reason: string
+  reason?: string
 }
 
 // Transaction Summary/Stats

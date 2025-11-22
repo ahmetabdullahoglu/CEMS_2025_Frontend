@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { Check, X, ArrowRight } from 'lucide-react'
+import { Check, X, ArrowRight, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -27,6 +27,7 @@ import {
   useApproveVaultTransfer,
   useCompleteVaultTransfer,
   useRejectVaultTransfer,
+  useCancelVaultTransfer,
 } from '@/hooks/useVault'
 
 export default function PendingTransfers() {
@@ -36,7 +37,7 @@ export default function PendingTransfers() {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [actionType, setActionType] = useState<'approve' | 'reject'>('approve')
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'cancel'>('approve')
   const [selectedTransferId, setSelectedTransferId] = useState<string>('')
   const [notes, setNotes] = useState('')
 
@@ -49,6 +50,7 @@ export default function PendingTransfers() {
   const { mutate: approve, isPending: isApproving } = useApproveVaultTransfer()
   const { mutate: complete, isPending: isCompleting } = useCompleteVaultTransfer()
   const { mutate: reject, isPending: isRejecting } = useRejectVaultTransfer()
+  const { mutate: cancel, isPending: isCancelling } = useCancelVaultTransfer()
 
   const handleApprove = (id: string) => {
     setActionType('approve')
@@ -59,6 +61,13 @@ export default function PendingTransfers() {
 
   const handleReject = (id: string) => {
     setActionType('reject')
+    setSelectedTransferId(id)
+    setNotes('')
+    setDialogOpen(true)
+  }
+
+  const handleCancel = (id: string) => {
+    setActionType('cancel')
     setSelectedTransferId(id)
     setNotes('')
     setDialogOpen(true)
@@ -75,7 +84,10 @@ export default function PendingTransfers() {
           },
         }
       )
-    } else {
+      return
+    }
+
+    if (actionType === 'reject') {
       reject(
         { id: selectedTransferId, notes: notes.trim() || undefined },
         {
@@ -85,7 +97,18 @@ export default function PendingTransfers() {
           },
         }
       )
+      return
     }
+
+    cancel(
+      { id: selectedTransferId, reason: notes.trim() || undefined },
+      {
+        onSuccess: () => {
+          setDialogOpen(false)
+          setNotes('')
+        },
+      }
+    )
   }
 
   const handleComplete = (id: string) => {
@@ -221,7 +244,7 @@ export default function PendingTransfers() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleApprove(transfer.id)}
-                              disabled={isApproving || isCompleting || isRejecting}
+                              disabled={isApproving || isCompleting || isRejecting || isCancelling}
                             >
                               <Check className="w-4 h-4 mr-1" />
                               Approve
@@ -230,7 +253,7 @@ export default function PendingTransfers() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleReject(transfer.id)}
-                              disabled={isApproving || isCompleting || isRejecting}
+                              disabled={isApproving || isCompleting || isRejecting || isCancelling}
                             >
                               <X className="w-4 h-4 mr-1" />
                               Reject
@@ -242,10 +265,21 @@ export default function PendingTransfers() {
                             size="sm"
                             variant="default"
                             onClick={() => handleComplete(transfer.id)}
-                            disabled={isApproving || isCompleting || isRejecting}
+                            disabled={isApproving || isCompleting || isRejecting || isCancelling}
                           >
                             <Check className="w-4 h-4 mr-1" />
                             Complete
+                          </Button>
+                        )}
+                        {['pending', 'approved'].includes(transfer.status ?? '') && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleCancel(transfer.id)}
+                            disabled={isApproving || isCompleting || isRejecting || isCancelling}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Cancel
                           </Button>
                         )}
                       </div>
@@ -307,12 +341,18 @@ export default function PendingTransfers() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {actionType === 'approve' ? 'الموافقة على التحويل' : 'رفض التحويل'}
+              {actionType === 'approve'
+                ? 'الموافقة على التحويل'
+                : actionType === 'reject'
+                  ? 'رفض التحويل'
+                  : 'إلغاء التحويل'}
             </DialogTitle>
             <DialogDescription>
               {actionType === 'approve'
                 ? 'يمكنك إضافة ملاحظات للموافقة (اختياري).'
-                : 'يمكنك إضافة سبب الرفض (اختياري).'}
+                : actionType === 'reject'
+                  ? 'يمكنك إضافة سبب الرفض (اختياري).'
+                  : 'يمكنك إضافة سبب الإلغاء (اختياري).'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -323,7 +363,9 @@ export default function PendingTransfers() {
                 placeholder={
                   actionType === 'approve'
                     ? 'مثال: تمت الموافقة بعد التحقق من الأرصدة'
-                    : 'مثال: رصيد غير كافي في الفرع'
+                    : actionType === 'reject'
+                      ? 'مثال: رصيد غير كافي في الفرع'
+                      : 'مثال: تم الإلغاء بناءً على طلب المسؤول'
                 }
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -340,26 +382,31 @@ export default function PendingTransfers() {
             <Button
               variant="outline"
               onClick={() => setDialogOpen(false)}
-              disabled={isApproving || isRejecting}
+              disabled={isApproving || isRejecting || isCancelling}
             >
               إلغاء
             </Button>
             <Button
               onClick={handleConfirmAction}
-              disabled={isApproving || isRejecting}
-              variant={actionType === 'approve' ? 'default' : 'destructive'}
+              disabled={isApproving || isRejecting || isCancelling}
+              variant={actionType === 'approve' ? 'default' : actionType === 'reject' ? 'destructive' : 'secondary'}
             >
-              {isApproving || isRejecting ? (
+              {isApproving || isRejecting || isCancelling ? (
                 'جاري المعالجة...'
               ) : actionType === 'approve' ? (
                 <>
                   <Check className="w-4 h-4 mr-2" />
                   تأكيد الموافقة
                 </>
-              ) : (
+              ) : actionType === 'reject' ? (
                 <>
                   <X className="w-4 h-4 mr-2" />
                   تأكيد الرفض
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  تأكيد الإلغاء
                 </>
               )}
             </Button>

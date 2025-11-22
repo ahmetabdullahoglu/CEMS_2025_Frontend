@@ -11,7 +11,12 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
+import {
+  useTransactionDetails,
+  useCancelTransaction,
+  useApproveTransaction,
+  useReceiveTransfer,
+} from '@/hooks/useTransactions'
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
 import { formatBranchLabel } from '@/utils/branch'
@@ -265,6 +270,7 @@ export default function TransactionDetailsDialog({
 
   const { mutate: cancelTransaction, isPending: isCancelling } = useCancelTransaction()
   const { mutate: approveTransaction, isPending: isApproving } = useApproveTransaction()
+  const { mutate: receiveTransfer, isPending: isReceiving } = useReceiveTransfer()
 
   useEffect(() => {
     if (!open) {
@@ -293,6 +299,24 @@ export default function TransactionDetailsDialog({
     if (!transactionId) return
 
     setActionError(null)
+    if (transaction?.transaction_type === 'transfer') {
+      receiveTransfer(
+        { id: transactionId },
+        {
+          onSuccess: () => {
+            setShowApproveConfirm(false)
+            setActionError(null)
+            onOpenChange(false)
+          },
+          onError: (err) => {
+            const message = err instanceof Error ? err.message : 'Failed to complete transfer receipt'
+            setActionError(message)
+          },
+        }
+      )
+      return
+    }
+
     approveTransaction(transactionId, {
       onSuccess: () => {
         setShowApproveConfirm(false)
@@ -355,20 +379,21 @@ export default function TransactionDetailsDialog({
           <DialogFooter className="flex-col sm:flex-row gap-2">
             {!showCancelConfirm && !showApproveConfirm ? (
               <>
-                {transaction.status === 'pending' && transaction.transaction_type === 'expense' && (
-                  <Button
-                    onClick={() => {
-                      setActionError(null)
-                      setShowCancelConfirm(false)
-                      setShowApproveConfirm(true)
-                    }}
-                    className="w-full sm:w-auto"
-                    disabled={isApproving}
-                  >
-                    Approve Transaction
-                  </Button>
-                )}
-                {transaction.status === 'pending' && (
+                {transaction.status === 'pending' &&
+                  (transaction.transaction_type === 'expense' || transaction.transaction_type === 'transfer') && (
+                    <Button
+                      onClick={() => {
+                        setActionError(null)
+                        setShowCancelConfirm(false)
+                        setShowApproveConfirm(true)
+                      }}
+                      className="w-full sm:w-auto"
+                      disabled={isApproving || isReceiving}
+                    >
+                      {transaction.transaction_type === 'transfer' ? 'Complete Receipt' : 'Approve Transaction'}
+                    </Button>
+                  )}
+                {transaction.status !== 'cancelled' && (
                   <Button
                     variant="destructive"
                     onClick={() => {
@@ -400,7 +425,11 @@ export default function TransactionDetailsDialog({
                 )}
                 <div className="flex items-center gap-2 text-sm text-green-600 w-full sm:flex-1">
                   <AlertCircle className="h-4 w-4" />
-                  <span>Are you sure you want to approve this transaction?</span>
+                  <span>
+                    {transaction?.transaction_type === 'transfer'
+                      ? 'Are you sure you want to mark this transfer as received?'
+                      : 'Are you sure you want to approve this transaction?'}
+                  </span>
                 </div>
                 <Button
                   variant="outline"
@@ -408,18 +437,18 @@ export default function TransactionDetailsDialog({
                     setActionError(null)
                     setShowApproveConfirm(false)
                   }}
-                  disabled={isApproving}
+                  disabled={isApproving || isReceiving}
                   className="w-full sm:w-auto"
                 >
                   No, Go Back
                 </Button>
                 <Button
                   onClick={handleApprove}
-                  disabled={isApproving}
+                  disabled={isApproving || isReceiving}
                   className="w-full sm:w-auto"
                 >
-                  {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Yes, Approve
+                  {(isApproving || isReceiving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {transaction?.transaction_type === 'transfer' ? 'Yes, Mark Received' : 'Yes, Approve'}
                 </Button>
               </>
             ) : (

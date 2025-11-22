@@ -117,9 +117,9 @@ export const vaultApi = {
   },
 
   // Cancel vault transfer
-  cancelVaultTransfer: async (id: string, reason: string): Promise<VaultTransferResponse> => {
+  cancelVaultTransfer: async (id: string, reason?: string): Promise<VaultTransferResponse> => {
     const response = await apiClient.delete<VaultTransferResponse>(`/vault/transfer/${id}`, {
-      params: { reason },
+      params: reason ? { reason } : undefined,
     })
     return response.data
   },

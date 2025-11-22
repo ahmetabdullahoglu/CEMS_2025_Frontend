@@ -140,8 +140,8 @@ export const useCancelTransaction = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      transactionApi.cancelTransaction(id, { reason }),
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      transactionApi.cancelTransaction(id, reason ? { reason } : undefined),
     onSuccess: (_, { id }) => {
       // Invalidate both the transaction details and the transactions list
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })

@@ -149,11 +149,13 @@ export const transactionApi = {
   // Cancel transaction
   cancelTransaction: async (
     id: string,
-    payload: TransactionCancelRequest
+    payload?: TransactionCancelRequest
   ): Promise<CancelTransactionResponse> => {
+    const body = payload?.reason ? { reason: payload.reason } : undefined
+
     const response = await apiClient.post<CancelTransactionResponse>(
       `/transactions/${id}/cancel`,
-      payload
+      body ?? {}
     )
     return response.data
   },
