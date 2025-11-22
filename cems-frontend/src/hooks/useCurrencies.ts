@@ -5,6 +5,7 @@ import type {
   CurrencyQueryParams,
   UpdateRateRequest,
 } from '@/types/currency.types'
+import { isSameCurrency, normalizeCurrencyIdentifier } from '@/utils/currency'
 
 export const useCurrencies = (params?: CurrencyQueryParams) => {
   return useQuery({
@@ -22,11 +23,14 @@ export const useActiveCurrencies = () => {
   })
 }
 
-export const useExchangeRate = (fromCode?: string, toCode?: string) => {
+export const useExchangeRate = (fromCurrency?: string, toCurrency?: string) => {
+  const from = fromCurrency ? normalizeCurrencyIdentifier(fromCurrency) : undefined
+  const to = toCurrency ? normalizeCurrencyIdentifier(toCurrency) : undefined
+
   return useQuery({
-    queryKey: ['exchangeRate', fromCode, toCode],
-    queryFn: () => currencyApi.getExchangeRate(fromCode!, toCode!),
-    enabled: !!fromCode && !!toCode && fromCode !== toCode,
+    queryKey: ['exchangeRate', from, to],
+    queryFn: () => currencyApi.getExchangeRate(from!, to!),
+    enabled: !!from && !!to && !isSameCurrency(from, to),
     staleTime: 1000 * 60 * 2, // 2 minutes - exchange rates update frequently
   })
 }
@@ -56,11 +60,20 @@ export const useUpdateCurrencyRates = () => {
   })
 }
 
-export const useCurrencyRateHistory = (currencyId?: string, enabled = true) => {
+export const useCurrencyRateHistory = (
+  fromCurrency?: string,
+  toCurrency?: string,
+  enabled = true
+) => {
+  const from = fromCurrency ? normalizeCurrencyIdentifier(fromCurrency) : undefined
+  const to = toCurrency ? normalizeCurrencyIdentifier(toCurrency) : undefined
+
+  const hasPair = !!from && !!to && !isSameCurrency(from, to)
+
   return useQuery({
-    queryKey: ['currencies', currencyId, 'history'],
-    queryFn: () => currencyApi.getRateHistory(currencyId!, { limit: 30 }),
-    enabled: enabled && Boolean(currencyId),
+    queryKey: ['currencies', from, to, 'history'],
+    queryFn: () => currencyApi.getRateHistory(from!, to!, { limit: 30 }),
+    enabled: enabled && hasPair,
     staleTime: 1000 * 60 * 5,
   })
 }

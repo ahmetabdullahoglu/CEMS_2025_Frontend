@@ -112,12 +112,12 @@ export const transactionApi = {
     return transactionApi.getTransactionsByType('transfer', params)
   },
 
-  // Pending approvals helper (filters expense endpoint to pending status)
+  // Pending transfer approvals helper (awaiting receipt)
   getPendingApprovalTransactions: async (
     params: TransactionQueryParams = {}
   ): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>('/transactions/expense', {
-      params: { ...withTypeFilters(params, 'expense'), status: 'pending' },
+    const response = await apiClient.get<TransactionListResponse>('/transactions/transfer', {
+      params: { ...withTypeFilters(params, 'transfer'), status: 'pending' },
     })
     return response.data
   },

@@ -10,6 +10,8 @@ import type {
   UpdateRateResponse,
   CurrencyRateHistoryResponse,
 } from '@/types/currency.types'
+import type { ExchangeCalculationResponse } from '@/types/transaction.types'
+import { normalizeCurrencyIdentifier } from '@/utils/currency'
 
 export const currencyApi = {
   // Get all currencies with pagination
@@ -25,10 +27,13 @@ export const currencyApi = {
   },
 
   // Get exchange rate between two currencies
-  getExchangeRate: async (fromCode: string, toCode: string): Promise<ExchangeRate> => {
-    const response = await apiClient.get<ExchangeRate>(`/currencies/exchange-rate`, {
-      params: { from: fromCode, to: toCode },
-    })
+  getExchangeRate: async (fromCurrency: string, toCurrency: string): Promise<ExchangeRate> => {
+    const from = normalizeCurrencyIdentifier(fromCurrency)
+    const to = normalizeCurrencyIdentifier(toCurrency)
+
+    const response = await apiClient.get<ExchangeRate>(
+      `/currencies/rates/${encodeURIComponent(from)}/${encodeURIComponent(to)}`
+    )
     return response.data
   },
 
@@ -54,14 +59,41 @@ export const currencyApi = {
 
   // Get exchange rate history for a currency
   getRateHistory: async (
-    currencyId: string,
+    fromCurrency: string,
+    toCurrency: string,
     params?: {
       start_date?: string
       end_date?: string
       limit?: number
     }
   ): Promise<CurrencyRateHistoryResponse> => {
-    const response = await apiClient.get<CurrencyRateHistoryResponse>(`/currencies/${currencyId}/rates`, { params })
+    const from = normalizeCurrencyIdentifier(fromCurrency)
+    const to = normalizeCurrencyIdentifier(toCurrency)
+
+    const response = await apiClient.get<CurrencyRateHistoryResponse>(
+      `/currencies/rates/history/${encodeURIComponent(from)}/${encodeURIComponent(to)}`,
+      { params }
+    )
+    return response.data
+  },
+
+  // Calculate currency exchange using identifiers (UUID or code)
+  calculateExchange: async (
+    params: {
+      amount: number | string
+      from_currency: string
+      to_currency: string
+      apply_commission?: boolean
+    }
+  ): Promise<ExchangeCalculationResponse> => {
+    const response = await apiClient.get<ExchangeCalculationResponse>('/currencies/calculate', {
+      params: {
+        amount: params.amount,
+        from_currency: normalizeCurrencyIdentifier(params.from_currency),
+        to_currency: normalizeCurrencyIdentifier(params.to_currency),
+        apply_commission: params.apply_commission,
+      },
+    })
     return response.data
   },
 }

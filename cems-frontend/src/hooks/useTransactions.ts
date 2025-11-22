@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { transactionApi } from '@/lib/api/transaction.api'
+import { branchApi } from '@/lib/api/branch.api'
 import type {
   TransactionQueryParams,
   IncomeTransactionRequest,
@@ -10,7 +11,9 @@ import type {
   ExchangeCalculationResponse,
   TransactionSummaryQueryParams,
   TransferReceiptRequest,
+  TransferTransactionResponse,
 } from '@/types/transaction.types'
+import type { Branch, BranchListResponse } from '@/types/branch.types'
 
 /**
  * React Query hook for transactions list with filters and pagination
@@ -52,6 +55,13 @@ export const usePendingApprovalTransactions = (
   return useQuery({
     queryKey: ['transactions', 'pending-approvals', params],
     queryFn: () => transactionApi.getPendingApprovalTransactions(params),
+    select: (response) => ({
+      ...response,
+      transactions: (response?.transactions || []).filter(
+        (tx): tx is TransferTransactionResponse =>
+          tx.transaction_type === 'transfer' && (tx as TransferTransactionResponse).is_pending_receipt
+      ),
+    }),
     enabled,
     staleTime: 1000 * 60 * 2,
   })
@@ -61,10 +71,11 @@ export const usePendingApprovalTransactions = (
  * Hook for getting branches list
  */
 export const useBranches = () => {
-  return useQuery({
+  return useQuery<BranchListResponse, Error, Branch[]>({
     queryKey: ['branches'],
-    queryFn: transactionApi.getBranches,
+    queryFn: branchApi.getBranches,
     staleTime: 1000 * 60 * 10, // 10 minutes
+    select: (response) => response?.data ?? [],
   })
 }
 
@@ -135,6 +146,7 @@ export const useCancelTransaction = () => {
       // Invalidate both the transaction details and the transactions list
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions', 'pending-approvals'] })
     },
   })
 }
@@ -171,6 +183,7 @@ export const useReceiveTransfer = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions', 'pending-approvals'] })
     },
   })
 }

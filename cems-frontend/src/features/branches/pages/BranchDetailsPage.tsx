@@ -26,6 +26,7 @@ import type {
   ExpenseTransactionResponse,
   TransferTransactionResponse,
 } from '@/types/transaction.types'
+import PendingTransferApprovals from '@/features/transactions/components/PendingTransferApprovals'
 
 // Helper function to get amount from any transaction type with proper type safety
 const getTransactionAmount = (transaction: AnyTransactionResponse): string | undefined => {
@@ -409,14 +410,17 @@ export default function BranchDetailsPage() {
         </TabsContent>
 
         <TabsContent value="transactions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Branch Transactions</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                All transactions for this branch
-              </p>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-4">
+            <PendingTransferApprovals branchId={branchId} />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Branch Transactions</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  All transactions for this branch
+                </p>
+              </CardHeader>
+              <CardContent>
               {transactionsLoading && (
                 <div className="text-center py-8 text-muted-foreground">
                   Loading transactions...
@@ -512,8 +516,9 @@ export default function BranchDetailsPage() {
                   })()}
                 </>
               )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

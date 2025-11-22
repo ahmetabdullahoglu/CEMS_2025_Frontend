@@ -9,6 +9,7 @@ import { LazyLoadWrapper } from './LazyLoadWrapper'
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
 const TransactionsPage = lazy(() => import('@/features/transactions/pages/TransactionsPage'))
+const PendingApprovalsPage = lazy(() => import('@/features/transactions/pages/PendingApprovalsPage'))
 const CustomersPage = lazy(() => import('@/features/customers/pages/CustomersPage'))
 const CustomerDetailsPage = lazy(() => import('@/features/customers/pages/CustomerDetailsPage'))
 const CurrenciesPage = lazy(() => import('@/features/currencies/pages/CurrenciesPage'))
@@ -75,6 +76,14 @@ export const router = createBrowserRouter([
         element: (
           <LazyLoadWrapper>
             <TransactionsPage />
+          </LazyLoadWrapper>
+        ),
+      },
+      {
+        path: 'transactions/pending-approvals',
+        element: (
+          <LazyLoadWrapper>
+            <PendingApprovalsPage />
           </LazyLoadWrapper>
         ),
       },

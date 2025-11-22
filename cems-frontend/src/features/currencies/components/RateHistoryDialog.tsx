@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useCurrencyRateHistory } from '@/hooks/useCurrencies'
+import { useActiveCurrencies, useCurrencyRateHistory } from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
 
 interface RateHistoryDialogProps {
@@ -17,7 +17,15 @@ interface RateHistoryDialogProps {
 }
 
 export default function RateHistoryDialog({ currency, open, onClose }: RateHistoryDialogProps) {
-  const { data, isLoading } = useCurrencyRateHistory(currency?.id, open)
+  const { data: activeCurrencies } = useActiveCurrencies()
+  const baseCurrency = activeCurrencies?.find((entry) => entry.is_base_currency)
+  const shouldSkipHistory = !currency || currency.is_base_currency || !baseCurrency
+
+  const { data, isLoading } = useCurrencyRateHistory(
+    currency?.id,
+    shouldSkipHistory ? undefined : baseCurrency?.id,
+    open && !shouldSkipHistory
+  )
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -29,14 +37,21 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
         </DialogHeader>
         {!currency ? (
           <div className="text-center py-8 text-muted-foreground">Select a currency to view history.</div>
+        ) : currency.is_base_currency ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Base currency does not have exchange history against itself.
+          </div>
+        ) : !baseCurrency ? (
+          <div className="text-center py-8 text-muted-foreground">No base currency is configured.</div>
         ) : isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading rate history...</div>
-        ) : !data || data.rates.length === 0 ? (
+        ) : !data || data.data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">No historical rates were found.</div>
         ) : (
           <div className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              Showing last {data.rates.length} entries updated by treasury.
+              Showing last {data.data.length} entries updated by treasury for {currency.code} →{' '}
+              {baseCurrency?.code}.
             </div>
             <div className="rounded-lg border">
               <Table>
@@ -49,15 +64,19 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.rates.map((rate, index) => (
-                    <TableRow key={`${rate.date}-${index}`}>
+                  {data.data.map((rate) => (
+                    <TableRow key={rate.id}>
                       <TableCell className="font-medium">
-                        {new Date(rate.date).toLocaleDateString()}
+                        {new Date(rate.effective_from ?? rate.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right">{Number(rate.buy_rate).toFixed(4)}</TableCell>
-                      <TableCell className="text-right">{Number(rate.sell_rate).toFixed(4)}</TableCell>
+                      <TableCell className="text-right">
+                        {rate.buy_rate ? Number(rate.buy_rate).toFixed(4) : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {rate.sell_rate ? Number(rate.sell_rate).toFixed(4) : 'N/A'}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(rate.created_at).toLocaleString()}
+                        {new Date(rate.updated_at).toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}
