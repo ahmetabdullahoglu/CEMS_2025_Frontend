@@ -40,6 +40,8 @@ const transferSchema = z.object({
   to_branch_id: z.string().uuid('Please select a to branch'),
   currency_id: z.string().uuid('Please select a currency'),
   amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
+  transfer_type: z.enum(['branch_to_branch', 'vault_to_branch', 'branch_to_vault']),
+  description: z.string().optional(),
   notes: z.string().optional(),
   reference_number: z.string().optional(),
 })
@@ -64,6 +66,8 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
       to_branch_id: '',
       currency_id: '',
       amount: 0,
+      transfer_type: 'branch_to_branch',
+      description: '',
       notes: '',
       reference_number: '',
     },
@@ -93,7 +97,14 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
       return
     }
 
-    createTransfer(data, {
+    const payload: TransferFormData = {
+      ...data,
+      description: data.description?.trim() || undefined,
+      notes: data.notes?.trim() || undefined,
+      reference_number: data.reference_number?.trim() || undefined,
+    }
+
+    createTransfer(payload, {
       onSuccess: () => {
         onOpenChange(false)
         form.reset()
@@ -113,6 +124,29 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="transfer_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Transfer Type *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select transfer type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="branch_to_branch">Branch to Branch</SelectItem>
+                      <SelectItem value="vault_to_branch">Vault to Branch</SelectItem>
+                      <SelectItem value="branch_to_vault">Branch to Vault</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* From Branch */}
             <FormField
               control={form.control}
@@ -254,6 +288,26 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
                   <FormLabel>Reference Number (Optional)</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter reference number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Description */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter a short description"
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

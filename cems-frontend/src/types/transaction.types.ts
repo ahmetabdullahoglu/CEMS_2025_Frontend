@@ -135,7 +135,9 @@ export interface TransferTransactionCreate {
   to_branch_id: string // UUID
   currency_id: string // UUID
   amount: number | string
+  transfer_type: 'branch_to_branch' | 'vault_to_branch' | 'branch_to_vault'
   reference_number?: string | null
+  description?: string | null
   notes?: string | null
   transaction_date?: string | null // ISO datetime
 }
@@ -146,6 +148,7 @@ export interface TransferTransactionResponse extends Omit<BaseTransactionRespons
   currency_id: string // UUID
   amount: string // Decimal as string
   transfer_type: 'branch_to_branch' | 'vault_to_branch' | 'branch_to_vault'
+  description?: string | null
   received_at?: string | null // ISO datetime
   received_by_id?: string | null // UUID
   is_received: boolean
