@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { usePendingApprovalTransactions, useReceiveTransfer, useCancelTransaction } from '@/hooks/useTransactions'
 import type { TransactionQueryParams, TransferTransactionResponse } from '@/types/transaction.types'
 import { formatBranchLabel } from '@/utils/branch'
-import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { handleApiError } from '@/lib/api/client'
 
 interface PendingTransferApprovalsProps {
   branchId?: string
@@ -24,11 +24,13 @@ export default function PendingTransferApprovals({ branchId }: PendingTransferAp
   const { data, isLoading, isError } = usePendingApprovalTransactions(params)
   const { mutate: receive, isPending: isReceiving } = useReceiveTransfer()
   const { mutate: cancel, isPending: isCancelling } = useCancelTransaction()
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const pendingTransfers = (data?.transactions || []) as TransferTransactionResponse[]
   const loading = isLoading || isReceiving || isCancelling
 
   const handleCancel = (id: string) => {
+    setActionError(null)
     const reason = cancelReasons[id]?.trim()
     if (!reason) {
       setCancelReasons((prev) => ({ ...prev, [id]: '' }))
@@ -44,13 +46,16 @@ export default function PendingTransferApprovals({ branchId }: PendingTransferAp
             delete next[id]
             return next
           })
+          setActionError(null)
         },
+        onError: (err) => setActionError(handleApiError(err)),
       }
     )
   }
 
   const handleReceive = (id: string) => {
-    receive({ id, payload: {} })
+    setActionError(null)
+    receive({ id, payload: {} }, { onError: (err) => setActionError(handleApiError(err)) })
   }
 
   if (isLoading) {
@@ -81,6 +86,11 @@ export default function PendingTransferApprovals({ branchId }: PendingTransferAp
 
   return (
     <div className="grid gap-4">
+      {actionError && (
+        <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {actionError}
+        </div>
+      )}
       {pendingTransfers.map((transfer) => (
         <Card key={transfer.id} className="border-blue-100">
           <CardHeader className="flex flex-row items-center justify-between">

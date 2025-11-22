@@ -382,6 +382,12 @@ export default function TransactionDetailsDialog({
 
         {!isLoading && !isError && transaction && (
           <DialogFooter className="flex-col sm:flex-row gap-2">
+            {actionError && !showApproveConfirm && (
+              <div className="flex w-full items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <span>{actionError}</span>
+              </div>
+            )}
             {!showCancelConfirm && !showApproveConfirm ? (
               <>
                 {transaction.status === 'pending' &&
