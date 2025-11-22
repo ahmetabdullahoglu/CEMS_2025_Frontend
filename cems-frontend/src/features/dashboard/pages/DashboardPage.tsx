@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ArrowRightLeft,
   DollarSign,
@@ -32,6 +33,7 @@ import type {
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -42,6 +44,7 @@ import {
 import { formatBranchLabel } from '@/utils/branch'
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const { availableBranches: branchOptions, currentBranchId } = useBranchSelection()
   const [selectedBranchId, setSelectedBranchId] = useState<string>(currentBranchId ?? 'all')
   const hasInitializedBranch = useRef(false)
@@ -341,6 +344,14 @@ export default function DashboardPage() {
               <CardContent>
                 <p className="text-2xl font-bold text-blue-700">{overview.pending_approvals}</p>
                 <p className="text-sm text-blue-600 mt-1">Transactions awaiting approval</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => navigate('/transactions/pending-approvals')}
+                >
+                  Review Pending Transfers
+                </Button>
               </CardContent>
             </Card>
           )}

@@ -3,7 +3,23 @@ import { vaultApi } from '@/lib/api/vault.api'
 import type {
   CreateVaultTransferRequest,
   VaultTransferQueryParams,
+  VaultResponse,
 } from '@/types/vault.types'
+
+export const useVaultsList = (params?: { branch_id?: string; is_active?: boolean }) => {
+  return useQuery({
+    queryKey: ['vault', 'list', params],
+    queryFn: () => vaultApi.listVaults(params),
+    staleTime: 1000 * 60 * 5,
+    select: (response): VaultResponse[] => {
+      if (Array.isArray(response)) return response
+      if (response && Array.isArray((response as { data?: unknown }).data)) {
+        return (response as { data: VaultResponse[] }).data
+      }
+      return []
+    },
+  })
+}
 
 export const useVaultBalances = () => {
   return useQuery({
