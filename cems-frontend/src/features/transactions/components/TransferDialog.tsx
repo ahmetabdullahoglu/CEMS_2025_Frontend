@@ -144,7 +144,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
 
     if (transferType === 'branch_to_branch') {
       form.reset({
-        transfer_type,
+        transfer_type: transferType,
         from_branch_id: currentBranchId ?? '',
         to_branch_id: '',
         currency_id,
@@ -158,7 +158,7 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
 
     if (transferType === 'vault_to_branch') {
       form.reset({
-        transfer_type,
+        transfer_type: transferType,
         vault_id: '',
         branch_id: currentBranchId ?? '',
         currency_id,
@@ -170,18 +170,18 @@ export default function TransferDialog({ open, onOpenChange }: TransferDialogPro
 
     if (transferType === 'branch_to_vault') {
       form.reset({
-        transfer_type,
+        transfer_type: transferType,
         branch_id: currentBranchId ?? '',
         vault_id: '',
         currency_id,
         amount,
         notes: '',
-      })
+        })
       return
     }
 
     form.reset({
-      transfer_type,
+      transfer_type: transferType,
       from_vault_id: '',
       to_vault_id: '',
       currency_id,
