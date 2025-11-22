@@ -18,6 +18,7 @@ import type {
   TransactionSummary,
   TransactionSummaryQueryParams,
   TransferReceiptRequest,
+  ExpenseApprovalRequest,
 } from '@/types/transaction.types'
 
 const detailEndpointMap: Partial<Record<TransactionType, string>> = {
@@ -161,8 +162,14 @@ export const transactionApi = {
   },
 
   // Approve transaction
-  approveTransaction: async (id: string): Promise<TransactionDetail> => {
-    const response = await apiClient.post<TransactionDetail>(`/transactions/expense/${id}/approve`)
+  approveTransaction: async (
+    id: string,
+    payload: ExpenseApprovalRequest = {}
+  ): Promise<TransactionDetail> => {
+    const response = await apiClient.post<TransactionDetail>(
+      `/transactions/expense/${id}/approve`,
+      payload
+    )
     return response.data
   },
 

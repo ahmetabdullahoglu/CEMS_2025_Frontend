@@ -158,9 +158,12 @@ export const handleApiError = (error: unknown): string => {
 
     if (axiosError.response) {
       // Server responded with error
+      const data = axiosError.response.data as { detail?: string; message?: string; error?: { message?: string } }
+
       const errorMessage =
-        axiosError.response.data?.detail ||
-        axiosError.response.data?.message ||
+        data?.error?.message ||
+        data?.detail ||
+        data?.message ||
         'An error occurred while processing your request'
       return errorMessage
     } else if (axiosError.request) {

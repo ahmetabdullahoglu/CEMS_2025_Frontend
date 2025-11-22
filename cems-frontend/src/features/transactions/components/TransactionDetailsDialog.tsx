@@ -20,6 +20,7 @@ import {
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
 import { formatBranchLabel } from '@/utils/branch'
+import { handleApiError } from '@/lib/api/client'
 import type { Branch } from '@/types/branch.types'
 import type { TransactionDetail, TransactionType } from '@/types/transaction.types'
 
@@ -259,6 +260,7 @@ export default function TransactionDetailsDialog({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showApproveConfirm, setShowApproveConfirm] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
+  const [approvalNotes, setApprovalNotes] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
@@ -277,6 +279,7 @@ export default function TransactionDetailsDialog({
       setShowApproveConfirm(false)
       setShowCancelConfirm(false)
       setActionError(null)
+      setApprovalNotes('')
     }
   }, [open])
 
@@ -309,25 +312,27 @@ export default function TransactionDetailsDialog({
             onOpenChange(false)
           },
           onError: (err) => {
-            const message = err instanceof Error ? err.message : 'Failed to complete transfer receipt'
-            setActionError(message)
+            setActionError(handleApiError(err))
           },
         }
       )
       return
     }
 
-    approveTransaction(transactionId, {
-      onSuccess: () => {
-        setShowApproveConfirm(false)
-        setActionError(null)
-        onOpenChange(false)
-      },
-      onError: (err) => {
-        const message = err instanceof Error ? err.message : 'Failed to approve transaction'
-        setActionError(message)
-      },
-    })
+    approveTransaction(
+      { id: transactionId, approval_notes: approvalNotes || null },
+      {
+        onSuccess: () => {
+          setShowApproveConfirm(false)
+          setActionError(null)
+          setApprovalNotes('')
+          onOpenChange(false)
+        },
+        onError: (err) => {
+          setActionError(handleApiError(err))
+        },
+      }
+    )
   }
 
   const renderTransactionContent = () => {
@@ -431,6 +436,14 @@ export default function TransactionDetailsDialog({
                       : 'Are you sure you want to approve this transaction?'}
                   </span>
                 </div>
+                {transaction?.transaction_type === 'expense' && (
+                  <Textarea
+                    placeholder="Approval notes"
+                    value={approvalNotes}
+                    onChange={(event) => setApprovalNotes(event.target.value)}
+                    rows={3}
+                  />
+                )}
                 <Button
                   variant="outline"
                   onClick={() => {

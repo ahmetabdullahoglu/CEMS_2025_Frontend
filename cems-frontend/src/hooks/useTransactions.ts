@@ -158,8 +158,9 @@ export const useApproveTransaction = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => transactionApi.approveTransaction(id),
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, approval_notes }: { id: string; approval_notes?: string | null }) =>
+      transactionApi.approveTransaction(id, { approval_notes }),
+    onSuccess: (_, { id }) => {
       // Invalidate both the transaction details and the transactions list
       queryClient.invalidateQueries({ queryKey: ['transaction', id] })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })

@@ -198,6 +198,10 @@ export interface TransactionCancelRequest {
   reason?: string
 }
 
+export interface ExpenseApprovalRequest {
+  approval_notes?: string | null
+}
+
 // Transaction Summary/Stats
 export interface TransactionSummary {
   total_count: number
