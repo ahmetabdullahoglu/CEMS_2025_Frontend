@@ -56,6 +56,11 @@ export default function ExchangeTrends() {
     })
   }
 
+  const trends = data?.data?.trends ?? data?.trends ?? []
+  const periodStart = data?.data?.period_start ?? data?.period_start
+  const periodEnd = data?.data?.period_end ?? data?.period_end
+  const mostTraded = data?.data?.most_traded_pair ?? data?.most_traded_pair
+
   return (
     <div className="space-y-6">
       <Card>
@@ -132,7 +137,7 @@ export default function ExchangeTrends() {
         <div className="text-center py-10 text-destructive">Unable to load exchange trends.</div>
       ) : data ? (
         <div className="space-y-6">
-          {data.most_traded_pair && (
+          {mostTraded && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -143,17 +148,17 @@ export default function ExchangeTrends() {
                 <div>
                   <p className="text-sm text-muted-foreground">Pair</p>
                   <p className="text-2xl font-semibold">
-                    {data.most_traded_pair.from_currency} / {data.most_traded_pair.to_currency}
+                    {mostTraded.from_currency} / {mostTraded.to_currency}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Volume</p>
-                  <p className="text-2xl font-semibold">{Number(data.most_traded_pair.volume).toLocaleString()}</p>
+                  <p className="text-2xl font-semibold">{Number(mostTraded.volume).toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Period</p>
                   <p className="text-lg font-medium">
-                    {data.period_start} → {data.period_end}
+                    {periodStart ?? '—'} → {periodEnd ?? '—'}
                   </p>
                 </div>
               </CardContent>
@@ -166,7 +171,7 @@ export default function ExchangeTrends() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={data.trends}>
+                <LineChart data={trends}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -193,7 +198,7 @@ export default function ExchangeTrends() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.trends.slice(0, 10).map((trend) => (
+                  {trends.slice(0, 10).map((trend) => (
                     <TableRow key={`${trend.date}-${trend.from_currency}-${trend.to_currency}`}>
                       <TableCell>{trend.date}</TableCell>
                       <TableCell>
