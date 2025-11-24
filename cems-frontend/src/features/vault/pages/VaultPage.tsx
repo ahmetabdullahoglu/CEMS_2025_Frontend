@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils'
 
 export default function VaultPage() {
   const [showTransferDialog, setShowTransferDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState('balances')
   const [selectedVaultId, setSelectedVaultId] = useState<string>()
 
   const [vaultFilters, setVaultFilters] = useState({ search: '', vault_type: 'all' })
@@ -287,7 +288,7 @@ export default function VaultPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="balances" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="balances">Balances</TabsTrigger>
           <TabsTrigger value="transfers">Pending Transfers</TabsTrigger>
@@ -452,9 +453,9 @@ export default function VaultPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setDetailId(transfer.id)}>
-                            View
-                          </Button>
+                        <Button size="sm" variant="outline" onClick={() => setDetailId(transfer.id)}>
+                          View
+                        </Button>
                           {transfer.status === 'pending' && (
                             <>
                               <Button
@@ -594,7 +595,14 @@ export default function VaultPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setSelectedVaultId(vault.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedVaultId(vault.id)
+                            setActiveTab('balances')
+                          }}
+                        >
                           View
                         </Button>
                         <Button
