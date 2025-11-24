@@ -13,10 +13,14 @@ export default function PendingApprovalsPage() {
         </p>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Vault Transfers (Vault ⇄ Branch/Vault)</h2>
-        <PendingTransfers />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Vault Transfers (Vault ⇄ Branch/Vault)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PendingTransfers />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

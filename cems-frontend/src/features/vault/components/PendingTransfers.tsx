@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { Check, X, ArrowRight, Trash2 } from 'lucide-react'
+import { Check, X, ArrowRight, Trash2, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,11 @@ import {
   useRejectVaultTransfer,
   useCancelVaultTransfer,
 } from '@/hooks/useVault'
+import { useBranches } from '@/hooks/useBranches'
+import { useActiveCurrencies } from '@/hooks/useCurrencies'
+import { useVaultsList } from '@/hooks/useVault'
+import { formatBranchLabel } from '@/utils/branch'
+import type { VaultTransferResponse } from '@/types/vault.types'
 
 export default function PendingTransfers() {
   const [page, setPage] = useState(1)
@@ -51,6 +57,64 @@ export default function PendingTransfers() {
   const { mutate: complete, isPending: isCompleting } = useCompleteVaultTransfer()
   const { mutate: reject, isPending: isRejecting } = useRejectVaultTransfer()
   const { mutate: cancel, isPending: isCancelling } = useCancelVaultTransfer()
+
+  const { data: branchesData } = useBranches({ limit: 200, is_active: true })
+  const { data: currenciesData } = useActiveCurrencies()
+  const { data: vaultsData } = useVaultsList({ is_active: true })
+
+  const branchLookup = useMemo(() => {
+    const map = new Map<string, { code?: string; name?: string }>()
+    ;(branchesData?.data ?? []).forEach((branch) => {
+      map.set(branch.id, { code: branch.code, name: branch.name_en ?? branch.name })
+    })
+    return map
+  }, [branchesData])
+
+  const currencyLookup = useMemo(() => {
+    const map = new Map<string, { code?: string; name?: string }>()
+    ;(currenciesData ?? []).forEach((currency) => {
+      map.set(currency.id, { code: currency.code, name: currency.name })
+    })
+    return map
+  }, [currenciesData])
+
+  const vaultLookup = useMemo(() => {
+    const map = new Map<string, { code?: string; name?: string }>()
+    ;(vaultsData ?? []).forEach((vault) => {
+      map.set(vault.id, { code: vault.vault_code, name: vault.name })
+    })
+    return map
+  }, [vaultsData])
+
+  const resolveBranchLabel = (id?: string | null, fallbackCode?: string | null) => {
+    if (!id && !fallbackCode) return undefined
+    const branch = id ? branchLookup.get(id) : undefined
+
+    return formatBranchLabel(
+      branch
+        ? { id, code: branch.code ?? undefined, name: branch.name ?? undefined }
+        : undefined,
+      fallbackCode ?? undefined,
+      id ?? undefined
+    )
+  }
+
+  const resolveVaultLabel = (id?: string | null, fallbackCode?: string | null) => {
+    if (!id && !fallbackCode) return undefined
+    const vault = id ? vaultLookup.get(id) : undefined
+    if (vault?.code && vault?.name) return `${vault.code} - ${vault.name}`
+    if (vault?.code) return vault.code
+    if (vault?.name && id) return `${vault.name} (${id})`
+    return fallbackCode ?? id ?? 'Unknown vault'
+  }
+
+  const resolveCurrencyLabel = (id: string, fallback?: string | null) => {
+    const currency = currencyLookup.get(id)
+    if (currency?.code && currency?.name) return `${currency.code} - ${currency.name}`
+    if (currency?.code) return currency.code
+    if (currency?.name) return currency.name
+    return fallback ?? id
+  }
 
   const handleApprove = (id: string) => {
     setActionType('approve')
@@ -153,11 +217,71 @@ export default function PendingTransfers() {
     return pages
   }
 
+  const renderTransferRoute = (transfer: VaultTransferResponse) => {
+    const fromLabel = (() => {
+      if (transfer.transfer_type === 'branch_to_vault') {
+        const branchId = (transfer as { branch_id?: string }).branch_id
+        return resolveBranchLabel(branchId ?? transfer.to_branch_id, transfer.to_branch_code)
+      }
+      return resolveVaultLabel(transfer.from_vault_id, transfer.from_vault_code)
+    })()
+
+    const toLabel = (() => {
+      if (transfer.transfer_type === 'vault_to_branch') {
+        return resolveBranchLabel(transfer.to_branch_id, transfer.to_branch_code)
+      }
+      return resolveVaultLabel(transfer.to_vault_id, transfer.to_vault_code)
+    })()
+
+    return (
+      <div className="flex flex-col gap-1 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{fromLabel ?? 'Unknown'}</span>
+          <ArrowRight className="w-3 h-3 text-muted-foreground" />
+          <span className="font-medium">{toLabel ?? 'Unknown'}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Badge variant="outline" className="capitalize">
+            {transfer.transfer_type.replaceAll('_', ' ')}
+          </Badge>
+          <Badge variant="secondary">{transfer.transfer_number}</Badge>
+        </div>
+      </div>
+    )
+  }
+
+  const renderMeta = (transfer: VaultTransferResponse) => {
+    const initiated = transfer.initiated_at
+      ? format(new Date(transfer.initiated_at), 'MMM dd, yyyy')
+      : '—'
+    const completed = transfer.completed_at
+      ? format(new Date(transfer.completed_at), 'MMM dd, yyyy')
+      : transfer.approved_at
+        ? format(new Date(transfer.approved_at), 'MMM dd, yyyy')
+        : '—'
+
+    return (
+      <div className="flex flex-col text-xs text-muted-foreground gap-1">
+        <div className="flex items-center gap-1">
+          <span>Initiated:</span>
+          <span className="font-medium text-foreground">{initiated}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span>Last Update:</span>
+          <span className="font-medium text-foreground">{completed}</span>
+        </div>
+        {transfer.notes && (
+          <div className="line-clamp-2">Notes: {transfer.notes}</div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Pending Transfers</CardTitle>
+          <CardTitle>Vault Transfers (Vault ⇄ Branch/Vault)</CardTitle>
           {data && (
             <span className="text-sm text-muted-foreground">
               {data.data?.length ?? 0} pending transfer(s)
@@ -189,102 +313,100 @@ export default function PendingTransfers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
                   <TableHead>Transfer</TableHead>
+                  <TableHead>Route</TableHead>
                   <TableHead>Currency</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Requested By</TableHead>
+                  <TableHead>Meta</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(data.data ?? []).map((transfer) => {
-                  const source =
-                    transfer.transfer_type === 'branch_to_vault'
-                      ? transfer.to_branch_code ?? 'Branch'
-                      : transfer.from_vault_code ?? 'Vault'
-                  const destination =
-                    transfer.transfer_type === 'vault_to_branch'
-                      ? transfer.to_branch_code ?? 'Branch'
-                      : transfer.to_vault_code ?? 'Vault'
-
                   return (
                     <TableRow key={transfer.id}>
-                    <TableCell>
-                      {transfer.created_at ? format(new Date(transfer.created_at), 'MMM dd, yyyy') : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{source}</span>
-                        <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-sm">{destination}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div>{transfer.currency_code ?? 'N/A'}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {Number(transfer.amount ?? 0).toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {transfer.initiated_by_name || transfer.initiated_by || '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {transfer.status === 'pending' && (
-                          <>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-semibold">{transfer.transfer_number}</span>
+                          <span className="text-xs text-muted-foreground">ID: {transfer.id}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{renderTransferRoute(transfer)}</TableCell>
+                      <TableCell>
+                        <HoverCard openDelay={200} closeDelay={100}>
+                          <HoverCardTrigger className="font-medium cursor-default">
+                            {resolveCurrencyLabel(transfer.currency_id, transfer.currency_code)}
+                          </HoverCardTrigger>
+                          <HoverCardContent className="text-sm" align="start">
+                            <div className="flex items-center gap-2">
+                              <Info className="w-4 h-4 text-muted-foreground" />
+                              <span>Currency ID: {transfer.currency_id}</span>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {Number(transfer.amount ?? 0).toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {transfer.initiated_by_name || transfer.initiated_by || '-'}
+                      </TableCell>
+                      <TableCell>{renderMeta(transfer)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {transfer.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleApprove(transfer.id)}
+                                disabled={isApproving || isCompleting || isRejecting || isCancelling}
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleReject(transfer.id)}
+                                disabled={isApproving || isCompleting || isRejecting || isCancelling}
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {transfer.status === 'approved' && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => handleApprove(transfer.id)}
+                              variant="default"
+                              onClick={() => handleComplete(transfer.id)}
                               disabled={isApproving || isCompleting || isRejecting || isCancelling}
                             >
                               <Check className="w-4 h-4 mr-1" />
-                              Approve
+                              Complete
                             </Button>
+                          )}
+                          {['pending', 'approved'].includes(transfer.status ?? '') && (
                             <Button
                               size="sm"
-                              variant="destructive"
-                              onClick={() => handleReject(transfer.id)}
+                              variant="secondary"
+                              onClick={() => handleCancel(transfer.id)}
                               disabled={isApproving || isCompleting || isRejecting || isCancelling}
                             >
-                              <X className="w-4 h-4 mr-1" />
-                              Reject
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Cancel
                             </Button>
-                          </>
-                        )}
-                        {transfer.status === 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => handleComplete(transfer.id)}
-                            disabled={isApproving || isCompleting || isRejecting || isCancelling}
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Complete
-                          </Button>
-                        )}
-                        {['pending', 'approved'].includes(transfer.status ?? '') && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleCancel(transfer.id)}
-                            disabled={isApproving || isCompleting || isRejecting || isCancelling}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Cancel
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   )
                 })}
               </TableBody>
