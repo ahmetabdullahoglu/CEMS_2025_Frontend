@@ -53,9 +53,24 @@ export default function CurrenciesPage() {
     region: region || null,
   })
 
-  const { data: withRates } = useCurrencyWithRates(detailCurrency?.id)
+  const { data: withRatesResponse } = useCurrencyWithRates(detailCurrency?.id)
 
-  const rateEntries = withRates?.rates ?? []
+  const normalizedWithRates: CurrencyWithRates | undefined = (() => {
+    if (!withRatesResponse) return undefined
+    const direct = withRatesResponse as CurrencyWithRates
+    if (Array.isArray(direct.rates)) {
+      return direct
+    }
+
+    const wrapped = (withRatesResponse as { data?: CurrencyWithRates }).data
+    if (wrapped && Array.isArray(wrapped.rates)) {
+      return wrapped
+    }
+
+    return undefined
+  })()
+
+  const rateEntries = normalizedWithRates?.rates ?? []
 
   const handleSearch = () => {
     setSearch(searchInput)
@@ -374,7 +389,7 @@ export default function CurrenciesPage() {
         currency={editingCurrency}
       />
 
-      {detailCurrency && withRates && (
+      {detailCurrency && normalizedWithRates && (
         <Card>
           <CardHeader>
             <CardTitle>

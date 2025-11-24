@@ -129,7 +129,14 @@ export const currencyApi = {
   calculateExchange: async (
     payload: CalculateCurrencyRequest
   ): Promise<ExchangeCalculationResponse | CalculateCurrencyResponse> => {
-    const response = await apiClient.post<CalculateCurrencyResponse>('/currencies/calculate', payload)
+    const params = {
+      amount: payload.amount,
+      from_currency: normalizeCurrencyIdentifier(payload.from_currency_id),
+      to_currency: normalizeCurrencyIdentifier(payload.to_currency_id),
+      apply_commission: payload.apply_commission ?? false,
+    }
+
+    const response = await apiClient.get<CalculateCurrencyResponse>('/currencies/calculate', { params })
     return response.data
   },
 }

@@ -144,6 +144,7 @@ export interface CalculateCurrencyRequest {
   from_currency_id: string
   to_currency_id: string
   amount: number | string
+  apply_commission?: boolean
 }
 
 export interface CalculateCurrencyResponse {
