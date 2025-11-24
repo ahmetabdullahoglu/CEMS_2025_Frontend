@@ -81,6 +81,7 @@ export default function BranchesPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [includeBalances, setIncludeBalances] = useState(true)
   const [calculateUsd, setCalculateUsd] = useState(true)
+  const [expandedBranchId, setExpandedBranchId] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useBranches({
     skip,
@@ -110,7 +111,6 @@ export default function BranchesPage() {
   const [editForm, setEditForm] = useState<BranchFormState>(defaultBranchForm)
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [expandedBranchId, setExpandedBranchId] = useState<string | null>(null)
 
   const {
     data: balancesData,
