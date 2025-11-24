@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { Calendar, TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react'
 import {
@@ -23,14 +23,8 @@ import { formatBranchLabel } from '@/utils/branch'
 
 export default function DailySummary() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const { availableBranches, currentBranchId } = useBranchSelection()
+  const { availableBranches } = useBranchSelection()
   const [branchId, setBranchId] = useState<string>('all')
-
-  useEffect(() => {
-    if (currentBranchId && branchId === 'all') {
-      setBranchId(currentBranchId)
-    }
-  }, [branchId, currentBranchId])
 
   const { data, isLoading, isError } = useDailySummary(
     {

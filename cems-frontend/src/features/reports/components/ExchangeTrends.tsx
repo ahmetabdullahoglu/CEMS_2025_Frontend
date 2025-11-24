@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { subDays, format } from 'date-fns'
 import { TrendingUp, RefreshCcw } from 'lucide-react'
 import {
@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -24,6 +25,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useExchangeTrends, useReportExport } from '@/hooks/useReports'
+import { useActiveCurrencies } from '@/hooks/useCurrencies'
+import type { CurrencyResponse } from '@/types/currency.types'
 
 export default function ExchangeTrends() {
   const today = format(new Date(), 'yyyy-MM-dd')
@@ -33,6 +36,24 @@ export default function ExchangeTrends() {
   const [endDate, setEndDate] = useState(today)
   const [fromCurrency, setFromCurrency] = useState('USD')
   const [toCurrency, setToCurrency] = useState('EUR')
+
+  const { data: activeCurrencies } = useActiveCurrencies()
+
+  const currencyOptions = useMemo<CurrencyResponse[]>(() => {
+    const payload = (activeCurrencies as { data?: CurrencyResponse[]; success?: boolean })?.data ?? activeCurrencies
+    return Array.isArray(payload) ? payload : []
+  }, [activeCurrencies])
+
+  useEffect(() => {
+    if (currencyOptions.length === 0) return
+    if (!fromCurrency || !currencyOptions.some((c) => c.code === fromCurrency)) {
+      setFromCurrency(currencyOptions[0].code)
+    }
+    if (!toCurrency || !currencyOptions.some((c) => c.code === toCurrency)) {
+      const fallback = currencyOptions.find((c) => c.code !== fromCurrency)
+      setToCurrency((fallback ?? currencyOptions[0]).code)
+    }
+  }, [currencyOptions, fromCurrency, toCurrency])
 
   const { data, isLoading, isError, refetch, isFetching } = useExchangeTrends({
     startDate,
@@ -56,10 +77,13 @@ export default function ExchangeTrends() {
     })
   }
 
-  const trends = data?.data?.trends ?? data?.trends ?? []
-  const periodStart = data?.data?.period_start ?? data?.period_start
-  const periodEnd = data?.data?.period_end ?? data?.period_end
-  const mostTraded = data?.data?.most_traded_pair ?? data?.most_traded_pair
+  const exchangePayload = (data as { data?: unknown; success?: boolean })?.data ?? data
+  const trends = exchangePayload?.daily_trends ?? exchangePayload?.trends ?? []
+  const periodStart = exchangePayload?.date_range?.start ?? exchangePayload?.period_start
+  const periodEnd = exchangePayload?.date_range?.end ?? exchangePayload?.period_end
+  const mostTraded = exchangePayload?.most_traded_pair ?? null
+  const trendRows = Array.isArray(trends) ? trends : []
+  const pairLabel = exchangePayload?.currency_pair ?? `${fromCurrency}/${toCurrency}`
 
   return (
     <div className="space-y-6">
@@ -104,23 +128,47 @@ export default function ExchangeTrends() {
             </div>
             <div>
               <Label htmlFor="from-currency">From Currency</Label>
-              <Input
-                id="from-currency"
-                placeholder="e.g. USD"
+              <Select
                 value={fromCurrency}
-                onChange={(event) => setFromCurrency(event.target.value.toUpperCase())}
-                maxLength={3}
-              />
+                onValueChange={(value) => {
+                  setFromCurrency(value)
+                  if (value === toCurrency && currencyOptions.length > 1) {
+                    const fallback = currencyOptions.find((c) => c.code !== value)
+                    if (fallback) setToCurrency(fallback.code)
+                  }
+                }}
+                disabled={currencyOptions.length === 0}
+              >
+                <SelectTrigger id="from-currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencyOptions.map((currency) => (
+                    <SelectItem key={currency.id ?? currency.code} value={currency.code}>
+                      {currency.code} — {currency.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="to-currency">To Currency</Label>
-              <Input
-                id="to-currency"
-                placeholder="e.g. EUR"
+              <Select
                 value={toCurrency}
-                onChange={(event) => setToCurrency(event.target.value.toUpperCase())}
-                maxLength={3}
-              />
+                onValueChange={(value) => setToCurrency(value)}
+                disabled={currencyOptions.length === 0}
+              >
+                <SelectTrigger id="to-currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencyOptions.map((currency) => (
+                    <SelectItem key={currency.id ?? currency.code} value={currency.code}>
+                      {currency.code} — {currency.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           {exportMutation.isSuccess && exportMutation.data && (
@@ -171,7 +219,7 @@ export default function ExchangeTrends() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={trends}>
+                <LineChart data={trendRows}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -198,12 +246,10 @@ export default function ExchangeTrends() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {trends.slice(0, 10).map((trend) => (
+                  {trendRows.slice(0, 10).map((trend) => (
                     <TableRow key={`${trend.date}-${trend.from_currency}-${trend.to_currency}`}>
                       <TableCell>{trend.date}</TableCell>
-                      <TableCell>
-                        {trend.from_currency} / {trend.to_currency}
-                      </TableCell>
+                      <TableCell>{trend.from_currency ? `${trend.from_currency} / ${trend.to_currency}` : pairLabel}</TableCell>
                       <TableCell>{Number(trend.average_rate).toFixed(4)}</TableCell>
                       <TableCell>{Number(trend.total_volume).toLocaleString()}</TableCell>
                       <TableCell>{trend.transaction_count}</TableCell>
