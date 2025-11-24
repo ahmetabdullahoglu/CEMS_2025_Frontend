@@ -64,11 +64,13 @@ export default function TopBar() {
                         <SelectValue placeholder="Select branch" />
                       </SelectTrigger>
                       <SelectContent>
-                        {availableBranches.map((branch) => (
-                          <SelectItem key={branch.id} value={branch.id}>
-                            {formatBranchLabel(branch, branch.name, branch.id)}
-                          </SelectItem>
-                        ))}
+                        {availableBranches
+                          .filter((branch) => Boolean(branch.id))
+                          .map((branch) => (
+                            <SelectItem key={branch.id} value={branch.id}>
+                              {formatBranchLabel(branch, branch.name, branch.id)}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   ) : (

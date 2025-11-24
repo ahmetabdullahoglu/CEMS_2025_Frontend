@@ -389,11 +389,13 @@ export default function VaultPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All branches</SelectItem>
-                  {(branchesData?.data ?? []).map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.code} - {branch.name_en ?? branch.name}
-                    </SelectItem>
-                  ))}
+                  {(branchesData?.data ?? [])
+                    .filter((branch) => branch.id)
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.code} - {branch.name_en ?? branch.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -723,11 +725,18 @@ export default function VaultPage() {
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(activeVault?.balances ?? []).map((bal) => (
-                    <SelectItem key={bal.currency_id ?? bal.currency_code} value={bal.currency_id ?? bal.currency_code}>
-                      {bal.currency_code} - {bal.currency_name}
-                    </SelectItem>
-                  ))}
+                  {(activeVault?.balances ?? [])
+                    .filter((bal) => (bal.currency_id ?? bal.currency_code)?.length)
+                    .map((bal) => {
+                      const value = bal.currency_id ?? bal.currency_code
+                      const label = [bal.currency_code, bal.currency_name].filter(Boolean).join(' - ')
+
+                      return (
+                        <SelectItem key={value} value={value}>
+                          {label || value}
+                        </SelectItem>
+                      )
+                    })}
                 </SelectContent>
               </Select>
             </div>
@@ -807,11 +816,13 @@ export default function VaultPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {(branchesData?.data ?? []).map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.code} - {branch.name_en ?? branch.name}
-                    </SelectItem>
-                  ))}
+                  {(branchesData?.data ?? [])
+                    .filter((branch) => branch.id)
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.code} - {branch.name_en ?? branch.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

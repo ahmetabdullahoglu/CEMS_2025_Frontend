@@ -187,11 +187,13 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="vault">Vault</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id.toString()}>
-                      {formatBranchLabel(branch)}
-                    </SelectItem>
-                  ))}
+                  {branches
+                    .filter((branch) => branch.id)
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id.toString()}>
+                        {formatBranchLabel(branch)}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -213,11 +215,13 @@ export default function TransferDialog({ open, onClose }: TransferDialogProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="vault">Vault</SelectItem>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id.toString()}>
-                    {formatBranchLabel(branch)}
-                  </SelectItem>
-                ))}
+                {branches
+                  .filter((branch) => branch.id)
+                  .map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                      {formatBranchLabel(branch)}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
