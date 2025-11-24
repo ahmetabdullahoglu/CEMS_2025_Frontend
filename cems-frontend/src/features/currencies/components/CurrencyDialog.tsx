@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useCreateCurrency, useUpdateCurrency } from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
 
@@ -144,10 +144,10 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
               <Label htmlFor="is_active">Active</Label>
               <p className="text-sm text-muted-foreground">Toggle currency availability</p>
             </div>
-            <Switch
+            <Checkbox
               id="is_active"
               checked={watch('is_active') ?? false}
-              onCheckedChange={(checked) => setValue('is_active', checked)}
+              onCheckedChange={(checked) => setValue('is_active', !!checked)}
               disabled={isBusy}
             />
           </div>
