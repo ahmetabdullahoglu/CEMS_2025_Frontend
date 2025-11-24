@@ -47,7 +47,7 @@ export default function VaultPage() {
   const [showTransferDialog, setShowTransferDialog] = useState(false)
   const [selectedVaultId, setSelectedVaultId] = useState<string>()
 
-  const [vaultFilters, setVaultFilters] = useState({ search: '', vault_type: '' })
+  const [vaultFilters, setVaultFilters] = useState({ search: '', vault_type: 'all' })
   const [vaultPage, setVaultPage] = useState(1)
   const vaultPageSize = 10
 
@@ -68,7 +68,7 @@ export default function VaultPage() {
     is_active: true,
   })
 
-  const [historyFilters, setHistoryFilters] = useState<{ 
+  const [historyFilters, setHistoryFilters] = useState<{
     status?: VaultTransferStatus
     transfer_type?: VaultTransferType
     vault_id?: string
@@ -97,7 +97,7 @@ export default function VaultPage() {
 
   const { data: vaultsList, isLoading: vaultsLoading } = useVaultsList({
     search: vaultFilters.search || undefined,
-    vault_type: vaultFilters.vault_type || undefined,
+    vault_type: vaultFilters.vault_type === 'all' ? undefined : vaultFilters.vault_type,
     skip: (vaultPage - 1) * vaultPageSize,
     limit: vaultPageSize,
   })
@@ -338,16 +338,16 @@ export default function VaultPage() {
             <div>
               <Label>Status</Label>
               <Select
-                value={historyFilters.status ?? ''}
+                value={historyFilters.status ?? 'all'}
                 onValueChange={(val) =>
-                  setHistoryFilters((prev) => ({ ...prev, status: (val || undefined) as VaultTransferStatus }))
+                  setHistoryFilters((prev) => ({ ...prev, status: (val === 'all' ? undefined : (val as VaultTransferStatus)) }))
                 }
               >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="in_transit">In Transit</SelectItem>
@@ -360,16 +360,16 @@ export default function VaultPage() {
             <div>
               <Label>Transfer Type</Label>
               <Select
-                value={historyFilters.transfer_type ?? ''}
+                value={historyFilters.transfer_type ?? 'all'}
                 onValueChange={(val) =>
-                  setHistoryFilters((prev) => ({ ...prev, transfer_type: (val || undefined) as VaultTransferType }))
+                  setHistoryFilters((prev) => ({ ...prev, transfer_type: (val === 'all' ? undefined : (val as VaultTransferType)) }))
                 }
               >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="vault_to_vault">Vault to Vault</SelectItem>
                   <SelectItem value="vault_to_branch">Vault to Branch</SelectItem>
                   <SelectItem value="branch_to_vault">Branch to Vault</SelectItem>
@@ -379,16 +379,16 @@ export default function VaultPage() {
             <div>
               <Label>Branch Filter</Label>
               <Select
-                value={historyFilters.branch_id ?? ''}
+                value={historyFilters.branch_id ?? 'all'}
                 onValueChange={(val) =>
-                  setHistoryFilters((prev) => ({ ...prev, branch_id: val || undefined }))
+                  setHistoryFilters((prev) => ({ ...prev, branch_id: val === 'all' ? undefined : val }))
                 }
               >
                 <SelectTrigger className="w-60">
                   <SelectValue placeholder="All branches" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All branches</SelectItem>
+                  <SelectItem value="all">All branches</SelectItem>
                   {(branchesData?.data ?? []).map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.code} - {branch.name_en ?? branch.name}
@@ -554,7 +554,7 @@ export default function VaultPage() {
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="main">Main</SelectItem>
                   <SelectItem value="branch">Branch</SelectItem>
                 </SelectContent>
@@ -796,15 +796,17 @@ export default function VaultPage() {
             <div>
               <Label>Branch</Label>
               <Select
-                value={vaultForm.branch_id}
-                onValueChange={(val) => setVaultForm((prev) => ({ ...prev, branch_id: val }))}
+                value={vaultForm.branch_id || 'none'}
+                onValueChange={(val) =>
+                  setVaultForm((prev) => ({ ...prev, branch_id: val === 'none' ? '' : val }))
+                }
                 disabled={vaultForm.vault_type === 'main'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {(branchesData?.data ?? []).map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.code} - {branch.name_en ?? branch.name}
