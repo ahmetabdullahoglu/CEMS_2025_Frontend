@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Table,
@@ -7,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useActiveCurrencies, useCurrencyRateHistory } from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
 
@@ -18,13 +20,23 @@ interface RateHistoryDialogProps {
 
 export default function RateHistoryDialog({ currency, open, onClose }: RateHistoryDialogProps) {
   const { data: activeCurrencies } = useActiveCurrencies()
-  const baseCurrency = activeCurrencies?.find((entry) => entry.is_base_currency)
-  const shouldSkipHistory = !currency || currency.is_base_currency || !baseCurrency
+  const [targetCurrencyId, setTargetCurrencyId] = useState<string | undefined>()
+
+  const availableTargets = useMemo(
+    () => activeCurrencies?.filter((entry) => entry.id !== currency?.id) ?? [],
+    [activeCurrencies, currency?.id]
+  )
+
+  useEffect(() => {
+    if (open && availableTargets.length > 0) {
+      setTargetCurrencyId((prev) => prev ?? availableTargets[0].id)
+    }
+  }, [open, availableTargets])
 
   const { data, isLoading } = useCurrencyRateHistory(
     currency?.id,
-    shouldSkipHistory ? undefined : baseCurrency?.id,
-    open && !shouldSkipHistory
+    targetCurrencyId,
+    open && !!currency && !!targetCurrencyId
   )
 
   return (
@@ -37,21 +49,32 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
         </DialogHeader>
         {!currency ? (
           <div className="text-center py-8 text-muted-foreground">Select a currency to view history.</div>
-        ) : currency.is_base_currency ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Base currency does not have exchange history against itself.
-          </div>
-        ) : !baseCurrency ? (
-          <div className="text-center py-8 text-muted-foreground">No base currency is configured.</div>
+        ) : availableTargets.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">No comparison currencies available.</div>
         ) : isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading rate history...</div>
         ) : !data || data.data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">No historical rates were found.</div>
         ) : (
           <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">Compare against</div>
+              <Select value={targetCurrencyId} onValueChange={(val) => setTargetCurrencyId(val)}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTargets.map((target) => (
+                    <SelectItem key={target.id} value={target.id}>
+                      {target.code} — {target.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="text-sm text-muted-foreground">
-              Showing last {data.data.length} entries updated by treasury for {currency.code} →{' '}
-              {baseCurrency?.code}.
+              Showing {data.data.length} entries for {currency.code} →{' '}
+              {availableTargets.find((item) => item.id === targetCurrencyId)?.code}
             </div>
             <div className="rounded-lg border">
               <Table>

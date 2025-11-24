@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Edit, History, Search } from 'lucide-react'
+import { Edit, History, Plus, Search, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useCurrencies } from '@/hooks/useCurrencies'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  useActivateCurrency,
+  useCurrencies,
+  useCurrencyWithRates,
+  useDeactivateCurrency,
+  useDeleteCurrency,
+} from '@/hooks/useCurrencies'
 import UpdateRateDialog from '../components/UpdateRateDialog'
 import RateHistoryDialog from '../components/RateHistoryDialog'
 import type { Currency } from '@/types/currency.types'
+import { CurrencyDialog } from '../components/CurrencyDialog'
 
 export default function CurrenciesPage() {
   const [page, setPage] = useState(1)
@@ -27,12 +35,25 @@ export default function CurrenciesPage() {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const [historyCurrency, setHistoryCurrency] = useState<Currency | null>(null)
   const [showHistoryDialog, setShowHistoryDialog] = useState(false)
+  const [showCurrencyDialog, setShowCurrencyDialog] = useState(false)
+  const [editingCurrency, setEditingCurrency] = useState<Currency | null>(null)
+  const [includeInactive, setIncludeInactive] = useState(false)
+  const [region, setRegion] = useState('')
+  const [detailCurrency, setDetailCurrency] = useState<Currency | null>(null)
+
+  const { mutate: activateCurrency } = useActivateCurrency()
+  const { mutate: deactivateCurrency } = useDeactivateCurrency()
+  const { mutate: deleteCurrency } = useDeleteCurrency()
 
   const { data, isLoading, isError } = useCurrencies({
     skip,
     limit: pageSize,
     search,
+    include_inactive: includeInactive,
+    region: region || null,
   })
+
+  const { data: withRates } = useCurrencyWithRates(detailCurrency?.id)
 
   const handleSearch = () => {
     setSearch(searchInput)
@@ -58,6 +79,11 @@ export default function CurrenciesPage() {
   const handleViewHistory = (currency: Currency) => {
     setHistoryCurrency(currency)
     setShowHistoryDialog(true)
+  }
+
+  const handleOpenCurrencyDialog = (currency?: Currency) => {
+    setEditingCurrency(currency ?? null)
+    setShowCurrencyDialog(true)
   }
 
   const handleCloseHistory = () => {
@@ -92,8 +118,15 @@ export default function CurrenciesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Currency Management</h1>
-        <p className="text-muted-foreground">Manage currency exchange rates</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Currency Management</h1>
+            <p className="text-muted-foreground">Manage currencies and exchange rates</p>
+          </div>
+          <Button onClick={() => handleOpenCurrencyDialog()}>
+            <Plus className="w-4 h-4 mr-2" /> Add Currency
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -101,19 +134,31 @@ export default function CurrenciesPage() {
           <CardTitle>Search Currencies</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search by code or name..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                />
+              </div>
               <Input
-                placeholder="Search by code or name..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyPress={handleKeyPress}
+                placeholder="Region"
+                className="w-40"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
               />
+              <Button onClick={handleSearch}>
+                <Search className="w-4 h-4 mr-2" />
+                Search
+              </Button>
             </div>
-            <Button onClick={handleSearch}>
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
+            <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox checked={includeInactive} onCheckedChange={(val) => setIncludeInactive(!!val)} />
+              Include inactive currencies
+            </label>
           </div>
         </CardContent>
       </Card>
@@ -156,7 +201,7 @@ export default function CurrenciesPage() {
                     <TableHead>Code</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Symbol</TableHead>
-                    <TableHead className="text-center">Base Currency</TableHead>
+                    <TableHead className="text-center">Decimals</TableHead>
                     <TableHead className="text-center">Active</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -164,26 +209,16 @@ export default function CurrenciesPage() {
                 </TableHeader>
                 <TableBody>
                   {(data.data ?? []).map((currency) => (
-                    <TableRow key={currency.id}>
+                    <TableRow key={currency.id} onClick={() => setDetailCurrency(currency)} className="cursor-pointer">
                       <TableCell className="font-medium">{currency.code ?? 'N/A'}</TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{currency.name_en ?? 'N/A'}</div>
-                          {currency.name_ar && (
-                            <div className="text-sm text-muted-foreground">{currency.name_ar}</div>
-                          )}
+                          <div className="font-medium">{currency.name ?? currency.name_en ?? 'N/A'}</div>
+                          {currency.name_ar && <div className="text-sm text-muted-foreground">{currency.name_ar}</div>}
                         </div>
                       </TableCell>
                       <TableCell className="text-xl">{currency.symbol ?? '-'}</TableCell>
-                      <TableCell className="text-center">
-                        {currency.is_base_currency ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                            Base
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
+                      <TableCell className="text-center">{currency.decimal_places}</TableCell>
                       <TableCell className="text-center">
                         {currency.is_active ? (
                           <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -216,7 +251,53 @@ export default function CurrenciesPage() {
                             onClick={() => handleUpdateRate(currency)}
                           >
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit
+                            Add Rate
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleOpenCurrencyDialog(currency)
+                            }}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Currency
+                          </Button>
+                          {currency.is_active ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deactivateCurrency(currency.id)
+                              }}
+                            >
+                              Deactivate
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                activateCurrency(currency.id)
+                              }}
+                            >
+                              Activate
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteCurrency(currency.id)
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
@@ -284,6 +365,56 @@ export default function CurrenciesPage() {
         open={showHistoryDialog}
         onClose={handleCloseHistory}
       />
+
+      <CurrencyDialog
+        open={showCurrencyDialog}
+        onClose={() => setShowCurrencyDialog(false)}
+        currency={editingCurrency}
+      />
+
+      {detailCurrency && withRates && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Rates for {detailCurrency.code} ({detailCurrency.name || detailCurrency.name_en})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {withRates.rates.length === 0 ? (
+              <div className="text-muted-foreground">No exchange rates recorded for this currency.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pair</TableHead>
+                    <TableHead>Mid Rate</TableHead>
+                    <TableHead>Buy Rate</TableHead>
+                    <TableHead>Sell Rate</TableHead>
+                    <TableHead>Effective</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {withRates.rates.map((rate) => (
+                    <TableRow key={rate.id}>
+                      <TableCell className="font-medium">
+                        {rate.from_currency?.code ?? detailCurrency.code} → {rate.to_currency?.code}
+                      </TableCell>
+                      <TableCell>{rate.rate}</TableCell>
+                      <TableCell>{rate.buy_rate ?? 'N/A'}</TableCell>
+                      <TableCell>{rate.sell_rate ?? 'N/A'}</TableCell>
+                      <TableCell>
+                        {rate.effective_from
+                          ? new Date(rate.effective_from).toLocaleString()
+                          : new Date(rate.created_at).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
