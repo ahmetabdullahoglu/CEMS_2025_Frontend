@@ -246,7 +246,6 @@ export default function PendingTransfers() {
           <Badge variant="outline" className="capitalize">
             {transfer.transfer_type.replaceAll('_', ' ')}
           </Badge>
-          <Badge variant="secondary">{transfer.transfer_number}</Badge>
         </div>
       </div>
     )

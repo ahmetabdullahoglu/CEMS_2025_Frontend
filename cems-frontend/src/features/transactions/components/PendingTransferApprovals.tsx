@@ -94,7 +94,6 @@ export default function PendingTransferApprovals({ branchId }: PendingTransferAp
         <Badge variant="outline" className="capitalize">
           {transfer.transfer_type.replace(/_/g, ' ')}
         </Badge>
-        <Badge variant="secondary">{transfer.transaction_number}</Badge>
       </div>
     </div>
   )
