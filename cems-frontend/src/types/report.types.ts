@@ -217,16 +217,16 @@ export interface CustomReportResponse {
 
 // Report Export Types
 export interface ReportExportParams {
-  report_name: string
+  report_type: string
   format: 'pdf' | 'excel' | 'csv'
-  start_date: string
-  end_date: string
   filters?: Record<string, unknown>
 }
 
 export interface ReportExportResponse {
-  download_url: string
-  expires_at: string // ISO datetime
-  file_name: string
-  file_size: number
+  download_url?: string
+  expires_at?: string // ISO datetime
+  file_name?: string
+  file_size?: number
+  // Some report exports may return a generic payload
+  [key: string]: unknown
 }

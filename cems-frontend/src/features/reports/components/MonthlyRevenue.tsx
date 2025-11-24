@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Calendar, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
 import {
@@ -16,13 +16,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useMonthlyRevenue } from '@/hooks/useReports'
+import { useBranchSelection } from '@/contexts/BranchContext'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { formatBranchLabel } from '@/utils/branch'
 
 export default function MonthlyRevenue() {
   const currentDate = new Date()
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1)
+  const { availableBranches, currentBranchId } = useBranchSelection()
+  const [branchId, setBranchId] = useState<string>('all')
 
-  const { data, isLoading, isError } = useMonthlyRevenue(selectedYear, selectedMonth)
+  useEffect(() => {
+    if (currentBranchId && branchId === 'all') {
+      setBranchId(currentBranchId)
+    }
+  }, [branchId, currentBranchId])
+
+  const { data, isLoading, isError } = useMonthlyRevenue(
+    { year: selectedYear, month: selectedMonth, branchId: branchId === 'all' ? null : branchId },
+    !!selectedYear && !!selectedMonth
+  )
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const [year, month] = e.target.value.split('-')
@@ -40,7 +54,7 @@ export default function MonthlyRevenue() {
           <CardTitle>Select Month</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
             <Calendar className="w-5 h-5 text-muted-foreground" />
             <div className="flex-1 max-w-xs">
               <Label htmlFor="month">Month</Label>
@@ -51,6 +65,22 @@ export default function MonthlyRevenue() {
                 onChange={handleMonthChange}
                 max={format(new Date(), 'yyyy-MM')}
               />
+            </div>
+            <div className="flex-1 max-w-xs">
+              <Label htmlFor="revenue-branch">Branch</Label>
+              <Select value={branchId} onValueChange={(value) => setBranchId(value)}>
+                <SelectTrigger id="revenue-branch">
+                  <SelectValue placeholder="All branches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All branches</SelectItem>
+                  {availableBranches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {formatBranchLabel(branch, branch.name_en, branch.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

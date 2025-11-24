@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Calendar, TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react'
 import {
@@ -16,12 +16,29 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useDailySummary } from '@/hooks/useReports'
+import { useBranchSelection } from '@/contexts/BranchContext'
+import { formatBranchLabel } from '@/utils/branch'
 
 export default function DailySummary() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const { availableBranches, currentBranchId } = useBranchSelection()
+  const [branchId, setBranchId] = useState<string>('all')
 
-  const { data, isLoading, isError } = useDailySummary(selectedDate)
+  useEffect(() => {
+    if (currentBranchId && branchId === 'all') {
+      setBranchId(currentBranchId)
+    }
+  }, [branchId, currentBranchId])
+
+  const { data, isLoading, isError } = useDailySummary(
+    {
+      targetDate: selectedDate,
+      branchId: branchId === 'all' ? null : branchId,
+    },
+    !!selectedDate
+  )
 
   return (
     <div className="space-y-6">
@@ -31,7 +48,7 @@ export default function DailySummary() {
           <CardTitle>Select Date</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
             <Calendar className="w-5 h-5 text-muted-foreground" />
             <div className="flex-1 max-w-xs">
               <Label htmlFor="date">Date</Label>
@@ -42,6 +59,22 @@ export default function DailySummary() {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 max={format(new Date(), 'yyyy-MM-dd')}
               />
+            </div>
+            <div className="flex-1 max-w-xs">
+              <Label htmlFor="branch">Branch</Label>
+              <Select value={branchId} onValueChange={(value) => setBranchId(value)}>
+                <SelectTrigger id="branch">
+                  <SelectValue placeholder="All branches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All branches</SelectItem>
+                  {availableBranches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {formatBranchLabel(branch, branch.name_en, branch.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

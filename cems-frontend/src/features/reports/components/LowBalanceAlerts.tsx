@@ -24,10 +24,8 @@ export default function LowBalanceAlerts() {
 
   const handleExport = () => {
     exportMutation.mutate({
-      report_name: 'low-balance-alerts',
+      report_type: 'low-balance-alerts',
       format: 'pdf',
-      start_date: new Date().toISOString(),
-      end_date: new Date().toISOString(),
       filters: { severity: severity === 'all' ? undefined : severity },
     })
   }

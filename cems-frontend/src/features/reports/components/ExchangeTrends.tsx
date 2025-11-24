@@ -31,27 +31,27 @@ export default function ExchangeTrends() {
 
   const [startDate, setStartDate] = useState(weekAgo)
   const [endDate, setEndDate] = useState(today)
-  const [fromCurrency, setFromCurrency] = useState('')
-  const [toCurrency, setToCurrency] = useState('')
+  const [fromCurrency, setFromCurrency] = useState('USD')
+  const [toCurrency, setToCurrency] = useState('EUR')
 
   const { data, isLoading, isError, refetch, isFetching } = useExchangeTrends({
     startDate,
     endDate,
-    fromCurrency: fromCurrency || undefined,
-    toCurrency: toCurrency || undefined,
+    fromCurrency,
+    toCurrency,
   })
 
   const exportMutation = useReportExport()
 
   const handleExport = () => {
     exportMutation.mutate({
-      report_name: 'exchange-trends',
+      report_type: 'exchange-trends',
       format: 'csv',
-      start_date: startDate,
-      end_date: endDate,
       filters: {
-        from_currency: fromCurrency || undefined,
-        to_currency: toCurrency || undefined,
+        start_date: startDate,
+        end_date: endDate,
+        from_currency: fromCurrency,
+        to_currency: toCurrency,
       },
     })
   }

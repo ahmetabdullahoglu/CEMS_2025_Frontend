@@ -57,10 +57,8 @@ export default function CustomAnalytics() {
 
   const handleExport = () => {
     exportMutation.mutate({
-      report_name: `${formState.report_type}-custom`,
+      report_type: `${formState.report_type}-custom`,
       format: 'csv',
-      start_date: formState.start_date,
-      end_date: formState.end_date,
       filters: formState,
     })
   }

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useReportExport } from '@/hooks/useReports'
 
 export default function ReportExportPanel() {
-  const [reportName, setReportName] = useState('executive-summary')
+  const [reportType, setReportType] = useState('daily-summary')
   const [format, setFormat] = useState<'pdf' | 'excel' | 'csv'>('pdf')
   const [startDate, setStartDate] = useState('2024-01-01')
   const [endDate, setEndDate] = useState('2024-12-31')
@@ -18,10 +18,9 @@ export default function ReportExportPanel() {
   const handleExport = (event: React.FormEvent) => {
     event.preventDefault()
     exportMutation.mutate({
-      report_name: reportName,
+      report_type: reportType,
       format,
-      start_date: startDate,
-      end_date: endDate,
+      filters: { start_date: startDate, end_date: endDate },
     })
   }
 
@@ -36,13 +35,21 @@ export default function ReportExportPanel() {
       <CardContent>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={handleExport}>
           <div className="md:col-span-2">
-            <Label htmlFor="report-name">Report Name</Label>
-            <Input
-              id="report-name"
-              value={reportName}
-              onChange={(event) => setReportName(event.target.value)}
-              placeholder="finance-weekly"
-            />
+            <Label htmlFor="report-name">Report Type</Label>
+            <Select value={reportType} onValueChange={setReportType}>
+              <SelectTrigger id="report-name">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily-summary">Daily summary</SelectItem>
+                <SelectItem value="monthly-revenue">Monthly revenue</SelectItem>
+                <SelectItem value="branch-performance">Branch performance</SelectItem>
+                <SelectItem value="exchange-trends">Exchange trends</SelectItem>
+                <SelectItem value="low-balance-alerts">Low balance alerts</SelectItem>
+                <SelectItem value="user-activity">User activity</SelectItem>
+                <SelectItem value="audit-trail">Audit trail</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="export-start-date">Start Date</Label>

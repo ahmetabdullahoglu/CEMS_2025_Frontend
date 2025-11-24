@@ -135,6 +135,14 @@ export const useCurrencyWithRates = (currencyId?: string) => {
     queryFn: () => currencyApi.getCurrencyWithRates(currencyId!),
     enabled: !!currencyId,
     staleTime: 1000 * 60 * 2,
+    select: (payload) => {
+      const wrapped = (payload as { data?: CurrencyWithRates }).data
+      const base = wrapped ?? payload
+      return {
+        ...base,
+        rates: Array.isArray(base?.rates) ? base.rates : [],
+      } as CurrencyWithRates
+    },
   })
 }
 

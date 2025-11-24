@@ -18,17 +18,27 @@ import type {
 
 export const reportApi = {
   // Get daily summary report
-  getDailySummary: async (date: string): Promise<DailySummaryResponse> => {
+  getDailySummary: async (
+    targetDate?: string,
+    branchId?: string | null
+  ): Promise<DailySummaryResponse> => {
     const response = await apiClient.get<DailySummaryResponse>('/reports/daily-summary', {
-      params: { date },
+      params: {
+        target_date: targetDate,
+        branch_id: branchId ?? undefined,
+      },
     })
     return response.data
   },
 
   // Get monthly revenue report
-  getMonthlyRevenue: async (year: number, month: number): Promise<MonthlyRevenueResponse> => {
+  getMonthlyRevenue: async (
+    year: number,
+    month: number,
+    branchId?: string | null
+  ): Promise<MonthlyRevenueResponse> => {
     const response = await apiClient.get<MonthlyRevenueResponse>('/reports/monthly-revenue', {
-      params: { year, month },
+      params: { year, month, branch_id: branchId ?? undefined },
     })
     return response.data
   },
@@ -42,7 +52,12 @@ export const reportApi = {
   },
 
   // Get exchange trends report
-  getExchangeTrends: async (startDate: string, endDate: string, fromCurrency?: string, toCurrency?: string): Promise<ExchangeTrendsResponse> => {
+  getExchangeTrends: async (
+    startDate: string,
+    endDate: string,
+    fromCurrency: string,
+    toCurrency: string
+  ): Promise<ExchangeTrendsResponse> => {
     const response = await apiClient.get<ExchangeTrendsResponse>('/reports/exchange-trends', {
       params: {
         start_date: startDate,
@@ -55,9 +70,12 @@ export const reportApi = {
   },
 
   // Get balance snapshot report
-  getBalanceSnapshot: async (branchId?: string): Promise<BalanceSnapshotResponse> => {
+  getBalanceSnapshot: async (branchId?: string, asOf?: string): Promise<BalanceSnapshotResponse> => {
     const response = await apiClient.get<BalanceSnapshotResponse>('/reports/balance-snapshot', {
-      params: branchId ? { branch_id: branchId } : undefined,
+      params: {
+        branch_id: branchId,
+        as_of: asOf,
+      },
     })
     return response.data
   },
@@ -76,18 +94,13 @@ export const reportApi = {
   },
 
   // Get low balance alerts report
-  getLowBalanceAlerts: async (branchId?: string, severity?: 'warning' | 'critical'): Promise<LowBalanceAlertsResponse> => {
-    const response = await apiClient.get<LowBalanceAlertsResponse>('/reports/low-balance-alerts', {
-      params: {
-        branch_id: branchId,
-        severity,
-      },
-    })
+  getLowBalanceAlerts: async (): Promise<LowBalanceAlertsResponse> => {
+    const response = await apiClient.get<LowBalanceAlertsResponse>('/reports/low-balance-alerts')
     return response.data
   },
 
   // Get user activity report
-  getUserActivity: async (startDate: string, endDate: string, userId?: string): Promise<UserActivityResponse> => {
+  getUserActivity: async (startDate: string, endDate: string, userId: string): Promise<UserActivityResponse> => {
     const response = await apiClient.get<UserActivityResponse>('/reports/user-activity', {
       params: {
         start_date: startDate,
@@ -99,15 +112,14 @@ export const reportApi = {
   },
 
   // Get audit trail report
-  getAuditTrail: async (startDate: string, endDate: string, userId?: string, action?: string, page: number = 1, pageSize: number = 50): Promise<AuditTrailResponse> => {
+  getAuditTrail: async (
+    entityType: string,
+    entityId: string
+  ): Promise<AuditTrailResponse> => {
     const response = await apiClient.get<AuditTrailResponse>('/reports/audit-trail', {
       params: {
-        start_date: startDate,
-        end_date: endDate,
-        user_id: userId,
-        action,
-        page,
-        page_size: pageSize,
+        entity_type: entityType,
+        entity_id: entityId,
       },
     })
     return response.data
@@ -134,7 +146,12 @@ export const reportApi = {
 
   // Export report
   exportReport: async (params: ReportExportParams): Promise<ReportExportResponse> => {
-    const response = await apiClient.post<ReportExportResponse>('/reports/export', params)
+    const { report_type, format, filters } = params
+    const response = await apiClient.post<ReportExportResponse>(
+      '/reports/export',
+      filters ?? {},
+      { params: { report_type, format } }
+    )
     return response.data
   },
 }

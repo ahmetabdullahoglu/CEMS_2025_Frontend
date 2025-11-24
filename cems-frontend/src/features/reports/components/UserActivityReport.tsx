@@ -29,18 +29,23 @@ export default function UserActivityReport() {
   const lastMonth = format(subDays(new Date(), 30), 'yyyy-MM-dd')
   const [startDate, setStartDate] = useState(lastMonth)
   const [endDate, setEndDate] = useState(today)
+  const [userId, setUserId] = useState('')
 
-  const { data, isLoading, isError } = useUserActivityReport({ startDate, endDate })
+  const { data, isLoading, isError } = useUserActivityReport({ startDate, endDate, userId, enabled: !!userId })
   const exportMutation = useReportExport()
 
   const topUsers = useMemo(() => data?.users.slice(0, 8) ?? [], [data])
 
   const handleExport = () => {
+    if (!userId) return
     exportMutation.mutate({
-      report_name: 'user-activity',
+      report_type: 'user-activity',
       format: 'excel',
-      start_date: startDate,
-      end_date: endDate,
+      filters: {
+        start_date: startDate,
+        end_date: endDate,
+        user_id: userId,
+      },
     })
   }
 
@@ -53,6 +58,15 @@ export default function UserActivityReport() {
             <p className="text-sm text-muted-foreground">Review workload and performance per user</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <div>
+              <Label htmlFor="user-id">User ID</Label>
+              <Input
+                id="user-id"
+                placeholder="User UUID"
+                value={userId}
+                onChange={(event) => setUserId(event.target.value)}
+              />
+            </div>
             <div>
               <Label htmlFor="user-activity-start">Start Date</Label>
               <Input
@@ -81,7 +95,9 @@ export default function UserActivityReport() {
         </CardHeader>
       </Card>
 
-      {isLoading ? (
+      {!userId ? (
+        <div className="text-center py-10 text-muted-foreground">Enter a user ID to view activity.</div>
+      ) : isLoading ? (
         <div className="text-center py-10 text-muted-foreground">Loading user activity...</div>
       ) : isError ? (
         <div className="text-center py-10 text-destructive">Failed to load user activity.</div>
