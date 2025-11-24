@@ -1,6 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Phone, Mail, Eye, PencilLine, Plus, Users } from 'lucide-react'
+import {
+  Search,
+  MapPin,
+  Phone,
+  Mail,
+  Eye,
+  PencilLine,
+  Plus,
+  Users,
+  Wallet,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -32,7 +44,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { Branch } from '@/types/branch.types'
-import { useBranches, useCreateBranch, useUpdateBranch } from '@/hooks/useBranches'
+import {
+  useBranchBalances,
+  useBranches,
+  useCreateBranch,
+  useUpdateBranch,
+} from '@/hooks/useBranches'
 
 type BranchFormState = {
   name: string
@@ -86,6 +103,13 @@ export default function BranchesPage() {
   const [editForm, setEditForm] = useState<BranchFormState>(defaultBranchForm)
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [expandedBranchId, setExpandedBranchId] = useState<string | null>(null)
+
+  const {
+    data: balancesData,
+    isLoading: balancesLoading,
+    isError: balancesError,
+  } = useBranchBalances(expandedBranchId ?? '', Boolean(expandedBranchId))
 
   const { mutateAsync: createBranch, isPending: creatingBranch } = useCreateBranch()
   const { mutateAsync: updateBranch, isPending: updatingBranch } = useUpdateBranch()
@@ -217,6 +241,10 @@ export default function BranchesPage() {
     setCreateForm(defaultBranchForm)
     setEditForm(defaultBranchForm)
     setFormError(null)
+  }
+
+  const toggleBalances = (branchId: string) => {
+    setExpandedBranchId((prev) => (prev === branchId ? null : branchId))
   }
 
   const handleCreateBranch = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -439,19 +467,23 @@ export default function BranchesPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Contact Info</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(data.data ?? []).map((branch) => (
-                    <TableRow key={branch.id}>
-                      <TableCell>
-                        <button
-                          onClick={() => handleViewBranch(branch.id)}
-                          className="hover:text-primary hover:underline text-left"
-                        >
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {(data.data ?? []).map((branch) => {
+                    const isExpanded = expandedBranchId === branch.id
+
+                    return (
+                      <Fragment key={branch.id}>
+                        <TableRow>
+                          <TableCell>
+                            <button
+                              onClick={() => handleViewBranch(branch.id)}
+                              className="hover:text-primary hover:underline text-left"
+                            >
                           <div className="font-medium">{branch.name_en ?? 'N/A'}</div>
                           {branch.name_ar && (
                             <div className="text-sm text-muted-foreground">{branch.name_ar}</div>
@@ -494,39 +526,129 @@ export default function BranchesPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={branch.is_active ? 'default' : 'secondary'}>
-                          {branch.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
-                            <PencilLine className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => navigate(`/branches/${branch.id}/users`)}
-                          >
-                            <Users className="w-4 h-4 mr-2" />
-                            Users
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewBranch(branch.id)}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Details
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          <TableCell>
+                            <Badge variant={branch.is_active ? 'default' : 'secondary'}>
+                              {branch.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
+                                <PencilLine className="w-4 h-4 mr-2" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => navigate(`/branches/${branch.id}/users`)}
+                              >
+                                <Users className="w-4 h-4 mr-2" />
+                                Users
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleViewBranch(branch.id)}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Details
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={isExpanded ? 'default' : 'outline'}
+                                onClick={() => toggleBalances(branch.id)}
+                              >
+                                <Wallet className="w-4 h-4 mr-2" />
+                                {isExpanded ? 'Hide Balances' : 'Balances'}
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 ml-2" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 ml-2" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow className="bg-muted/40">
+                            <TableCell colSpan={6}>
+                              {balancesLoading && (
+                                <div className="py-4 text-sm text-muted-foreground">
+                                  Loading balances...
+                                </div>
+                              )}
+                              {balancesError && (
+                                <div className="py-4 text-sm text-destructive">
+                                  Unable to load balances for this branch right now.
+                                </div>
+                              )}
+                              {balancesData && balancesData.branch_id === branch.id && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Wallet className="w-4 h-4" />
+                                      <span className="font-medium text-foreground">
+                                        {balancesData.branch_name}
+                                      </span>
+                                    </div>
+                                    {balancesData.total_usd_equivalent && (
+                                      <span className="text-sm text-muted-foreground">
+                                        Total USD Value: {balancesData.total_usd_equivalent}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {balancesData.balances.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground">
+                                      No balances available for this branch.
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-md border bg-background">
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow>
+                                            <TableHead>Currency</TableHead>
+                                            <TableHead>Balance</TableHead>
+                                            <TableHead>Available</TableHead>
+                                            <TableHead>Reserved</TableHead>
+                                            <TableHead>Min / Max</TableHead>
+                                            <TableHead>Updated</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {balancesData.balances.map((balance) => (
+                                            <TableRow key={`${balance.currency_code}-${balance.currency_id ?? ''}`}>
+                                              <TableCell className="font-medium">
+                                                <div>{balance.currency_code}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                  {balance.currency_name}
+                                                </div>
+                                              </TableCell>
+                                              <TableCell>{balance.balance}</TableCell>
+                                              <TableCell>{balance.available_balance ?? '—'}</TableCell>
+                                              <TableCell>{balance.reserved_balance ?? '—'}</TableCell>
+                                              <TableCell className="text-sm text-muted-foreground">
+                                                {balance.minimum_threshold ?? '—'} /{' '}
+                                                {balance.maximum_threshold ?? '—'}
+                                              </TableCell>
+                                              <TableCell className="text-sm text-muted-foreground">
+                                                {balance.last_updated ? new Date(balance.last_updated).toLocaleString() : '—'}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+              </TableBody>
+            </Table>
 
               {/* Pagination */}
               {(() => {
