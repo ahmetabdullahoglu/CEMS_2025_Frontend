@@ -25,6 +25,16 @@ export default function DailySummary() {
 
   const summary = (data as { data?: unknown })?.data ?? data
 
+  const selectedBranch =
+    branchId === 'all' ? null : availableBranches.find((branch) => branch.id === branchId)
+
+  const branchScopeLabel =
+    branchId === 'all'
+      ? 'All branches'
+      : selectedBranch
+        ? formatBranchLabel(selectedBranch, selectedBranch.name_en, selectedBranch.id)
+        : branchId
+
   const currencyVolumes = Object.entries(summary?.volume_by_currency ?? {}).map(([code, value]) => ({
     currency: code,
     volume: Number(value ?? 0),
@@ -143,7 +153,7 @@ export default function DailySummary() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{branchId === 'all' ? 'All branches' : branchId}</div>
+                <div className="text-2xl font-bold">{branchScopeLabel}</div>
                 <p className="text-xs text-muted-foreground mt-1">Scope of the report</p>
               </CardContent>
             </Card>
