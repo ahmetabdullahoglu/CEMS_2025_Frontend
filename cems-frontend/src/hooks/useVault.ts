@@ -4,9 +4,21 @@ import type {
   CreateVaultTransferRequest,
   VaultTransferQueryParams,
   VaultResponse,
+  VaultBalanceUpdate,
+  VaultStatistics,
+  VaultTransferSummary,
+  VaultCreate,
+  VaultUpdate,
 } from '@/types/vault.types'
 
-export const useVaultsList = (params?: { branch_id?: string; is_active?: boolean }) => {
+export const useVaultsList = (params?: {
+  branch_id?: string
+  is_active?: boolean
+  search?: string
+  vault_type?: string
+  skip?: number
+  limit?: number
+}) => {
   return useQuery({
     queryKey: ['vault', 'list', params],
     queryFn: () => vaultApi.listVaults(params),
@@ -29,6 +41,15 @@ export const useVaultBalances = () => {
   })
 }
 
+export const useVaultDetails = (vaultId?: string) => {
+  return useQuery({
+    queryKey: ['vault', 'details', vaultId],
+    queryFn: () => vaultApi.getVaultById(vaultId!),
+    enabled: Boolean(vaultId),
+    staleTime: 1000 * 60 * 2,
+  })
+}
+
 export const useVaultCurrencyBalance = (currencyId?: string) => {
   return useQuery({
     queryKey: ['vault', 'currency-balance', currencyId],
@@ -41,9 +62,20 @@ export const useVaultCurrencyBalance = (currencyId?: string) => {
 export const useVaultReconciliationReport = (vaultId?: string) => {
   return useQuery({
     queryKey: ['vault', 'reconciliation', vaultId],
-    queryFn: () => vaultApi.getReconciliationReport(vaultId!),
-    enabled: Boolean(vaultId),
+    queryFn: () => vaultApi.getReconciliationReport(vaultId),
+    enabled: true,
     staleTime: 1000 * 60 * 5,
+  })
+}
+
+export const useReconcileVault = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: vaultApi.reconcileVault,
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vault', 'reconciliation', variables.vault_id] })
+    },
   })
 }
 
@@ -63,6 +95,18 @@ export const useCreateVaultTransfer = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })
       queryClient.invalidateQueries({ queryKey: ['vault', 'details'] })
+    },
+  })
+}
+
+export const useAdjustVaultBalance = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: VaultBalanceUpdate) => vaultApi.adjustVaultBalance(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vault', 'details'] })
+      queryClient.invalidateQueries({ queryKey: ['vault', 'details', variables.vault_id] })
     },
   })
 }
@@ -87,6 +131,56 @@ export const useRejectVaultTransfer = () => {
       vaultApi.rejectVaultTransfer(id, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault', 'transfers'] })
+    },
+  })
+}
+
+export const useVaultTransferDetails = (transferId?: string) => {
+  return useQuery({
+    queryKey: ['vault', 'transfer', transferId],
+    queryFn: () => vaultApi.getVaultTransferDetails(transferId!),
+    enabled: Boolean(transferId),
+  })
+}
+
+export const useVaultStatistics = (vaultId?: string) => {
+  return useQuery<VaultStatistics>({
+    queryKey: ['vault', 'statistics', vaultId],
+    queryFn: () => vaultApi.getVaultStatistics(vaultId),
+    enabled: true,
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
+export const useVaultTransferStatistics = (vaultId?: string, periodDays?: number) => {
+  return useQuery<VaultTransferSummary>({
+    queryKey: ['vault', 'statistics', 'transfers', vaultId, periodDays],
+    queryFn: () => vaultApi.getVaultTransferStatistics(vaultId, periodDays),
+    enabled: true,
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
+export const useCreateVault = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: VaultCreate) => vaultApi.createVault(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vault', 'list'] })
+    },
+  })
+}
+
+export const useUpdateVault = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ vaultId, payload }: { vaultId: string; payload: VaultUpdate }) =>
+      vaultApi.updateVault(vaultId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vault', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['vault', 'details', variables.vaultId] })
     },
   })
 }

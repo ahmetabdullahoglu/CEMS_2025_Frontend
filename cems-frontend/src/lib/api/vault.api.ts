@@ -36,6 +36,8 @@ export const vaultApi = {
     is_active?: boolean
     skip?: number
     limit?: number
+    search?: string
+    vault_type?: string
   }) => {
     const response = await apiClient.get('/vault/all', { params })
     return response.data
@@ -124,6 +126,11 @@ export const vaultApi = {
     return response.data
   },
 
+  getVaultTransferDetails: async (transferId: string): Promise<VaultTransferResponse> => {
+    const response = await apiClient.get<VaultTransferResponse>(`/vault/transfers/${transferId}`)
+    return response.data
+  },
+
   // Get vault balance for specific currency
   getCurrencyBalance: async (currencyIdentifier: string, vaultId?: string): Promise<VaultCurrencyBalanceDetails> => {
     const response = await apiClient.get<VaultCurrencyBalanceDetails>(
@@ -141,10 +148,10 @@ export const vaultApi = {
     return response.data
   },
 
-  // Get latest reconciliation report for a vault
-  getReconciliationReport: async (vaultId: string): Promise<VaultReconciliationReport> => {
-    const response = await apiClient.get<VaultReconciliationReport>('/vault/reconciliation/report', {
-      params: { vault_id: vaultId },
+  // Get latest reconciliation report for a vault (falls back to main vault when not provided)
+  getReconciliationReport: async (vaultId?: string): Promise<VaultReconciliationReport> => {
+    const response = await apiClient.get<VaultReconciliationReport>('/vault/reconciliation', {
+      params: vaultId ? { vault_id: vaultId } : undefined,
     })
     return response.data
   },
