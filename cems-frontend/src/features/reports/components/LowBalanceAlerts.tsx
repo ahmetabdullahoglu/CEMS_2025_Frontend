@@ -36,6 +36,8 @@ export default function LowBalanceAlerts() {
     </Badge>
   )
 
+  const alerts = data?.alerts ?? []
+
   return (
     <div className="space-y-6">
       <Card>
@@ -72,7 +74,7 @@ export default function LowBalanceAlerts() {
         <div className="text-center py-10 text-muted-foreground">Loading alerts...</div>
       ) : isError ? (
         <div className="text-center py-10 text-destructive">Unable to load alerts.</div>
-      ) : data && data.alerts.length > 0 ? (
+      ) : alerts.length > 0 ? (
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -83,25 +85,19 @@ export default function LowBalanceAlerts() {
                 <ShieldAlert className="h-10 w-10 text-red-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Critical Alerts</p>
-                  <p className="text-2xl font-bold">
-                    {data.alerts.filter((alert) => alert.severity === 'critical').length}
-                  </p>
+                  <p className="text-2xl font-bold">{alerts.filter((alert) => alert.severity === 'critical').length}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <ShieldCheck className="h-10 w-10 text-yellow-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">Warnings</p>
-                  <p className="text-2xl font-bold">
-                    {data.alerts.filter((alert) => alert.severity === 'warning').length}
-                  </p>
+                  <p className="text-2xl font-bold">{alerts.filter((alert) => alert.severity === 'warning').length}</p>
                 </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Branches Impacted</p>
-                <p className="text-2xl font-bold">
-                  {new Set(data.alerts.map((alert) => alert.branch_id)).size}
-                </p>
+                <p className="text-2xl font-bold">{new Set(alerts.map((alert) => alert.branch_id)).size}</p>
               </div>
             </CardContent>
           </Card>
@@ -123,7 +119,7 @@ export default function LowBalanceAlerts() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.alerts.slice(0, 8).map((alert) => (
+                  {alerts.slice(0, 8).map((alert) => (
                     <TableRow key={`${alert.branch_id}-${alert.currency_id}`}>
                       <TableCell>
                         <div>

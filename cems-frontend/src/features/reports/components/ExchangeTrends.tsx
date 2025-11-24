@@ -1,32 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { subDays, format } from 'date-fns'
 import { TrendingUp, RefreshCcw } from 'lucide-react'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useExchangeTrends, useReportExport } from '@/hooks/useReports'
 import { useActiveCurrencies } from '@/hooks/useCurrencies'
 import type { CurrencyResponse } from '@/types/currency.types'
+import type { ExchangeTrendData } from '@/types/report.types'
 
 export default function ExchangeTrends() {
   const today = format(new Date(), 'yyyy-MM-dd')
@@ -77,13 +62,16 @@ export default function ExchangeTrends() {
     })
   }
 
-  const exchangePayload = (data as { data?: unknown; success?: boolean })?.data ?? data
-  const trends = exchangePayload?.daily_trends ?? exchangePayload?.trends ?? []
-  const periodStart = exchangePayload?.date_range?.start ?? exchangePayload?.period_start
-  const periodEnd = exchangePayload?.date_range?.end ?? exchangePayload?.period_end
-  const mostTraded = exchangePayload?.most_traded_pair ?? null
-  const trendRows = Array.isArray(trends) ? trends : []
-  const pairLabel = exchangePayload?.currency_pair ?? `${fromCurrency}/${toCurrency}`
+  const payload = (data as { data?: unknown })?.data ?? data
+  const trends = (payload?.daily_trends ?? payload?.trends ?? []) as ExchangeTrendData[]
+  const pairLabel = payload?.currency_pair ?? `${fromCurrency}/${toCurrency}`
+  const totalVolume = Number(payload?.total_volume ?? 0)
+  const totalTransactions = payload?.total_transactions ?? 0
+  const avgRate = Number(payload?.average_rate ?? 0)
+  const minRate = Number(payload?.min_rate ?? 0)
+  const maxRate = Number(payload?.max_rate ?? 0)
+  const periodStart = payload?.date_range?.start ?? payload?.period_start
+  const periodEnd = payload?.date_range?.end ?? payload?.period_end
 
   return (
     <div className="space-y-6">
@@ -183,45 +171,64 @@ export default function ExchangeTrends() {
         <div className="text-center py-10 text-muted-foreground">Loading exchange trends...</div>
       ) : isError ? (
         <div className="text-center py-10 text-destructive">Unable to load exchange trends.</div>
-      ) : data ? (
+      ) : payload ? (
         <div className="space-y-6">
-          {mostTraded && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" /> Most Traded Pair
-                </CardTitle>
+                <CardTitle className="text-sm">Pair</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pair</p>
-                  <p className="text-2xl font-semibold">
-                    {mostTraded.from_currency} / {mostTraded.to_currency}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Volume</p>
-                  <p className="text-2xl font-semibold">{Number(mostTraded.volume).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Period</p>
-                  <p className="text-lg font-medium">
-                    {periodStart ?? '—'} → {periodEnd ?? '—'}
-                  </p>
-                </div>
+              <CardContent>
+                <p className="text-2xl font-semibold">{pairLabel}</p>
+                <p className="text-xs text-muted-foreground">{periodStart ?? '—'} → {periodEnd ?? '—'}</p>
               </CardContent>
             </Card>
-          )}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{totalTransactions}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Volume</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-green-600">{totalVolume.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Average Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{avgRate.toFixed(4)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Min / Max</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg font-semibold text-red-500">Min: {minRate.toFixed(4)}</p>
+                <p className="text-lg font-semibold text-green-600">Max: {maxRate.toFixed(4)}</p>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Average Rate Trend</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" /> Average Rate Trend
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={trendRows}>
+                <LineChart data={trends}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
+                  <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM dd')} />
                   <YAxis />
                   <Tooltip />
                   <Line type="monotone" dataKey="average_rate" stroke="#2563eb" strokeWidth={2} dot={false} />
@@ -246,10 +253,10 @@ export default function ExchangeTrends() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {trendRows.slice(0, 10).map((trend) => (
-                    <TableRow key={`${trend.date}-${trend.from_currency}-${trend.to_currency}`}>
-                      <TableCell>{trend.date}</TableCell>
-                      <TableCell>{trend.from_currency ? `${trend.from_currency} / ${trend.to_currency}` : pairLabel}</TableCell>
+                  {trends.slice(0, 10).map((trend, index) => (
+                    <TableRow key={`${trend.date}-${index}`}>
+                      <TableCell>{format(new Date(trend.date), 'PPP')}</TableCell>
+                      <TableCell>{trend.from_currency && trend.to_currency ? `${trend.from_currency} / ${trend.to_currency}` : pairLabel}</TableCell>
                       <TableCell>{Number(trend.average_rate).toFixed(4)}</TableCell>
                       <TableCell>{Number(trend.total_volume).toLocaleString()}</TableCell>
                       <TableCell>{trend.transaction_count}</TableCell>

@@ -1,80 +1,86 @@
-// Daily Summary Types
-export interface DailySummaryStats {
-  total_transactions: number
-  total_revenue: string // Decimal as string
-  total_expenses: string // Decimal as string
-  net_profit: string // Decimal as string
-  exchange_transactions: number
-  income_transactions: number
-  expense_transactions: number
-  transfer_transactions: number
-}
-
-export interface DailySummaryChartData {
-  hour: string
-  transactions: number
-  revenue: string // Decimal as string
-}
-
+// Daily Summary Types aligned with backend payload
 export interface DailySummaryResponse {
   date: string // ISO date
-  stats: DailySummaryStats
-  hourly_data: DailySummaryChartData[]
+  branch_id?: string | null
+  total_transactions: number
+  total_revenue: number | string
+  average_commission?: number | string
+  volume_by_currency: Record<string, number | string>
+  revenue_by_type: {
+    exchange: number | string
+    income: number | string
+    expense: number | string
+    transfer: number | string
+  }
+  transaction_breakdown: {
+    exchange: number
+    income: number
+    expense: number
+    transfer: number
+  }
 }
 
 // Monthly Revenue Types
-export interface MonthlyRevenueData {
-  date: string // ISO date
-  revenue: string // Decimal as string
-  expenses: string // Decimal as string
-  profit: string // Decimal as string
+export interface MonthlyRevenueDailyBreakdownEntry {
+  revenue: number | string
+  count: number
 }
 
 export interface MonthlyRevenueResponse {
-  month: string
-  total_revenue: string // Decimal as string
-  total_expenses: string // Decimal as string
-  total_profit: string // Decimal as string
-  daily_data: MonthlyRevenueData[]
+  year: number
+  month: number
+  branch_id?: string | null
+  total_revenue: number | string
+  total_transactions: number
+  average_daily_revenue: number | string
+  max_daily_revenue: number | string
+  min_daily_revenue: number | string
+  daily_breakdown: Record<string, MonthlyRevenueDailyBreakdownEntry>
 }
 
 // Branch Performance Types
 export interface BranchPerformanceData {
   branch_id: string // UUID
+  branch_code: string
   branch_name: string
   total_transactions: number
-  total_revenue: string // Decimal as string
-  total_expenses: string // Decimal as string
-  net_profit: string // Decimal as string
-  top_currency: string
-  top_currency_volume: string // Decimal as string
+  total_revenue: number | string
+  avg_transaction_value: number | string
+  rank: number
 }
 
 export interface BranchPerformanceResponse {
+  date_range: {
+    start: string
+    end: string
+  }
+  total_system_revenue: number | string
+  branch_count: number
   branches: BranchPerformanceData[]
-  period_start: string // ISO date
-  period_end: string // ISO date
 }
 
 // Exchange Trends Types
 export interface ExchangeTrendData {
   date: string // ISO date
-  from_currency: string
-  to_currency: string
-  average_rate: string // Decimal as string
-  total_volume: string // Decimal as string
+  average_rate: number | string
+  total_volume: number | string
   transaction_count: number
+  from_currency?: string
+  to_currency?: string
 }
 
 export interface ExchangeTrendsResponse {
-  trends: ExchangeTrendData[]
-  period_start: string // ISO date
-  period_end: string // ISO date
-  most_traded_pair: {
-    from_currency: string
-    to_currency: string
-    volume: string
+  currency_pair: string
+  date_range: {
+    start: string
+    end: string
   }
+  total_transactions: number
+  total_volume: number | string
+  average_rate: number | string
+  min_rate: number | string
+  max_rate: number | string
+  daily_trends: ExchangeTrendData[]
 }
 
 // Balance Snapshot Types
@@ -132,7 +138,9 @@ export interface LowBalanceAlert {
 
 export interface LowBalanceAlertsResponse {
   alerts: LowBalanceAlert[]
-  total_alerts: number
+  total_alerts?: number
+  alert_count?: number
+  generated_at?: string
 }
 
 // User Activity Types

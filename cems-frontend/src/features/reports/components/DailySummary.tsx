@@ -1,18 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { Calendar, TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react'
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,6 +22,23 @@ export default function DailySummary() {
     },
     !!selectedDate
   )
+
+  const summary = (data as { data?: unknown })?.data ?? data
+
+  const currencyVolumes = Object.entries(summary?.volume_by_currency ?? {}).map(([code, value]) => ({
+    currency: code,
+    volume: Number(value ?? 0),
+  }))
+
+  const revenueTypes = Object.entries(summary?.revenue_by_type ?? {}).map(([type, value]) => ({
+    type,
+    amount: Number(value ?? 0),
+  }))
+
+  const transactionBreakdown = Object.entries(summary?.transaction_breakdown ?? {}).map(([type, value]) => ({
+    type,
+    count: Number(value ?? 0),
+  }))
 
   return (
     <div className="space-y-6">
@@ -75,18 +81,14 @@ export default function DailySummary() {
       </Card>
 
       {isLoading && (
-        <div className="text-center py-8 text-muted-foreground">
-          Loading daily summary...
-        </div>
+        <div className="text-center py-8 text-muted-foreground">Loading daily summary...</div>
       )}
 
       {isError && (
-        <div className="text-center py-8 text-red-500">
-          Error loading daily summary. Please try again.
-        </div>
+        <div className="text-center py-8 text-red-500">Error loading daily summary. Please try again.</div>
       )}
 
-      {data && (
+      {summary && (
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -96,10 +98,8 @@ export default function DailySummary() {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.stats?.total_transactions ?? 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Exchange: {data.stats?.exchange_transactions ?? 0} | Income: {data.stats?.income_transactions ?? 0}
-                </p>
+                <div className="text-2xl font-bold">{summary.total_transactions ?? 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">Date: {summary.date}</p>
               </CardContent>
             </Card>
 
@@ -110,100 +110,99 @@ export default function DailySummary() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ${Number(data.stats?.total_revenue ?? 0).toLocaleString('en-US', {
+                  ${Number(summary.total_revenue ?? 0).toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  From income and exchanges
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">Revenue by type below</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium">Average Commission</CardTitle>
                 <TrendingDown className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  ${Number(data.stats?.total_expenses ?? 0).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  {summary.average_commission != null
+                    ? `${Number(summary.average_commission).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
+                    : 'N/A'}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Expense: {data.stats?.expense_transactions ?? 0} | Transfer: {data.stats?.transfer_transactions ?? 0}
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">Average commission across transactions</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+                <CardTitle className="text-sm font-medium">Branch</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${Number(data.stats?.net_profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${Number(data.stats?.net_profit ?? 0).toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Revenue - Expenses
-                </p>
+                <div className="text-2xl font-bold">{branchId === 'all' ? 'All branches' : branchId}</div>
+                <p className="text-xs text-muted-foreground mt-1">Scope of the report</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Hourly Transaction Volume Chart */}
+          {/* Revenue by Type */}
           <Card>
             <CardHeader>
-              <CardTitle>Hourly Transaction Volume</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Number of transactions per hour
-              </p>
+              <CardTitle>Revenue by Type</CardTitle>
+              <p className="text-sm text-muted-foreground">Breakdown of revenue streams</p>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.hourly_data ?? []}>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={revenueTypes}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
-                  <YAxis />
+                  <XAxis dataKey="type" />
+                  <YAxis tickFormatter={(value) => `$${Number(value).toLocaleString()}`} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="transactions" fill="#3b82f6" name="Transactions" />
+                  <Bar dataKey="amount" fill="#3b82f6" name="Revenue" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Hourly Revenue Chart */}
+          {/* Transaction Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle>Hourly Revenue Trend</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Revenue generated per hour
-              </p>
+              <CardTitle>Transaction Breakdown</CardTitle>
+              <p className="text-sm text-muted-foreground">Counts by transaction type</p>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data.hourly_data ?? []}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {transactionBreakdown.map((entry) => (
+                  <div key={entry.type} className="rounded-md border p-3">
+                    <p className="text-xs uppercase text-muted-foreground">{entry.type}</p>
+                    <p className="text-xl font-semibold">{entry.count}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Volume by Currency */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Volume by Currency</CardTitle>
+              <p className="text-sm text-muted-foreground">Requested amounts per currency</p>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={currencyVolumes}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
-                  <YAxis />
+                  <XAxis dataKey="currency" />
+                  <YAxis tickFormatter={(value) => Number(value).toLocaleString()} />
                   <Tooltip />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    name="Revenue ($)"
-                  />
-                </LineChart>
+                  <Bar dataKey="volume" fill="#10b981" name="Volume" />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
