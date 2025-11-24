@@ -1,12 +1,26 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { Loader2 } from 'lucide-react'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { handleApiError } from '@/lib/api/client'
 import { useApproveTransaction, useCancelTransaction, useTransactions } from '@/hooks/useTransactions'
 import type {
@@ -18,9 +32,13 @@ interface PendingExpenseApprovalsProps {
   branchId?: string
 }
 
+type ActionType = 'approve' | 'cancel'
+
 export default function PendingExpenseApprovals({ branchId }: PendingExpenseApprovalsProps) {
-  const [approvalNotes, setApprovalNotes] = useState<Record<string, string>>({})
-  const [cancelReasons, setCancelReasons] = useState<Record<string, string>>({})
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [actionType, setActionType] = useState<ActionType>('approve')
+  const [selectedId, setSelectedId] = useState<string>('')
+  const [notes, setNotes] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
 
   const params: TransactionQueryParams = useMemo(
@@ -40,118 +58,133 @@ export default function PendingExpenseApprovals({ branchId }: PendingExpenseAppr
   const expenses = (data?.transactions || []) as ExpenseTransactionResponse[]
   const loading = isLoading || isApproving || isCancelling
 
-  const handleApprove = (id: string) => {
+  const openDialog = (type: ActionType, id: string) => {
+    setActionType(type)
+    setSelectedId(id)
+    setNotes('')
+    setDialogOpen(true)
     setActionError(null)
-    approve(
-      { id, approval_notes: approvalNotes[id]?.trim() || undefined },
-      { onError: (err) => setActionError(handleApiError(err)) }
-    )
   }
 
-  const handleCancel = (id: string) => {
-    setActionError(null)
+  const handleConfirm = () => {
+    if (!selectedId) return
+    if (actionType === 'approve') {
+      approve(
+        { id: selectedId, approval_notes: notes.trim() || undefined },
+        { onError: (err) => setActionError(handleApiError(err)), onSuccess: () => setDialogOpen(false) }
+      )
+      return
+    }
+
     cancel(
-      { id, reason: cancelReasons[id]?.trim() || undefined },
-      { onError: (err) => setActionError(handleApiError(err)) }
+      { id: selectedId, reason: notes.trim() || undefined },
+      { onError: (err) => setActionError(handleApiError(err)), onSuccess: () => setDialogOpen(false) }
     )
   }
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading pending expenses...
-        </CardContent>
-      </Card>
-    )
+    return <div className="py-6 text-center text-muted-foreground">Loading pending expenses...</div>
   }
 
   if (isError) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-red-500">Unable to load pending expenses.</CardContent>
-      </Card>
-    )
+    return <div className="py-6 text-center text-red-500">Unable to load pending expenses.</div>
   }
 
   if (!expenses.length) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-muted-foreground">No pending expense approvals.</CardContent>
-      </Card>
-    )
+    return <div className="py-6 text-center text-muted-foreground">No pending expense approvals.</div>
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="space-y-4">
       {actionError && (
         <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {actionError}
         </div>
       )}
-      {expenses.map((expense) => (
-        <Card key={expense.id} className="border-amber-100">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Expense #{expense.transaction_number}</CardTitle>
-              <p className="text-xs text-muted-foreground">
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Expense</TableHead>
+            <TableHead>Branch</TableHead>
+            <TableHead>Currency</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {expenses.map((expense) => (
+            <TableRow key={expense.id}>
+              <TableCell className="font-semibold">{expense.transaction_number}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">{expense.branch_name || expense.branch_id}</TableCell>
+              <TableCell className="text-sm">
+                <div className="flex flex-col">
+                  <span className="font-medium">{expense.currency_name || expense.currency_id}</span>
+                  <Badge variant="outline" className="capitalize w-fit mt-1">
+                    {expense.expense_category}
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell className="text-right font-medium">{expense.amount}</TableCell>
+              <TableCell className="text-sm text-muted-foreground">
                 {expense.transaction_date ? format(new Date(expense.transaction_date), 'PPpp') : '—'}
-              </p>
-            </div>
-            <Badge variant="outline" className="capitalize">
-              {expense.status}
-            </Badge>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">Currency: {expense.currency_id}</Badge>
-              <Badge variant="outline">Amount: {expense.amount}</Badge>
-              {expense.branch_id ? <Badge variant="outline">Branch: {expense.branch_id}</Badge> : null}
-            </div>
-            <div className="grid gap-2">
-              <Label className="text-xs" htmlFor={`approve-${expense.id}`}>
-                Approval Notes
-              </Label>
-              <Textarea
-                id={`approve-${expense.id}`}
-                value={approvalNotes[expense.id] ?? ''}
-                onChange={(e) =>
-                  setApprovalNotes((prev) => ({ ...prev, [expense.id]: e.target.value }))
-                }
-                placeholder="Add approval explanation (optional)"
-                disabled={loading}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label className="text-xs" htmlFor={`cancel-${expense.id}`}>
-                Cancel Reason
-              </Label>
-              <Input
-                id={`cancel-${expense.id}`}
-                value={cancelReasons[expense.id] ?? ''}
-                onChange={(e) =>
-                  setCancelReasons((prev) => ({ ...prev, [expense.id]: e.target.value }))
-                }
-                placeholder="Provide a reason to cancel (optional)"
-                disabled={loading}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleCancel(expense.id)}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button size="sm" onClick={() => openDialog('approve', expense.id)} disabled={loading}>
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => openDialog('cancel', expense.id)}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === 'approve' ? 'الموافقة على الصرف' : 'إلغاء عملية الصرف'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionType === 'approve'
+                ? 'يرجى توضيح سبب الموافقة (اختياري)'
+                : 'يرجى توضيح سبب الإلغاء (اختياري)'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3 py-2">
+            <Label htmlFor="notes">الملاحظات</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={actionType === 'approve' ? 'سبب الموافقة' : 'سبب الإلغاء'}
               disabled={loading}
-            >
-              Cancel
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={loading}>
+              إغلاق
             </Button>
-            <Button onClick={() => handleApprove(expense.id)} disabled={loading}>
-              {isApproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Approve
+            <Button onClick={handleConfirm} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {actionType === 'approve' ? 'تأكيد الموافقة' : 'تأكيد الإلغاء'}
             </Button>
-          </CardFooter>
-        </Card>
-      ))}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

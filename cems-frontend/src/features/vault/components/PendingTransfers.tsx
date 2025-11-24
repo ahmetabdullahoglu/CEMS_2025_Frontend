@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { Check, X, ArrowRight, Trash2 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -103,7 +102,7 @@ export default function PendingTransfers() {
     const vault = id ? vaultLookup.get(id) : undefined
     if (vault?.code && vault?.name) return `${vault.code} - ${vault.name}`
     if (vault?.code) return vault.code
-    if (vault?.name && id) return `${vault.name} (${id})`
+    if (vault?.name && id) return `${vault.name}`
     return fallbackCode ?? id ?? 'Unknown vault'
   }
 
@@ -277,182 +276,165 @@ export default function PendingTransfers() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Vault Transfers (Vault ⇄ Branch/Vault)</CardTitle>
-          {data && (
-            <span className="text-sm text-muted-foreground">
-              {data.data?.length ?? 0} pending transfer(s)
-            </span>
-          )}
+    <div className="space-y-4">
+      {data && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Pending transfers: {data.data?.length ?? 0}</span>
+          <span>
+            Showing {Math.min(pageSize, data.data?.length ?? 0)} of {data.total || data.data?.length || 0}
+          </span>
         </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading && (
-          <div className="text-center py-8 text-muted-foreground">
-            Loading pending transfers...
-          </div>
-        )}
+      )}
 
-        {isError && (
-          <div className="text-center py-8 text-red-500">
-            Error loading transfers. Please try again.
-          </div>
-        )}
+      {isLoading && (
+        <div className="text-center py-8 text-muted-foreground">Loading pending transfers...</div>
+      )}
 
-        {data && (data.data?.length ?? 0) === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No pending transfers.
-          </div>
-        )}
+      {isError && (
+        <div className="text-center py-8 text-red-500">Error loading transfers. Please try again.</div>
+      )}
 
-        {data && (data.data?.length ?? 0) > 0 && (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Transfer</TableHead>
-                  <TableHead>Route</TableHead>
-                  <TableHead>Currency</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Requested By</TableHead>
-                  <TableHead>Meta</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(data.data ?? []).map((transfer) => {
-                  return (
-                    <TableRow key={transfer.id}>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-semibold">{transfer.transfer_number}</span>
-                          <span className="text-xs text-muted-foreground">ID: {transfer.id}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{renderTransferRoute(transfer)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {resolveCurrencyLabel(transfer.currency_id, transfer.currency_code)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ID: {transfer.currency_id}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {Number(transfer.amount ?? 0).toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {transfer.initiated_by_name || transfer.initiated_by || '-'}
-                      </TableCell>
-                      <TableCell>{renderMeta(transfer)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {transfer.status === 'pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleApprove(transfer.id)}
-                                disabled={isApproving || isCompleting || isRejecting || isCancelling}
-                              >
-                                <Check className="w-4 h-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleReject(transfer.id)}
-                                disabled={isApproving || isCompleting || isRejecting || isCancelling}
-                              >
-                                <X className="w-4 h-4 mr-1" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                          {transfer.status === 'approved' && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleComplete(transfer.id)}
-                              disabled={isApproving || isCompleting || isRejecting || isCancelling}
-                            >
-                              <Check className="w-4 h-4 mr-1" />
-                              Complete
-                            </Button>
-                          )}
-                          {['pending', 'approved'].includes(transfer.status ?? '') && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleCancel(transfer.id)}
-                              disabled={isApproving || isCompleting || isRejecting || isCancelling}
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Cancel
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+      {data && (data.data?.length ?? 0) === 0 && (
+        <div className="text-center py-8 text-muted-foreground">No pending transfers.</div>
+      )}
 
-            {/* Pagination */}
-            {(() => {
-              const totalPages = Math.ceil((data?.total || 0) / pageSize)
-              return totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
-
-                  {getPageNumbers().map((pageNum, idx) =>
-                    pageNum === '...' ? (
-                      <span key={`ellipsis-${idx}`} className="px-2">
-                        ...
+      {data && (data.data?.length ?? 0) > 0 && (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Transfer</TableHead>
+                <TableHead>Route</TableHead>
+                <TableHead>Currency</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Requested By</TableHead>
+                <TableHead>Meta</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(data.data ?? []).map((transfer) => (
+                <TableRow key={transfer.id}>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold">{transfer.transfer_number}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{renderTransferRoute(transfer)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {resolveCurrencyLabel(transfer.currency_id, transfer.currency_code)}
                       </span>
-                    ) : (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setPage(pageNum as number)}
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  )}
+                      <span className="text-xs text-muted-foreground">
+                        Amount requested by {transfer.initiated_by_name || 'N/A'}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {Number(transfer.amount ?? 0).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {transfer.initiated_by_name || transfer.initiated_by || '-'}
+                  </TableCell>
+                  <TableCell>{renderMeta(transfer)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {transfer.status === 'pending' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleApprove(transfer.id)}
+                            disabled={isApproving || isRejecting || isCancelling || isCompleting}
+                          >
+                            <Check className="w-4 h-4 mr-1" /> Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleReject(transfer.id)}
+                            disabled={isApproving || isRejecting || isCancelling || isCompleting}
+                          >
+                            <X className="w-4 h-4 mr-1" /> Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleCancel(transfer.id)}
+                            disabled={isApproving || isRejecting || isCancelling || isCompleting}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" /> Cancel
+                          </Button>
+                        </>
+                      )}
+                      {(transfer.status === 'approved' || transfer.status === 'in_transit') && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleComplete(transfer.id)}
+                          disabled={isApproving || isRejecting || isCancelling || isCompleting}
+                          variant="outline"
+                        >
+                          Mark Received
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )
-            })()}
-          </>
-        )}
-      </CardContent>
+          {(() => {
+            const totalPages = Math.ceil((data?.total || 0) / pageSize)
+            return totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+
+                {getPageNumbers().map((pageNum, idx) =>
+                  pageNum === '...'
+                    ? (
+                        <span key={`ellipsis-${idx}`} className="px-2">
+                          ...
+                        </span>
+                      )
+                    : (
+                        <Button
+                          key={pageNum}
+                          variant={page === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setPage(pageNum as number)}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )
+          })()}
+        </>
+      )}
 
       {/* Approve/Reject Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -491,9 +473,7 @@ export default function PendingTransfers() {
                 rows={4}
                 className="resize-none"
               />
-              <p className="text-sm text-muted-foreground">
-                {notes.length}/500 حرف
-              </p>
+              <p className="text-sm text-muted-foreground">{notes.length}/500 حرف</p>
             </div>
           </div>
           <DialogFooter>
@@ -507,7 +487,9 @@ export default function PendingTransfers() {
             <Button
               onClick={handleConfirmAction}
               disabled={isApproving || isRejecting || isCancelling}
-              variant={actionType === 'approve' ? 'default' : actionType === 'reject' ? 'destructive' : 'secondary'}
+              variant={
+                actionType === 'approve' ? 'default' : actionType === 'reject' ? 'destructive' : 'secondary'
+              }
             >
               {isApproving || isRejecting || isCancelling ? (
                 'جاري المعالجة...'
@@ -531,6 +513,6 @@ export default function PendingTransfers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   )
 }
