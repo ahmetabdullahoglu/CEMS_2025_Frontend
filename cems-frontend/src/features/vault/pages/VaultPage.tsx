@@ -8,6 +8,7 @@ import {
   useCancelVaultTransfer,
   useCompleteVaultTransfer,
   useCreateVault,
+  useRejectVaultTransfer,
   useReconcileVault,
   useVaultBalances,
   useVaultDetails,
