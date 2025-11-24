@@ -11,7 +11,6 @@ import type {
   ExchangeCalculationResponse,
   TransactionSummaryQueryParams,
   TransferReceiptRequest,
-  TransferTransactionResponse,
 } from '@/types/transaction.types'
 import type { Branch, BranchListResponse } from '@/types/branch.types'
 
@@ -55,13 +54,6 @@ export const usePendingApprovalTransactions = (
   return useQuery({
     queryKey: ['transactions', 'pending-approvals', params],
     queryFn: () => transactionApi.getPendingApprovalTransactions(params),
-    select: (response) => ({
-      ...response,
-      transactions: (response?.transactions || []).filter(
-        (tx): tx is TransferTransactionResponse =>
-          tx.transaction_type === 'transfer' && (tx as TransferTransactionResponse).is_pending_receipt
-      ),
-    }),
     enabled,
     staleTime: 1000 * 60 * 2,
   })

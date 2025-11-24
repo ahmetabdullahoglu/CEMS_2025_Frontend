@@ -18,7 +18,12 @@ interface PendingTransferApprovalsProps {
 export default function PendingTransferApprovals({ branchId }: PendingTransferApprovalsProps) {
   const [cancelReasons, setCancelReasons] = useState<Record<string, string>>({})
   const params: TransactionQueryParams = useMemo(
-    () => ({ status_filter: 'pending', ...(branchId ? { branch_id: branchId } : {}) }),
+    () => ({
+      status_filter: 'pending',
+      transaction_type: 'transfer',
+      limit: 50,
+      ...(branchId ? { branch_id: branchId } : {}),
+    }),
     [branchId]
   )
   const { data, isLoading, isError } = usePendingApprovalTransactions(params)
