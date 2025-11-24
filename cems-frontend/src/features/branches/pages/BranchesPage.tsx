@@ -50,6 +50,7 @@ import {
   useCreateBranch,
   useUpdateBranch,
 } from '@/hooks/useBranches'
+import { formatAmount } from '@/utils/number'
 
 type BranchFormState = {
   name: string
@@ -538,11 +539,11 @@ export default function BranchesPage() {
                                     return Number.isFinite(usd) ? acc + usd : acc
                                   }, 0)
 
-                                  return Number.isFinite(sum) ? sum.toFixed(2) : undefined
+                                  return Number.isFinite(sum) ? sum : undefined
                                 })()
                               : undefined)
 
-                          return totalUsdValue ?? '—'
+                          return formatAmount(totalUsdValue)
                         })()}
                       </TableCell>
                       <TableCell>
@@ -612,7 +613,7 @@ export default function BranchesPage() {
                                     </div>
                                     {balancesData.total_usd_equivalent && (
                                       <span className="text-sm text-muted-foreground">
-                                        Total USD Value: {balancesData.total_usd_equivalent}
+                                        Total USD Value: {formatAmount(balancesData.total_usd_equivalent)}
                                       </span>
                                     )}
                                   </div>
@@ -642,12 +643,12 @@ export default function BranchesPage() {
                                                   {balance.currency_name}
                                                 </div>
                                               </TableCell>
-                                              <TableCell>{balance.balance}</TableCell>
-                                              <TableCell>{balance.available_balance ?? '—'}</TableCell>
-                                              <TableCell>{balance.reserved_balance ?? '—'}</TableCell>
+                                              <TableCell>{formatAmount(balance.balance)}</TableCell>
+                                              <TableCell>{formatAmount(balance.available_balance)}</TableCell>
+                                              <TableCell>{formatAmount(balance.reserved_balance)}</TableCell>
                                               <TableCell className="text-sm text-muted-foreground">
-                                                {balance.minimum_threshold ?? '—'} /{' '}
-                                                {balance.maximum_threshold ?? '—'}
+                                                {formatAmount(balance.minimum_threshold)} /{' '}
+                                                {formatAmount(balance.maximum_threshold)}
                                               </TableCell>
                                               <TableCell className="text-sm text-muted-foreground">
                                                 {balance.last_updated ? new Date(balance.last_updated).toLocaleString() : '—'}
