@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { Check, X, ArrowRight, Trash2, Info } from 'lucide-react'
+import { Check, X, ArrowRight, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import {
   Dialog,
   DialogContent,
@@ -335,17 +334,14 @@ export default function PendingTransfers() {
                       </TableCell>
                       <TableCell>{renderTransferRoute(transfer)}</TableCell>
                       <TableCell>
-                        <HoverCard openDelay={200} closeDelay={100}>
-                          <HoverCardTrigger className="font-medium cursor-default">
+                        <div className="flex flex-col">
+                          <span className="font-medium">
                             {resolveCurrencyLabel(transfer.currency_id, transfer.currency_code)}
-                          </HoverCardTrigger>
-                          <HoverCardContent className="text-sm" align="start">
-                            <div className="flex items-center gap-2">
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                              <span>Currency ID: {transfer.currency_id}</span>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ID: {transfer.currency_id}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {Number(transfer.amount ?? 0).toLocaleString('en-US', {
