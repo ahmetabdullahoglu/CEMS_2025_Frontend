@@ -82,20 +82,12 @@ export default function PendingTransferApprovals({ branchId }: PendingTransferAp
   const renderRoute = (transfer: TransferTransactionResponse) => (
     <div className="flex flex-col gap-1 text-sm">
       <div className="flex items-center gap-2">
-        <span className="font-medium">
-          {formatBranchLabel({
-            id: transfer.from_branch_id || '',
-            code: transfer.from_branch_id || '',
-            name: transfer.from_branch_name || transfer.from_branch_id || '—',
-          })}
+        <span className="font-medium rounded-md bg-red-50 text-red-700 px-2 py-1">
+          {formatBranchLabel({ name: transfer.from_branch_name || '—' })}
         </span>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">
-          {formatBranchLabel({
-            id: transfer.to_branch_id || '',
-            code: transfer.to_branch_id || '',
-            name: transfer.to_branch_name || transfer.to_branch_id || '—',
-          })}
+        <span className="font-medium rounded-md bg-emerald-50 text-emerald-700 px-2 py-1">
+          {formatBranchLabel({ name: transfer.to_branch_name || '—' })}
         </span>
       </div>
       <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">

@@ -234,9 +234,13 @@ export default function PendingTransfers() {
     return (
       <div className="flex flex-col gap-1 text-sm">
         <div className="flex items-center gap-2">
-          <span className="font-medium">{fromLabel ?? 'Unknown'}</span>
+          <span className="font-medium rounded-md bg-red-50 text-red-700 px-2 py-1">
+            {fromLabel ?? 'Unknown'}
+          </span>
           <ArrowRight className="w-3 h-3 text-muted-foreground" />
-          <span className="font-medium">{toLabel ?? 'Unknown'}</span>
+          <span className="font-medium rounded-md bg-emerald-50 text-emerald-700 px-2 py-1">
+            {toLabel ?? 'Unknown'}
+          </span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <Badge variant="outline" className="capitalize">
@@ -323,14 +327,9 @@ export default function PendingTransfers() {
                   </TableCell>
                   <TableCell>{renderTransferRoute(transfer)}</TableCell>
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {resolveCurrencyLabel(transfer.currency_id, transfer.currency_code)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Amount requested by {transfer.initiated_by_name || 'N/A'}
-                      </span>
-                    </div>
+                    <span className="font-medium">
+                      {resolveCurrencyLabel(transfer.currency_id, transfer.currency_code)}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {Number(transfer.amount ?? 0).toLocaleString('en-US', {
