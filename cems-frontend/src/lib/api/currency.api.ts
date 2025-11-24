@@ -59,12 +59,12 @@ export const currencyApi = {
   },
 
   activateCurrency: async (id: string): Promise<Currency> => {
-    const response = await apiClient.put<Currency>(`/currencies/${id}/activate`)
+    const response = await apiClient.patch<Currency>(`/currencies/${id}/activate`)
     return response.data
   },
 
   deactivateCurrency: async (id: string): Promise<Currency> => {
-    const response = await apiClient.put<Currency>(`/currencies/${id}/deactivate`)
+    const response = await apiClient.patch<Currency>(`/currencies/${id}/deactivate`)
     return response.data
   },
 

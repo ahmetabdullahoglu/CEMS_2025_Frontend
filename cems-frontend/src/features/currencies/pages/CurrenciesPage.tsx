@@ -55,6 +55,8 @@ export default function CurrenciesPage() {
 
   const { data: withRates } = useCurrencyWithRates(detailCurrency?.id)
 
+  const rateEntries = withRates?.rates ?? []
+
   const handleSearch = () => {
     setSearch(searchInput)
     setPage(1)
@@ -380,7 +382,7 @@ export default function CurrenciesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {withRates.rates.length === 0 ? (
+            {rateEntries.length === 0 ? (
               <div className="text-muted-foreground">No exchange rates recorded for this currency.</div>
             ) : (
               <Table>
@@ -394,7 +396,7 @@ export default function CurrenciesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {withRates.rates.map((rate) => (
+                  {rateEntries.map((rate) => (
                     <TableRow key={rate.id}>
                       <TableCell className="font-medium">
                         {rate.from_currency?.code ?? detailCurrency.code} → {rate.to_currency?.code}
