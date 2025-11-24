@@ -20,6 +20,7 @@ import type {
   TransferReceiptRequest,
   ExpenseApprovalRequest,
 } from '@/types/transaction.types'
+import type { BranchListResponse, BranchQueryParams } from '@/types/branch.types'
 
 const detailEndpointMap: Partial<Record<TransactionType, string>> = {
   exchange: '/transactions/exchange',
@@ -81,10 +82,10 @@ export const transactionApi = {
     return response.data
   },
 
-  // Get all branches
-  getBranches: async (): Promise<Branch[]> => {
-    const response = await apiClient.get<Branch[]>('/branches')
-    return response.data
+  // Get all branches (shared fallback)
+  getBranches: async (params?: BranchQueryParams): Promise<Branch[]> => {
+    const response = await apiClient.get<BranchListResponse>('/branches', { params })
+    return response.data.data
   },
 
   // Get transactions list with filters and pagination

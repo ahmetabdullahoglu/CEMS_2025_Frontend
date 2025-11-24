@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Phone, Mail, Eye, PencilLine, Plus, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,6 +23,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { Branch } from '@/types/branch.types'
 import { useBranches, useCreateBranch, useUpdateBranch } from '@/hooks/useBranches'
 
@@ -51,12 +59,26 @@ export default function BranchesPage() {
   const skip = (page - 1) * pageSize
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [region, setRegion] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [includeBalances, setIncludeBalances] = useState(false)
+  const [calculateUsd, setCalculateUsd] = useState(false)
 
   const { data, isLoading, isError } = useBranches({
     skip,
     limit: pageSize,
     search,
+    region: region || undefined,
+    is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
+    include_balances: includeBalances || undefined,
+    calculate_usd_value: includeBalances ? calculateUsd || undefined : undefined,
   })
+
+  useEffect(() => {
+    if (!includeBalances) {
+      setCalculateUsd(false)
+    }
+  }, [includeBalances])
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -312,6 +334,69 @@ export default function BranchesPage() {
               <Search className="w-4 h-4 mr-2" />
               Search
             </Button>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="region-filter">Region</Label>
+              <Input
+                id="region-filter"
+                placeholder="e.g. Istanbul_Asian"
+                value={region}
+                onChange={(e) => {
+                  setRegion(e.target.value)
+                  setPage(1)
+                }}
+              />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value as typeof statusFilter)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Balances</Label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-balances"
+                  checked={includeBalances}
+                  onCheckedChange={(checked) => {
+                    setIncludeBalances(Boolean(checked))
+                    setPage(1)
+                  }}
+                />
+                <Label htmlFor="include-balances" className="font-normal">
+                  Include balances
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="calc-usd"
+                  checked={calculateUsd}
+                  disabled={!includeBalances}
+                  onCheckedChange={(checked) => {
+                    setCalculateUsd(Boolean(checked))
+                    setPage(1)
+                  }}
+                />
+                <Label htmlFor="calc-usd" className="font-normal">
+                  Calculate USD value
+                </Label>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

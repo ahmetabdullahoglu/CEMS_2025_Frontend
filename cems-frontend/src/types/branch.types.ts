@@ -15,6 +15,8 @@ export interface Branch {
   opening_balance_date: string // ISO datetime
   created_at: string // ISO datetime
   updated_at: string // ISO datetime
+  balances?: BranchBalance[] | null
+  total_usd_value?: string | null
   // Deprecated fields for backward compatibility
   branch_number?: string
   name?: string // Can be derived from name_en
@@ -95,6 +97,9 @@ export interface BranchQueryParams {
   limit?: number // Number of items per page (replaces page_size)
   search?: string
   is_active?: boolean
+  region?: string
+  include_balances?: boolean
+  calculate_usd_value?: boolean
 }
 
 // Backward compatibility aliases
