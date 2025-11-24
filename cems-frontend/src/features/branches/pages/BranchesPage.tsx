@@ -78,8 +78,8 @@ export default function BranchesPage() {
   const [searchInput, setSearchInput] = useState('')
   const [region, setRegion] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
-  const [includeBalances, setIncludeBalances] = useState(false)
-  const [calculateUsd, setCalculateUsd] = useState(false)
+  const [includeBalances, setIncludeBalances] = useState(true)
+  const [calculateUsd, setCalculateUsd] = useState(true)
 
   const { data, isLoading, isError } = useBranches({
     skip,
@@ -87,8 +87,8 @@ export default function BranchesPage() {
     search,
     region: region || undefined,
     is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
-    include_balances: includeBalances || undefined,
-    calculate_usd_value: includeBalances ? calculateUsd || undefined : undefined,
+    include_balances: includeBalances,
+    calculate_usd_value: includeBalances ? calculateUsd : undefined,
   })
 
   useEffect(() => {
@@ -467,11 +467,12 @@ export default function BranchesPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Location</TableHead>
-                  <TableHead>Contact Info</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
+                    <TableHead>Contact Info</TableHead>
+                    <TableHead>Total USD Value</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                   {(data.data ?? []).map((branch) => {
                     const isExpanded = expandedBranchId === branch.id
@@ -526,10 +527,28 @@ export default function BranchesPage() {
                           )}
                         </div>
                       </TableCell>
-                          <TableCell>
-                            <Badge variant={branch.is_active ? 'default' : 'secondary'}>
-                              {branch.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
+                      <TableCell>
+                        {(() => {
+                          const totalUsdValue =
+                            branch.total_usd_value ??
+                            (branch.balances
+                              ? (() => {
+                                  const sum = branch.balances?.reduce((acc, balance) => {
+                                    const usd = Number(balance.usd_value ?? balance.usd_equivalent)
+                                    return Number.isFinite(usd) ? acc + usd : acc
+                                  }, 0)
+
+                                  return Number.isFinite(sum) ? sum.toFixed(2) : undefined
+                                })()
+                              : undefined)
+
+                          return totalUsdValue ?? '—'
+                        })()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={branch.is_active ? 'default' : 'secondary'}>
+                          {branch.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
@@ -571,7 +590,7 @@ export default function BranchesPage() {
                         </TableRow>
                         {isExpanded && (
                           <TableRow className="bg-muted/40">
-                            <TableCell colSpan={6}>
+                            <TableCell colSpan={7}>
                               {balancesLoading && (
                                 <div className="py-4 text-sm text-muted-foreground">
                                   Loading balances...
