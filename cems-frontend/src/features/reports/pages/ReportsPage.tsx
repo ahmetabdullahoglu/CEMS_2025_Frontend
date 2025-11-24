@@ -7,6 +7,8 @@ import LowBalanceAlerts from '../components/LowBalanceAlerts'
 import UserActivityReport from '../components/UserActivityReport'
 import CustomAnalytics from '../components/CustomAnalytics'
 import ReportExportPanel from '../components/ReportExportPanel'
+import BalanceSnapshot from '../components/BalanceSnapshot'
+import BalanceMovement from '../components/BalanceMovement'
 
 export default function ReportsPage() {
   return (
@@ -17,12 +19,14 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="daily" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+        <TabsList className="grid w-full gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
           <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="monthly">Monthly</TabsTrigger>
           <TabsTrigger value="branch">Branch Performance</TabsTrigger>
           <TabsTrigger value="exchange">Exchange Trends</TabsTrigger>
           <TabsTrigger value="alerts">Balance Alerts</TabsTrigger>
+          <TabsTrigger value="snapshot">Balance Snapshot</TabsTrigger>
+          <TabsTrigger value="movement">Balance Movement</TabsTrigger>
           <TabsTrigger value="users">User Activity</TabsTrigger>
           <TabsTrigger value="custom">Custom Analytics</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
@@ -46,6 +50,14 @@ export default function ReportsPage() {
 
         <TabsContent value="alerts">
           <LowBalanceAlerts />
+        </TabsContent>
+
+        <TabsContent value="snapshot">
+          <BalanceSnapshot />
+        </TabsContent>
+
+        <TabsContent value="movement">
+          <BalanceMovement />
         </TabsContent>
 
         <TabsContent value="users">

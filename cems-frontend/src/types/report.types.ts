@@ -84,44 +84,47 @@ export interface ExchangeTrendsResponse {
 }
 
 // Balance Snapshot Types
-export interface CurrencyBalance {
-  currency_id: string // UUID
+export interface BalanceSnapshotEntry {
   currency_code: string
   currency_name: string
-  balance: string // Decimal as string
-  reserved: string // Decimal as string
-  available: string // Decimal as string
+  balance: number | string
+  last_updated?: string
 }
 
-export interface BranchBalanceSnapshot {
-  branch_id: string // UUID
-  branch_name: string
-  balances: CurrencyBalance[]
+export interface BalanceSnapshotBranch {
+  id: string
+  code?: string
+  name?: string
 }
 
 export interface BalanceSnapshotResponse {
-  timestamp: string // ISO datetime
-  total_value_usd: string // Decimal as string
-  branches: BranchBalanceSnapshot[]
+  branch?: BalanceSnapshotBranch | null
+  snapshot_date: string
+  balances: BalanceSnapshotEntry[]
+  currency_count?: number
 }
 
 // Balance Movement Types
-export interface BalanceMovement {
-  date: string // ISO date
-  currency_code: string
-  opening_balance: string // Decimal as string
-  deposits: string // Decimal as string
-  withdrawals: string // Decimal as string
-  exchanges_in: string // Decimal as string
-  exchanges_out: string // Decimal as string
-  closing_balance: string // Decimal as string
+export interface BalanceMovementItem {
+  date: string
+  transaction_number: string
+  type: string
+  amount: number | string
+  description?: string | null
+  debit: number | string
+  credit: number | string
+  balance: number | string
 }
 
 export interface BalanceMovementResponse {
-  movements: BalanceMovement[]
-  period_start: string // ISO date
-  period_end: string // ISO date
-  branch_id?: string // UUID
+  branch_id?: string | null
+  currency?: string | null
+  date_range: {
+    start: string
+    end: string
+  }
+  movement_count: number
+  movements: BalanceMovementItem[]
 }
 
 // Low Balance Alerts Types

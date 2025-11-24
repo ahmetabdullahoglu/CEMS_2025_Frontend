@@ -1,6 +1,12 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { reportApi } from '@/lib/api/report.api'
-import type { CustomReportParams, LowBalanceAlertsResponse, ReportExportParams } from '@/types/report.types'
+import type {
+  BalanceMovementResponse,
+  BalanceSnapshotResponse,
+  CustomReportParams,
+  LowBalanceAlertsResponse,
+  ReportExportParams,
+} from '@/types/report.types'
 
 export const useDailySummary = (params: { targetDate?: string; branchId?: string | null }, enabled = true) => {
   return useQuery({
@@ -29,6 +35,44 @@ export const useBranchPerformance = (startDate: string, endDate: string, enabled
     queryFn: () => reportApi.getBranchPerformance(startDate, endDate),
     enabled: enabled && !!startDate && !!endDate,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+export const useBalanceSnapshot = ({
+  branchId,
+  snapshotDate,
+  enabled = true,
+}: {
+  branchId?: string | null
+  snapshotDate?: string
+  enabled?: boolean
+}) => {
+  return useQuery<BalanceSnapshotResponse>({
+    queryKey: ['reports', 'balance-snapshot', branchId, snapshotDate],
+    queryFn: () => reportApi.getBalanceSnapshot(branchId ?? undefined, snapshotDate),
+    enabled: enabled && !!snapshotDate,
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
+export const useBalanceMovement = ({
+  branchId,
+  currencyCode,
+  startDate,
+  endDate,
+  enabled = true,
+}: {
+  branchId?: string | null
+  currencyCode?: string | null
+  startDate: string
+  endDate: string
+  enabled?: boolean
+}) => {
+  return useQuery<BalanceMovementResponse>({
+    queryKey: ['reports', 'balance-movement', branchId, currencyCode, startDate, endDate],
+    queryFn: () => reportApi.getBalanceMovement(startDate, endDate, branchId ?? undefined, currencyCode ?? undefined),
+    enabled: enabled && !!startDate && !!endDate,
+    staleTime: 1000 * 60 * 5,
   })
 }
 

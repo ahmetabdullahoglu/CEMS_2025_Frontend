@@ -70,24 +70,29 @@ export const reportApi = {
   },
 
   // Get balance snapshot report
-  getBalanceSnapshot: async (branchId?: string, asOf?: string): Promise<BalanceSnapshotResponse> => {
+  getBalanceSnapshot: async (branchId?: string, snapshotDate?: string): Promise<BalanceSnapshotResponse> => {
     const response = await apiClient.get<BalanceSnapshotResponse>('/reports/balance-snapshot', {
       params: {
         branch_id: branchId,
-        as_of: asOf,
+        snapshot_date: snapshotDate,
       },
     })
     return response.data
   },
 
   // Get balance movement report
-  getBalanceMovement: async (startDate: string, endDate: string, branchId?: string, currencyId?: string): Promise<BalanceMovementResponse> => {
+  getBalanceMovement: async (
+    startDate: string,
+    endDate: string,
+    branchId?: string,
+    currencyCode?: string
+  ): Promise<BalanceMovementResponse> => {
     const response = await apiClient.get<BalanceMovementResponse>('/reports/balance-movement', {
       params: {
         start_date: startDate,
         end_date: endDate,
         branch_id: branchId,
-        currency_id: currencyId,
+        currency_code: currencyCode,
       },
     })
     return response.data
