@@ -92,6 +92,12 @@ export default function BranchesPage() {
     calculate_usd_value: includeBalances ? calculateUsd : undefined,
   })
 
+  const branches = data?.data ?? []
+  const expandedBranch = branches.find((branch) => branch.id === expandedBranchId)
+  const shouldFetchBalances = Boolean(
+    expandedBranchId && (!expandedBranch?.balances || expandedBranch.balances.length === 0)
+  )
+
   useEffect(() => {
     if (!includeBalances) {
       setCalculateUsd(false)
@@ -110,7 +116,7 @@ export default function BranchesPage() {
     data: balancesData,
     isLoading: balancesLoading,
     isError: balancesError,
-  } = useBranchBalances(expandedBranchId ?? '', Boolean(expandedBranchId))
+  } = useBranchBalances(expandedBranchId ?? '', shouldFetchBalances)
 
   const { mutateAsync: createBranch, isPending: creatingBranch } = useCreateBranch()
   const { mutateAsync: updateBranch, isPending: updatingBranch } = useUpdateBranch()
@@ -436,7 +442,7 @@ export default function BranchesPage() {
             <CardTitle>Branches</CardTitle>
             {data && (
               <span className="text-sm text-muted-foreground">
-                Showing {data.data?.length ?? 0} of {data.total} branches
+                Showing {branches.length} of {data.total} branches
               </span>
             )}
           </div>
@@ -454,13 +460,13 @@ export default function BranchesPage() {
             </div>
           )}
 
-          {data && (data.data?.length ?? 0) === 0 && (
+          {data && branches.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No branches found.
             </div>
           )}
 
-          {data && (data.data?.length ?? 0) > 0 && (
+          {data && branches.length > 0 && (
             <>
               <Table>
                 <TableHeader>
@@ -475,8 +481,20 @@ export default function BranchesPage() {
                   </TableRow>
                 </TableHeader>
               <TableBody>
-                  {(data.data ?? []).map((branch) => {
+                  {branches.map((branch) => {
                     const isExpanded = expandedBranchId === branch.id
+                    const hasLocalBalances = Boolean(branch.balances && branch.balances.length > 0)
+                    const branchBalances = hasLocalBalances
+                      ? branch.balances ?? []
+                      : balancesData?.branch_id === branch.id
+                        ? balancesData.balances
+                        : []
+                    const branchTotalUsd =
+                      branch.total_value_in_base_currency ??
+                      branch.total_usd_value ??
+                      (balancesData?.branch_id === branch.id
+                        ? balancesData.total_usd_equivalent
+                        : undefined)
 
                     return (
                       <Fragment key={branch.id}>
@@ -531,10 +549,10 @@ export default function BranchesPage() {
                       <TableCell>
                         {(() => {
                           const totalUsdValue =
-                            branch.total_usd_value ??
-                            (branch.balances
+                            branchTotalUsd ??
+                            (branchBalances.length
                               ? (() => {
-                                  const sum = branch.balances?.reduce((acc, balance) => {
+                                  const sum = branchBalances.reduce((acc, balance) => {
                                     const usd = Number(balance.usd_value ?? balance.usd_equivalent)
                                     return Number.isFinite(usd) ? acc + usd : acc
                                   }, 0)
@@ -592,7 +610,7 @@ export default function BranchesPage() {
                         {isExpanded && (
                           <TableRow className="bg-muted/40">
                             <TableCell colSpan={7}>
-                              {balancesLoading && (
+                              {!hasLocalBalances && balancesLoading && (
                                 <div className="py-4 text-sm text-muted-foreground">
                                   Loading balances...
                                 </div>
@@ -602,22 +620,22 @@ export default function BranchesPage() {
                                   Unable to load balances for this branch right now.
                                 </div>
                               )}
-                              {balancesData && balancesData.branch_id === branch.id && (
+                              {(branchBalances.length > 0 || (!hasLocalBalances && balancesData)) && (
                                 <div className="space-y-3">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Wallet className="w-4 h-4" />
                                       <span className="font-medium text-foreground">
-                                        {balancesData.branch_name}
+                                        {branch.name_en ?? branch.name ?? 'Branch balances'}
                                       </span>
                                     </div>
-                                    {balancesData.total_usd_equivalent && (
+                                    {branchTotalUsd && (
                                       <span className="text-sm text-muted-foreground">
-                                        Total USD Value: {formatAmount(balancesData.total_usd_equivalent)}
+                                        Total USD Value: {formatAmount(branchTotalUsd)}
                                       </span>
                                     )}
                                   </div>
-                                  {balancesData.balances.length === 0 ? (
+                                  {branchBalances.length === 0 ? (
                                     <div className="text-sm text-muted-foreground">
                                       No balances available for this branch.
                                     </div>
@@ -635,8 +653,8 @@ export default function BranchesPage() {
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          {balancesData.balances.map((balance) => (
-                                            <TableRow key={`${balance.currency_code}-${balance.currency_id ?? ''}`}>
+                                            {branchBalances.map((balance) => (
+                                              <TableRow key={`${balance.currency_code}-${balance.currency_id ?? ''}`}>
                                               <TableCell className="font-medium">
                                                 <div>{balance.currency_code}</div>
                                                 <div className="text-xs text-muted-foreground">

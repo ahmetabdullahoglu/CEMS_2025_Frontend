@@ -16,6 +16,9 @@ export interface Branch {
   created_at: string // ISO datetime
   updated_at: string // ISO datetime
   balances?: BranchBalance[] | null
+  // Total base currency value when balances are included (API field: total_value_in_base_currency)
+  total_value_in_base_currency?: string | null
+  // Deprecated alias kept for backward compatibility
   total_usd_value?: string | null
   // Deprecated fields for backward compatibility
   branch_number?: string
