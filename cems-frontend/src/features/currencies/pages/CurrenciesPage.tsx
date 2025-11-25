@@ -22,7 +22,7 @@ import {
 } from '@/hooks/useCurrencies'
 import UpdateRateDialog from '../components/UpdateRateDialog'
 import RateHistoryDialog from '../components/RateHistoryDialog'
-import type { Currency } from '@/types/currency.types'
+import type { Currency, ExchangeRate } from '@/types/currency.types'
 import { CurrencyDialog } from '../components/CurrencyDialog'
 
 export default function CurrenciesPage() {
@@ -36,6 +36,7 @@ export default function CurrenciesPage() {
   const [historyCurrency, setHistoryCurrency] = useState<Currency | null>(null)
   const [showHistoryDialog, setShowHistoryDialog] = useState(false)
   const [expandedCurrencyId, setExpandedCurrencyId] = useState<string | null>(null)
+  const [expandedPairKeys, setExpandedPairKeys] = useState<Record<string, boolean>>({})
   const [showCurrencyDialog, setShowCurrencyDialog] = useState(false)
   const [editingCurrency, setEditingCurrency] = useState<Currency | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
@@ -60,6 +61,51 @@ export default function CurrenciesPage() {
 
   const rateEntries = useMemo(() => expandedCurrencyRates?.rates ?? [], [expandedCurrencyRates])
 
+  const groupedRates = useMemo(() => {
+    const groupedMap = rateEntries.reduce(
+      (acc, rate: ExchangeRate) => {
+        const fromCode =
+          rate.from_currency?.code ??
+          (rate as unknown as { from_currency_code?: string }).from_currency_code ??
+          '—'
+        const toCode =
+          rate.to_currency?.code ?? (rate as unknown as { to_currency_code?: string }).to_currency_code ?? '—'
+        const pairKey = `${rate.from_currency_id ?? fromCode}-${rate.to_currency_id ?? toCode}`
+
+        const existing = acc.get(pairKey) ?? {
+          key: pairKey,
+          pairLabel: `${fromCode} → ${toCode}`,
+          current: [] as ExchangeRate[],
+          historical: [] as ExchangeRate[],
+        }
+
+        if (rate.is_current) {
+          existing.current.push(rate)
+        } else {
+          existing.historical.push(rate)
+        }
+
+        acc.set(pairKey, existing)
+        return acc
+      },
+      new Map<
+        string,
+        {
+          key: string
+          pairLabel: string
+          current: ExchangeRate[]
+          historical: ExchangeRate[]
+        }
+      >()
+    )
+
+    return Array.from(groupedMap.values())
+  }, [rateEntries])
+
+  const togglePairHistory = (pairKey: string) => {
+    setExpandedPairKeys((prev) => ({ ...prev, [pairKey]: !prev[pairKey] }))
+  }
+
   const handleSearch = () => {
     setSearch(searchInput)
     setPage(1)
@@ -83,6 +129,7 @@ export default function CurrenciesPage() {
 
   const handleToggleHistory = (currency: Currency) => {
     setExpandedCurrencyId((prev) => (prev === currency.id ? null : currency.id))
+    setExpandedPairKeys({})
   }
 
   const handleViewPairHistory = (currency: Currency) => {
@@ -340,7 +387,7 @@ export default function CurrenciesPage() {
                                     Rate history for {currency.code} ({currency.name || currency.name_en})
                                   </div>
                                   <p className="text-sm text-muted-foreground">
-                                    Showing all recorded rates for this currency against other listed currencies.
+                                    Current rates per pair. Historical entries are hidden under each current rate.
                                   </p>
                                 </div>
                                 {expandedRatesLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
@@ -367,38 +414,68 @@ export default function CurrenciesPage() {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {rateEntries.map((rate) => (
-                                        <TableRow key={rate.id}>
-                                          <TableCell className="font-medium">
-                                            {(rate.from_currency?.code ?? currency.code) || '—'} →{' '}
-                                            {rate.to_currency?.code ?? '—'}
-                                          </TableCell>
-                                          <TableCell className="text-right">{rate.rate}</TableCell>
-                                          <TableCell className="text-right">{rate.buy_rate ?? '—'}</TableCell>
-                                          <TableCell className="text-right">{rate.sell_rate ?? '—'}</TableCell>
-                                          <TableCell className="text-sm text-muted-foreground">
-                                            {rate.effective_from
-                                              ? new Date(rate.effective_from).toLocaleString()
-                                              : rate.created_at
-                                              ? new Date(rate.created_at).toLocaleString()
-                                              : '—'}
-                                          </TableCell>
-                                          <TableCell className="text-sm text-muted-foreground">
-                                            {rate.effective_to ? new Date(rate.effective_to).toLocaleString() : '—'}
-                                          </TableCell>
-                                          <TableCell>
-                                            {rate.is_current ? (
-                                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800">
-                                                Current
-                                              </span>
-                                            ) : (
-                                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
-                                                Historical
-                                              </span>
-                                            )}
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
+                                      {groupedRates.map((group) => {
+                                        const primaryRate = group.current[0] ?? group.historical[0]
+                                        const historicalRates =
+                                          group.current.length > 0
+                                            ? group.historical
+                                            : group.historical.slice(1)
+                                        const hasHistorical = historicalRates.length > 0
+
+                                        if (!primaryRate) return null
+
+                                        const renderRow = (rate: typeof primaryRate, isChild = false) => (
+                                          <TableRow
+                                            key={`${group.key}-${rate.id}${isChild ? '-child' : ''}`}
+                                            className={hasHistorical && !isChild ? 'cursor-pointer' : ''}
+                                            onClick={() => {
+                                              if (!isChild && hasHistorical) togglePairHistory(group.key)
+                                            }}
+                                          >
+                                            <TableCell className={`font-medium ${isChild ? 'pl-10' : ''}`}>
+                                              {group.pairLabel}
+                                              {isChild && <span className="ml-2 text-xs text-muted-foreground">Historical</span>}
+                                            </TableCell>
+                                            <TableCell className="text-right">{rate.rate}</TableCell>
+                                            <TableCell className="text-right">{rate.buy_rate ?? '—'}</TableCell>
+                                            <TableCell className="text-right">{rate.sell_rate ?? '—'}</TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                              {rate.effective_from
+                                                ? new Date(rate.effective_from).toLocaleString()
+                                                : rate.created_at
+                                                ? new Date(rate.created_at).toLocaleString()
+                                                : '—'}
+                                            </TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                              {rate.effective_to ? new Date(rate.effective_to).toLocaleString() : '—'}
+                                            </TableCell>
+                                            <TableCell>
+                                              {rate.is_current ? (
+                                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800">
+                                                  Current
+                                                </span>
+                                              ) : (
+                                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
+                                                  Historical
+                                                </span>
+                                              )}
+                                              {hasHistorical && !isChild && (
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                  {expandedPairKeys[group.key] ? 'Hide historical' : 'Show historical'}
+                                                </span>
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        )
+
+                                        return (
+                                          <Fragment key={group.key}>
+                                            {renderRow(primaryRate)}
+                                            {hasHistorical && expandedPairKeys[group.key] &&
+                                              historicalRates.map((rate) => renderRow(rate, true))}
+                                          </Fragment>
+                                        )
+                                      })}
                                     </TableBody>
                                   </Table>
                                 </div>
