@@ -23,21 +23,33 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
   const { data: activeCurrencies } = useActiveCurrencies()
   const [targetCurrencyId, setTargetCurrencyId] = useState<string | undefined>()
 
+  const baseCurrency = useMemo(
+    () => activeCurrencies?.find((entry) => entry.is_base_currency),
+    [activeCurrencies]
+  )
+
   const availableTargets = useMemo(
-    () => activeCurrencies?.filter((entry) => entry.id !== currency?.id) ?? [],
-    [activeCurrencies, currency?.id]
+    () => activeCurrencies?.filter((entry) => entry.id !== baseCurrency?.id) ?? [],
+    [activeCurrencies, baseCurrency?.id]
   )
 
   useEffect(() => {
-    if (open && availableTargets.length > 0) {
-      setTargetCurrencyId((prev) => prev ?? availableTargets[0].id)
+    if (!open) return
+
+    if (currency && currency.id !== baseCurrency?.id) {
+      setTargetCurrencyId(currency.id)
+      return
     }
-  }, [open, availableTargets])
+
+    if (availableTargets.length > 0) {
+      setTargetCurrencyId((prev) => (prev && availableTargets.some((c) => c.id === prev) ? prev : availableTargets[0].id))
+    }
+  }, [open, currency, baseCurrency?.id, availableTargets])
 
   const { data, isLoading } = useCurrencyRateHistory(
-    currency?.id,
+    baseCurrency?.id,
     targetCurrencyId,
-    open && !!currency && !!targetCurrencyId
+    open && !!baseCurrency && !!targetCurrencyId
   )
 
   const historyEntries = data?.data ?? []
@@ -52,6 +64,8 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
         </DialogHeader>
         {!currency ? (
           <div className="text-center py-8 text-muted-foreground">Select a currency to view history.</div>
+        ) : !baseCurrency ? (
+          <div className="text-center py-8 text-muted-foreground">Base currency not found.</div>
         ) : availableTargets.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">No comparison currencies available.</div>
         ) : isLoading ? (
@@ -76,7 +90,7 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
               </Select>
             </div>
             <div className="text-sm text-muted-foreground">
-              Showing {historyEntries.length} entries for {currency.code} →{' '}
+              Showing {historyEntries.length} entries for {baseCurrency?.code} →{' '}
               {availableTargets.find((item) => item.id === targetCurrencyId)?.code}
             </div>
             <div className="rounded-lg border">
@@ -109,9 +123,7 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
                           ? `${Number(rate.rate_change_percentage).toFixed(2)}%`
                           : '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {rate.reason ?? '—'}
-                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{rate.reason ?? '—'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
