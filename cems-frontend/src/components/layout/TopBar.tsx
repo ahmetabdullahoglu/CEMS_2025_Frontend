@@ -1,13 +1,23 @@
-import { LogOut, User } from 'lucide-react'
+import { LogOut, MapPin, User } from 'lucide-react'
 import { useAuth } from '@/contexts/useAuth'
+import { useBranchSelection } from '@/contexts/BranchContext'
 import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
 } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { formatBranchLabel } from '@/utils/branch'
 
 export default function TopBar() {
   const { user, logout } = useAuth()
+  const { availableBranches, currentBranchId, setCurrentBranchId, isLoading } = useBranchSelection()
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -34,6 +44,49 @@ export default function TopBar() {
 
         {/* Right side - User info and actions */}
         <div className="flex items-center space-x-4">
+          {/* Current Branch Selector */}
+          {user && (
+            <Card className="border-0 shadow-none">
+              <CardContent className="p-0 flex items-center space-x-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Current Branch
+                  </span>
+                  {isLoading ? (
+                    <div className="h-9 w-48 animate-pulse rounded-md bg-muted" />
+                  ) : availableBranches.length > 1 ? (
+                    <Select
+                      value={currentBranchId ?? undefined}
+                      onValueChange={setCurrentBranchId}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableBranches
+                          .filter((branch) => Boolean(branch.id))
+                          .map((branch) => (
+                            <SelectItem key={branch.id} value={branch.id}>
+                              {formatBranchLabel(branch, branch.name, branch.id)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="flex items-center text-sm font-medium">
+                      {formatBranchLabel(
+                        availableBranches[0],
+                        availableBranches[0]?.name,
+                        availableBranches[0]?.id
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* User Info Card */}
           {user && (
             <Card className="border-0 shadow-none">

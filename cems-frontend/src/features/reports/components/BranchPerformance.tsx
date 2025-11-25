@@ -1,28 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { format, subDays } from 'date-fns'
 import { Calendar, Award } from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useBranchPerformance } from '@/hooks/useReports'
 
 export default function BranchPerformance() {
@@ -31,10 +14,16 @@ export default function BranchPerformance() {
 
   const { data, isLoading, isError } = useBranchPerformance(startDate, endDate)
 
-  // Sort branches by revenue for ranking
-  const sortedBranches = data?.branches
-    ? [...data.branches].sort((a, b) => Number(b.total_revenue ?? 0) - Number(a.total_revenue ?? 0))
-    : []
+  const payload = (data as { data?: unknown })?.data ?? data
+  const branches = useMemo(() => payload?.branches ?? [], [payload])
+
+  const sortedBranches = useMemo(
+    () => [...branches].sort((a, b) => Number(b.total_revenue ?? 0) - Number(a.total_revenue ?? 0)),
+    [branches]
+  )
+
+  const periodStart = payload?.date_range?.start
+  const periodEnd = payload?.date_range?.end
 
   return (
     <div className="space-y-6">
@@ -74,25 +63,54 @@ export default function BranchPerformance() {
       </Card>
 
       {isLoading && (
-        <div className="text-center py-8 text-muted-foreground">
-          Loading branch performance...
-        </div>
+        <div className="text-center py-8 text-muted-foreground">Loading branch performance...</div>
       )}
 
       {isError && (
-        <div className="text-center py-8 text-red-500">
-          Error loading branch performance. Please try again.
-        </div>
+        <div className="text-center py-8 text-red-500">Error loading branch performance. Please try again.</div>
       )}
 
-      {data && (
+      {payload && (
         <>
+          {/* Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Total System Revenue</CardTitle>
+                <p className="text-sm text-muted-foreground">{periodStart} → {periodEnd}</p>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-green-600">
+                  ${Number(payload.total_system_revenue ?? 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Branch Count</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{payload.branch_count ?? branches.length}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Best Performer</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg font-semibold">{sortedBranches[0]?.branch_name ?? 'N/A'}</p>
+                <p className="text-sm text-muted-foreground">#{sortedBranches[0]?.rank ?? '—'} overall</p>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Branch Comparison Chart */}
           <Card>
             <CardHeader>
               <CardTitle>Revenue Comparison</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Total revenue by branch ({data.period_start ? format(new Date(data.period_start), 'MMM dd, yyyy') : 'N/A'} - {data.period_end ? format(new Date(data.period_end), 'MMM dd, yyyy') : 'N/A'})
+                Total revenue by branch ({periodStart ? format(new Date(periodStart), 'MMM dd, yyyy') : 'N/A'} -
+                {periodEnd ? ` ${format(new Date(periodEnd), 'MMM dd, yyyy')}` : ' N/A'})
               </p>
             </CardHeader>
             <CardContent>
@@ -103,7 +121,7 @@ export default function BranchPerformance() {
                   <YAxis />
                   <Tooltip
                     formatter={(value: number) =>
-                      `$${value.toLocaleString('en-US', {
+                      `$${Number(value).toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}`
@@ -120,9 +138,7 @@ export default function BranchPerformance() {
           <Card>
             <CardHeader>
               <CardTitle>Branch Performance Details</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Detailed breakdown by branch
-              </p>
+              <p className="text-sm text-muted-foreground">Detailed breakdown by branch</p>
             </CardHeader>
             <CardContent>
               <Table>
@@ -132,46 +148,34 @@ export default function BranchPerformance() {
                     <TableHead>Branch</TableHead>
                     <TableHead className="text-right">Transactions</TableHead>
                     <TableHead className="text-right">Revenue</TableHead>
-                    <TableHead className="text-right">Expenses</TableHead>
-                    <TableHead className="text-right">Profit</TableHead>
-                    <TableHead>Top Currency</TableHead>
+                    <TableHead className="text-right">Avg. Transaction</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedBranches.map((branch, index) => (
+                  {sortedBranches.map((branch) => (
                     <TableRow key={branch.branch_id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {index === 0 && <Award className="w-4 h-4 text-yellow-500" />}
-                          <span className="font-medium">#{index + 1}</span>
+                          {branch.rank === 1 && <Award className="w-4 h-4 text-yellow-500" />}
+                          <span className="font-medium">#{branch.rank}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">{branch.branch_name ?? 'N/A'}</TableCell>
-                      <TableCell className="text-right">
-                        {branch.total_transactions ?? 0}
+                      <TableCell className="font-medium">
+                        <div>{branch.branch_name ?? 'N/A'}</div>
+                        <div className="text-xs text-muted-foreground">{branch.branch_code}</div>
                       </TableCell>
+                      <TableCell className="text-right">{branch.total_transactions ?? 0}</TableCell>
                       <TableCell className="text-right text-green-600">
                         ${Number(branch.total_revenue ?? 0).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </TableCell>
-                      <TableCell className="text-right text-red-600">
-                        ${Number(branch.total_expenses ?? 0).toLocaleString('en-US', {
+                      <TableCell className="text-right font-medium">
+                        ${Number(branch.avg_transaction_value ?? 0).toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
-                      </TableCell>
-                      <TableCell className={`text-right font-medium ${Number(branch.net_profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${Number(branch.net_profit ?? 0).toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {branch.top_currency ?? 'N/A'} ({(branch.top_currency_volume ?? 0).toLocaleString()})
-                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}

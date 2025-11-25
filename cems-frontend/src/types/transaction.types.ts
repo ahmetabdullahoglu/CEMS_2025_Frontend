@@ -135,7 +135,9 @@ export interface TransferTransactionCreate {
   to_branch_id: string // UUID
   currency_id: string // UUID
   amount: number | string
+  transfer_type: 'branch_to_branch' | 'vault_to_branch' | 'branch_to_vault'
   reference_number?: string | null
+  description?: string | null
   notes?: string | null
   transaction_date?: string | null // ISO datetime
 }
@@ -146,6 +148,7 @@ export interface TransferTransactionResponse extends Omit<BaseTransactionRespons
   currency_id: string // UUID
   amount: string // Decimal as string
   transfer_type: 'branch_to_branch' | 'vault_to_branch' | 'branch_to_vault'
+  description?: string | null
   received_at?: string | null // ISO datetime
   received_by_id?: string | null // UUID
   is_received: boolean
@@ -175,24 +178,28 @@ export interface TransactionListResponse {
 // Transaction Filters and Query Params
 export interface TransactionFilters {
   transaction_type?: TransactionType
-  status?: TransactionStatus
   branch_id?: string // UUID
   customer_id?: string // UUID
-  from_date?: string // ISO date (renamed from date_from to match API)
-  to_date?: string // ISO date (renamed from date_to to match API)
-  search?: string
+  status_filter?: TransactionStatus
+  currency_id?: string // UUID
+  amount_min?: number
+  amount_max?: number
+  date_from?: string // ISO date
+  date_to?: string // ISO date
 }
 
 export interface TransactionQueryParams extends TransactionFilters {
-  skip?: number // Offset for pagination (replaces page)
-  limit?: number // Number of items per page (replaces page_size)
-  sort_by?: string
-  sort_order?: 'asc' | 'desc'
+  skip?: number // Offset for pagination
+  limit?: number // Number of items per page
 }
 
 // Transaction Cancel Request
 export interface TransactionCancelRequest {
-  reason: string
+  reason?: string
+}
+
+export interface ExpenseApprovalRequest {
+  approval_notes?: string | null
 }
 
 // Transaction Summary/Stats

@@ -11,9 +11,16 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { useTransactionDetails, useCancelTransaction, useApproveTransaction } from '@/hooks/useTransactions'
+import {
+  useTransactionDetails,
+  useCancelTransaction,
+  useApproveTransaction,
+  useReceiveTransfer,
+} from '@/hooks/useTransactions'
 import { useBranches } from '@/hooks/useBranches'
 import { BranchTooltip } from '@/components/BranchTooltip'
+import { formatBranchLabel } from '@/utils/branch'
+import { handleApiError } from '@/lib/api/client'
 import type { Branch } from '@/types/branch.types'
 import type { TransactionDetail, TransactionType } from '@/types/transaction.types'
 
@@ -81,7 +88,10 @@ const ExchangeTransactionDetails = ({ transaction }: { transaction: TransactionD
       <div className="space-y-1">
         <DetailRow label="Transaction Number" value={transaction.transaction_number} />
         <DetailRow label="Customer Name" value={transaction.customer?.name} />
-        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
+        <DetailRow
+          label="Branch"
+          value={formatBranchLabel(transaction.branch, transaction.branch_name, transaction.branch_id)}
+        />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -116,7 +126,10 @@ const IncomeTransactionDetails = ({ transaction }: { transaction: TransactionDet
         <DetailRow label="Category" value={transaction.income_category} />
         <DetailRow label="Source" value={transaction.income_source} />
         <DetailRow label="Notes" value={transaction.notes} />
-        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
+        <DetailRow
+          label="Branch"
+          value={formatBranchLabel(transaction.branch, transaction.branch_name, transaction.branch_id)}
+        />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -151,7 +164,10 @@ const ExpenseTransactionDetails = ({ transaction }: { transaction: TransactionDe
         <DetailRow label="Category" value={transaction.expense_category} />
         <DetailRow label="Payee" value={transaction.expense_to} />
         <DetailRow label="Notes" value={transaction.notes} />
-        <DetailRow label="Branch" value={transaction.branch?.name || transaction.branch_name} />
+        <DetailRow
+          label="Branch"
+          value={formatBranchLabel(transaction.branch, transaction.branch_name, transaction.branch_id)}
+        />
         <DetailRow label="Created By" value={transaction.user?.full_name} />
         <DetailRow
           label="Created At"
@@ -175,10 +191,12 @@ const TransferTransactionDetails = ({ transaction, branches }: {
   const fromBranch = branches?.find(b => b.id === transaction.from_branch_id)
   const toBranch = branches?.find(b => b.id === transaction.to_branch_id)
 
-  const fromBranchLabel =
-    fromBranch?.name || transaction.from_branch_name || `Branch #${transaction.from_branch_id ?? 'Unknown'}`
-  const toBranchLabel =
-    toBranch?.name || transaction.to_branch_name || `Branch #${transaction.to_branch_id ?? 'Unknown'}`
+  const fromBranchLabel = formatBranchLabel(
+    fromBranch,
+    transaction.from_branch_name,
+    transaction.from_branch_id
+  )
+  const toBranchLabel = formatBranchLabel(toBranch, transaction.to_branch_name, transaction.to_branch_id)
 
   return (
     <div className="space-y-4">
@@ -242,6 +260,7 @@ export default function TransactionDetailsDialog({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showApproveConfirm, setShowApproveConfirm] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
+  const [approvalNotes, setApprovalNotes] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { data: transaction, isLoading, isError } = useTransactionDetails(
@@ -253,12 +272,14 @@ export default function TransactionDetailsDialog({
 
   const { mutate: cancelTransaction, isPending: isCancelling } = useCancelTransaction()
   const { mutate: approveTransaction, isPending: isApproving } = useApproveTransaction()
+  const { mutate: receiveTransfer, isPending: isReceiving } = useReceiveTransfer()
 
   useEffect(() => {
     if (!open) {
       setShowApproveConfirm(false)
       setShowCancelConfirm(false)
       setActionError(null)
+      setApprovalNotes('')
     }
   }, [open])
 
@@ -281,17 +302,37 @@ export default function TransactionDetailsDialog({
     if (!transactionId) return
 
     setActionError(null)
-    approveTransaction(transactionId, {
-      onSuccess: () => {
-        setShowApproveConfirm(false)
-        setActionError(null)
-        onOpenChange(false)
-      },
-      onError: (err) => {
-        const message = err instanceof Error ? err.message : 'Failed to approve transaction'
-        setActionError(message)
-      },
-    })
+    if (transaction?.transaction_type === 'transfer') {
+      receiveTransfer(
+        { id: transactionId },
+        {
+          onSuccess: () => {
+            setShowApproveConfirm(false)
+            setActionError(null)
+            onOpenChange(false)
+          },
+          onError: (err) => {
+            setActionError(handleApiError(err))
+          },
+        }
+      )
+      return
+    }
+
+    approveTransaction(
+      { id: transactionId, approval_notes: approvalNotes || null },
+      {
+        onSuccess: () => {
+          setShowApproveConfirm(false)
+          setActionError(null)
+          setApprovalNotes('')
+          onOpenChange(false)
+        },
+        onError: (err) => {
+          setActionError(handleApiError(err))
+        },
+      }
+    )
   }
 
   const renderTransactionContent = () => {
@@ -341,22 +382,29 @@ export default function TransactionDetailsDialog({
 
         {!isLoading && !isError && transaction && (
           <DialogFooter className="flex-col sm:flex-row gap-2">
+            {actionError && !showApproveConfirm && (
+              <div className="flex w-full items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <span>{actionError}</span>
+              </div>
+            )}
             {!showCancelConfirm && !showApproveConfirm ? (
               <>
-                {transaction.status === 'pending' && transaction.transaction_type === 'expense' && (
-                  <Button
-                    onClick={() => {
-                      setActionError(null)
-                      setShowCancelConfirm(false)
-                      setShowApproveConfirm(true)
-                    }}
-                    className="w-full sm:w-auto"
-                    disabled={isApproving}
-                  >
-                    Approve Transaction
-                  </Button>
-                )}
-                {transaction.status === 'pending' && (
+                {transaction.status === 'pending' &&
+                  (transaction.transaction_type === 'expense' || transaction.transaction_type === 'transfer') && (
+                    <Button
+                      onClick={() => {
+                        setActionError(null)
+                        setShowCancelConfirm(false)
+                        setShowApproveConfirm(true)
+                      }}
+                      className="w-full sm:w-auto"
+                      disabled={isApproving || isReceiving}
+                    >
+                      {transaction.transaction_type === 'transfer' ? 'Complete Receipt' : 'Approve Transaction'}
+                    </Button>
+                  )}
+                {transaction.status !== 'cancelled' && (
                   <Button
                     variant="destructive"
                     onClick={() => {
@@ -388,26 +436,38 @@ export default function TransactionDetailsDialog({
                 )}
                 <div className="flex items-center gap-2 text-sm text-green-600 w-full sm:flex-1">
                   <AlertCircle className="h-4 w-4" />
-                  <span>Are you sure you want to approve this transaction?</span>
+                  <span>
+                    {transaction?.transaction_type === 'transfer'
+                      ? 'Are you sure you want to mark this transfer as received?'
+                      : 'Are you sure you want to approve this transaction?'}
+                  </span>
                 </div>
+                {transaction?.transaction_type === 'expense' && (
+                  <Textarea
+                    placeholder="Approval notes"
+                    value={approvalNotes}
+                    onChange={(event) => setApprovalNotes(event.target.value)}
+                    rows={3}
+                  />
+                )}
                 <Button
                   variant="outline"
                   onClick={() => {
                     setActionError(null)
                     setShowApproveConfirm(false)
                   }}
-                  disabled={isApproving}
+                  disabled={isApproving || isReceiving}
                   className="w-full sm:w-auto"
                 >
                   No, Go Back
                 </Button>
                 <Button
                   onClick={handleApprove}
-                  disabled={isApproving}
+                  disabled={isApproving || isReceiving}
                   className="w-full sm:w-auto"
                 >
-                  {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Yes, Approve
+                  {(isApproving || isReceiving) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {transaction?.transaction_type === 'transfer' ? 'Yes, Mark Received' : 'Yes, Approve'}
                 </Button>
               </>
             ) : (

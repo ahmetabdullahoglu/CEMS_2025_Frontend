@@ -1,6 +1,18 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Phone, Mail, Eye, PencilLine, Plus, Users } from 'lucide-react'
+import {
+  Search,
+  MapPin,
+  Phone,
+  Mail,
+  Eye,
+  PencilLine,
+  Plus,
+  Users,
+  Wallet,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -23,8 +35,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { Branch } from '@/types/branch.types'
-import { useBranches, useCreateBranch, useUpdateBranch } from '@/hooks/useBranches'
+import {
+  useBranchBalances,
+  useBranches,
+  useCreateBranch,
+  useUpdateBranch,
+} from '@/hooks/useBranches'
+import { formatAmount } from '@/utils/number'
 
 type BranchFormState = {
   name: string
@@ -51,12 +77,33 @@ export default function BranchesPage() {
   const skip = (page - 1) * pageSize
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  const [region, setRegion] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [includeBalances, setIncludeBalances] = useState(true)
+  const [calculateUsd, setCalculateUsd] = useState(true)
+  const [expandedBranchId, setExpandedBranchId] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useBranches({
     skip,
     limit: pageSize,
     search,
+    region: region || undefined,
+    is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
+    include_balances: includeBalances,
+    calculate_usd_value: includeBalances ? calculateUsd : undefined,
   })
+
+  const branches = data?.data ?? []
+  const expandedBranch = branches.find((branch) => branch.id === expandedBranchId)
+  const shouldFetchBalances = Boolean(
+    expandedBranchId && (!expandedBranch?.balances || expandedBranch.balances.length === 0)
+  )
+
+  useEffect(() => {
+    if (!includeBalances) {
+      setCalculateUsd(false)
+    }
+  }, [includeBalances])
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -64,6 +111,12 @@ export default function BranchesPage() {
   const [editForm, setEditForm] = useState<BranchFormState>(defaultBranchForm)
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+
+  const {
+    data: balancesData,
+    isLoading: balancesLoading,
+    isError: balancesError,
+  } = useBranchBalances(expandedBranchId ?? '', shouldFetchBalances)
 
   const { mutateAsync: createBranch, isPending: creatingBranch } = useCreateBranch()
   const { mutateAsync: updateBranch, isPending: updatingBranch } = useUpdateBranch()
@@ -197,6 +250,10 @@ export default function BranchesPage() {
     setFormError(null)
   }
 
+  const toggleBalances = (branchId: string) => {
+    setExpandedBranchId((prev) => (prev === branchId ? null : branchId))
+  }
+
   const handleCreateBranch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setFormError(null)
@@ -313,6 +370,69 @@ export default function BranchesPage() {
               Search
             </Button>
           </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="region-filter">Region</Label>
+              <Input
+                id="region-filter"
+                placeholder="e.g. Istanbul_Asian"
+                value={region}
+                onChange={(e) => {
+                  setRegion(e.target.value)
+                  setPage(1)
+                }}
+              />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value as typeof statusFilter)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Balances</Label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-balances"
+                  checked={includeBalances}
+                  onCheckedChange={(checked) => {
+                    setIncludeBalances(Boolean(checked))
+                    setPage(1)
+                  }}
+                />
+                <Label htmlFor="include-balances" className="font-normal">
+                  Include balances
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="calc-usd"
+                  checked={calculateUsd}
+                  disabled={!includeBalances}
+                  onCheckedChange={(checked) => {
+                    setCalculateUsd(Boolean(checked))
+                    setPage(1)
+                  }}
+                />
+                <Label htmlFor="calc-usd" className="font-normal">
+                  Calculate USD value
+                </Label>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -322,7 +442,7 @@ export default function BranchesPage() {
             <CardTitle>Branches</CardTitle>
             {data && (
               <span className="text-sm text-muted-foreground">
-                Showing {data.data?.length ?? 0} of {data.total} branches
+                Showing {branches.length} of {data.total} branches
               </span>
             )}
           </div>
@@ -340,13 +460,13 @@ export default function BranchesPage() {
             </div>
           )}
 
-          {data && (data.data?.length ?? 0) === 0 && (
+          {data && branches.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No branches found.
             </div>
           )}
 
-          {data && (data.data?.length ?? 0) > 0 && (
+          {data && branches.length > 0 && (
             <>
               <Table>
                 <TableHeader>
@@ -355,18 +475,35 @@ export default function BranchesPage() {
                     <TableHead>Code</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Contact Info</TableHead>
+                    <TableHead>Total USD Value</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {(data.data ?? []).map((branch) => (
-                    <TableRow key={branch.id}>
-                      <TableCell>
-                        <button
-                          onClick={() => handleViewBranch(branch.id)}
-                          className="hover:text-primary hover:underline text-left"
-                        >
+              <TableBody>
+                  {branches.map((branch) => {
+                    const isExpanded = expandedBranchId === branch.id
+                    const hasLocalBalances = Boolean(branch.balances && branch.balances.length > 0)
+                    const branchBalances = hasLocalBalances
+                      ? branch.balances ?? []
+                      : balancesData?.branch_id === branch.id
+                        ? balancesData.balances
+                        : []
+                    const branchTotalUsd =
+                      branch.total_value_in_base_currency ??
+                      branch.total_usd_value ??
+                      (balancesData?.branch_id === branch.id
+                        ? balancesData.total_usd_equivalent
+                        : undefined)
+
+                    return (
+                      <Fragment key={branch.id}>
+                        <TableRow>
+                          <TableCell>
+                            <button
+                              onClick={() => handleViewBranch(branch.id)}
+                              className="hover:text-primary hover:underline text-left"
+                            >
                           <div className="font-medium">{branch.name_en ?? 'N/A'}</div>
                           {branch.name_ar && (
                             <div className="text-sm text-muted-foreground">{branch.name_ar}</div>
@@ -410,38 +547,146 @@ export default function BranchesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
+                        {(() => {
+                          const totalUsdValue =
+                            branchTotalUsd ??
+                            (branchBalances.length
+                              ? (() => {
+                                  const sum = branchBalances.reduce((acc, balance) => {
+                                    const usd = Number(balance.usd_value ?? balance.usd_equivalent)
+                                    return Number.isFinite(usd) ? acc + usd : acc
+                                  }, 0)
+
+                                  return Number.isFinite(sum) ? sum : undefined
+                                })()
+                              : undefined)
+
+                          return formatAmount(totalUsdValue)
+                        })()}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={branch.is_active ? 'default' : 'secondary'}>
                           {branch.is_active ? 'Active' : 'Inactive'}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
-                            <PencilLine className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => navigate(`/branches/${branch.id}/users`)}
-                          >
-                            <Users className="w-4 h-4 mr-2" />
-                            Users
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewBranch(branch.id)}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Details
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
+                                <PencilLine className="w-4 h-4 mr-2" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => navigate(`/branches/${branch.id}/users`)}
+                              >
+                                <Users className="w-4 h-4 mr-2" />
+                                Users
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleViewBranch(branch.id)}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Details
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={isExpanded ? 'default' : 'outline'}
+                                onClick={() => toggleBalances(branch.id)}
+                              >
+                                <Wallet className="w-4 h-4 mr-2" />
+                                {isExpanded ? 'Hide Balances' : 'Balances'}
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 ml-2" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 ml-2" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow className="bg-muted/40">
+                            <TableCell colSpan={7}>
+                              {!hasLocalBalances && balancesLoading && (
+                                <div className="py-4 text-sm text-muted-foreground">
+                                  Loading balances...
+                                </div>
+                              )}
+                              {balancesError && (
+                                <div className="py-4 text-sm text-destructive">
+                                  Unable to load balances for this branch right now.
+                                </div>
+                              )}
+                              {(branchBalances.length > 0 || (!hasLocalBalances && balancesData)) && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Wallet className="w-4 h-4" />
+                                      <span className="font-medium text-foreground">
+                                        {branch.name_en ?? branch.name ?? 'Branch balances'}
+                                      </span>
+                                    </div>
+                                    {branchTotalUsd && (
+                                      <span className="text-sm text-muted-foreground">
+                                        Total USD Value: {formatAmount(branchTotalUsd)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {branchBalances.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground">
+                                      No balances available for this branch.
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-md border bg-background">
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow>
+                                            <TableHead>Currency</TableHead>
+                                            <TableHead>Balance</TableHead>
+                                            <TableHead>Available</TableHead>
+                                            <TableHead>Reserved</TableHead>
+                                            <TableHead>Min / Max</TableHead>
+                                            <TableHead>Updated</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {branchBalances.map((balance) => (
+                                              <TableRow key={`${balance.currency_code}-${balance.currency_id ?? ''}`}>
+                                              <TableCell className="font-medium">
+                                                <div>{balance.currency_code}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                  {balance.currency_name}
+                                                </div>
+                                              </TableCell>
+                                              <TableCell>{formatAmount(balance.balance)}</TableCell>
+                                              <TableCell>{formatAmount(balance.available_balance)}</TableCell>
+                                              <TableCell>{formatAmount(balance.reserved_balance)}</TableCell>
+                                              <TableCell className="text-sm text-muted-foreground">
+                                                {formatAmount(balance.minimum_threshold)} /{' '}
+                                                {formatAmount(balance.maximum_threshold)}
+                                              </TableCell>
+                                              <TableCell className="text-sm text-muted-foreground">
+                                                {balance.last_updated ? new Date(balance.last_updated).toLocaleString() : '—'}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+              </TableBody>
+            </Table>
 
               {/* Pagination */}
               {(() => {

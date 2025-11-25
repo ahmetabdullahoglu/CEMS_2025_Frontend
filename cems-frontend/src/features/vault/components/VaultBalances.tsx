@@ -11,19 +11,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { VaultBalance, VaultDetailsResponse } from '@/types/vault.types'
+import type { VaultBalanceInfo, VaultResponse } from '@/types/vault.types'
 import { cn } from '@/lib/utils'
 import CurrencyBalanceDetails from './CurrencyBalanceDetails'
 import BranchThresholdAlerts from './BranchThresholdAlerts'
 import { useBranchBalances, useBranchThresholds } from '@/hooks/useBranches'
 
 interface VaultBalancesProps {
-  data: VaultDetailsResponse
+  data: VaultResponse
   isLoading?: boolean
 }
 
 export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
-  const [selectedBalance, setSelectedBalance] = useState<VaultBalance | null>(null)
+  const [selectedBalance, setSelectedBalance] = useState<VaultBalanceInfo | null>(null)
 
   useEffect(() => {
     if ((data?.balances?.length ?? 0) === 0) {
@@ -57,7 +57,7 @@ export default function VaultBalances({ data, isLoading }: VaultBalancesProps) {
 
   const branchDisplayName = branchId ? branchBalances?.branch_name ?? data.name : undefined
 
-  const handleSelectCurrency = (balance: VaultBalance) => {
+  const handleSelectCurrency = (balance: VaultBalanceInfo) => {
     setSelectedBalance(balance)
   }
 

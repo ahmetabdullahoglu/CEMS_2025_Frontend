@@ -1,11 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, ChevronDown, ArrowLeftRight, TrendingUp, TrendingDown, Move } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  useTransactions,
-  useTransactionsByType,
-  usePendingApprovalTransactions,
-} from '@/hooks/useTransactions'
+import { useTransactions, useTransactionsByType } from '@/hooks/useTransactions'
 import TransactionFiltersComponent from '../components/TransactionFilters'
 import TransactionTable from '../components/TransactionTable'
 import ExchangeDialog from '../components/ExchangeDialog'
@@ -29,6 +25,7 @@ import {
   IncomeTransactionsList,
   TransferTransactionsList,
 } from '../components/TransactionTypeViews'
+import PendingTransferApprovals from '../components/PendingTransferApprovals'
 import type {
   TransactionFilters,
   TransactionQueryParams,
@@ -59,14 +56,14 @@ const ErrorCard = ({ title, description }: { title: string; description: string 
 export default function TransactionsPage() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
-  const [sortBy, setSortBy] = useState<string>('created_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [activeTab, setActiveTab] = useState<TransactionsTab>('all')
   const [isExchangeDialogOpen, setIsExchangeDialogOpen] = useState(false)
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
+  const [sortBy, setSortBy] = useState<string>('created_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedTransaction, setSelectedTransaction] = useState<{
     id: string
     type?: TransactionType
@@ -77,10 +74,8 @@ export default function TransactionsPage() {
     () => ({
       skip: (page - 1) * pageSize,
       limit: pageSize,
-      sort_by: sortBy,
-      sort_order: sortOrder,
     }),
-    [page, pageSize, sortBy, sortOrder]
+    [page, pageSize]
   )
 
   const filtersWithoutType = useMemo(() => {
@@ -104,7 +99,6 @@ export default function TransactionsPage() {
   const incomeQuery = useTransactionsByType('income', typeSpecificParams, activeTab === 'income')
   const expenseQuery = useTransactionsByType('expense', typeSpecificParams, activeTab === 'expense')
   const transferQuery = useTransactionsByType('transfer', typeSpecificParams, activeTab === 'transfer')
-  const approvalsQuery = usePendingApprovalTransactions(typeSpecificParams, activeTab === 'approvals')
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -372,23 +366,7 @@ export default function TransactionsPage() {
         </TabsContent>
 
         <TabsContent value="approvals" className="space-y-4">
-          {approvalsQuery.isLoading ? (
-            <LoadingCard message="Loading pending approvals..." />
-          ) : approvalsQuery.isError ? (
-            <ErrorCard
-              title="Failed to load pending approvals"
-              description={
-                approvalsQuery.error instanceof Error
-                  ? approvalsQuery.error.message
-                  : 'Please try again later'
-              }
-            />
-          ) : (
-            <ExpenseTransactionsList
-              transactions={(approvalsQuery.data?.transactions || []) as ExpenseTransactionResponse[]}
-              onViewDetails={handleViewDetails}
-            />
-          )}
+          <PendingTransferApprovals />
         </TabsContent>
       </Tabs>
 
