@@ -129,11 +129,14 @@ export const useExchangeRatesList = (params?: {
   })
 }
 
-export const useCurrencyWithRates = (currencyId?: string) => {
+export const useCurrencyWithRates = (
+  currencyId?: string,
+  options?: { includeHistorical?: boolean; enabled?: boolean }
+) => {
   return useQuery<CurrencyWithRates>({
-    queryKey: ['currencyWithRates', currencyId],
-    queryFn: () => currencyApi.getCurrencyWithRates(currencyId!),
-    enabled: !!currencyId,
+    queryKey: ['currencyWithRates', currencyId, options?.includeHistorical],
+    queryFn: () => currencyApi.getCurrencyWithRates(currencyId!, options),
+    enabled: !!currencyId && (options?.enabled ?? true),
     staleTime: 1000 * 60 * 2,
     select: (payload) => {
       const wrapped = (payload as { data?: CurrencyWithRates }).data
@@ -158,7 +161,7 @@ export const useCurrencyRateHistory = (
 
   return useQuery({
     queryKey: ['currencies', from, to, 'history'],
-    queryFn: () => currencyApi.getRateHistory(from!, to!, {}),
+    queryFn: () => currencyApi.getRateHistory(from!, to!),
     enabled: enabled && hasPair,
     staleTime: 1000 * 60 * 5,
   })

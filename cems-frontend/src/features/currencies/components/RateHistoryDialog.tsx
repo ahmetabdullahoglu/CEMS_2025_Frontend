@@ -11,6 +11,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useActiveCurrencies, useCurrencyRateHistory } from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
+import { Badge } from '@/components/ui/badge'
 
 interface RateHistoryDialogProps {
   currency: Currency | null
@@ -46,7 +47,7 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            Rate history for {currency?.name_en} ({currency?.code})
+            Pair history for {currency?.name_en ?? currency?.name} ({currency?.code})
           </DialogTitle>
         </DialogHeader>
         {!currency ? (
@@ -60,7 +61,7 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">Compare against</div>
+              <div className="text-sm text-muted-foreground">Select pair currency</div>
               <Select value={targetCurrencyId} onValueChange={(val) => setTargetCurrencyId(val)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Select currency" />
@@ -82,26 +83,34 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Buy Rate</TableHead>
-                    <TableHead className="text-right">Sell Rate</TableHead>
-                    <TableHead>Recorded At</TableHead>
+                    <TableHead>Changed At</TableHead>
+                    <TableHead>Change</TableHead>
+                    <TableHead className="text-right">Old Rate</TableHead>
+                    <TableHead className="text-right">New Rate</TableHead>
+                    <TableHead className="text-right">Δ %</TableHead>
+                    <TableHead>Reason</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {historyEntries.map((rate) => (
                     <TableRow key={rate.id}>
                       <TableCell className="font-medium">
-                        {new Date(rate.effective_from ?? rate.created_at).toLocaleDateString()}
+                        {new Date(rate.changed_at).toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {rate.buy_rate ? Number(rate.buy_rate).toFixed(4) : 'N/A'}
+                      <TableCell>
+                        <Badge variant={rate.change_type === 'created' ? 'default' : 'secondary'}>
+                          {rate.change_type}
+                        </Badge>
                       </TableCell>
+                      <TableCell className="text-right">{rate.old_rate ?? '—'}</TableCell>
+                      <TableCell className="text-right">{rate.new_rate}</TableCell>
                       <TableCell className="text-right">
-                        {rate.sell_rate ? Number(rate.sell_rate).toFixed(4) : 'N/A'}
+                        {rate.rate_change_percentage
+                          ? `${Number(rate.rate_change_percentage).toFixed(2)}%`
+                          : '—'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(rate.updated_at).toLocaleString()}
+                        {rate.reason ?? '—'}
                       </TableCell>
                     </TableRow>
                   ))}

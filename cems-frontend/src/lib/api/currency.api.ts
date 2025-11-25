@@ -39,9 +39,35 @@ export const currencyApi = {
     return response.data
   },
 
-  getCurrencyWithRates: async (id: string): Promise<CurrencyWithRates> => {
-    const response = await apiClient.get<CurrencyWithRates>(`/currencies/${id}/with-rates`)
-    return response.data
+  getCurrencyWithRates: async (
+    id: string,
+    options?: { includeHistorical?: boolean }
+  ): Promise<CurrencyWithRates> => {
+    const response = await apiClient.get<CurrencyWithRates>(`/currencies/${id}/with-rates`, {
+      params: { include_historical: options?.includeHistorical || undefined },
+    })
+
+    const payload = response.data as CurrencyWithRates &
+      Partial<Currency> & { current_rates?: ExchangeRate[] }
+
+    // Normalize API variations: some endpoints return { currency, rates }, others return currency fields directly
+    const currency: Currency = payload.currency ?? {
+      id: payload.id!,
+      code: payload.code!,
+      name: payload.name ?? payload.name_en ?? '',
+      symbol: payload.symbol ?? '',
+      decimal_places: payload.decimal_places ?? 2,
+      is_active: payload.is_active ?? true,
+      created_at: payload.created_at ?? '',
+      updated_at: payload.updated_at ?? '',
+      name_en: payload.name_en,
+      name_ar: payload.name_ar,
+      is_base_currency: payload.is_base_currency,
+    }
+
+    const rates = payload.rates ?? payload.current_rates ?? []
+
+    return { currency, rates }
   },
 
   createCurrency: async (payload: CurrencyCreate): Promise<Currency> => {
@@ -106,26 +132,19 @@ export const currencyApi = {
   // Get exchange rate history for a currency pair
   getRateHistory: async (
     fromCurrency: string,
-    toCurrency: string,
-    params?: {
-      start_date?: string | null
-      end_date?: string | null
-      limit?: number
-    }
+    toCurrency: string
   ): Promise<CurrencyRateHistoryResponse> => {
     const from = normalizeCurrencyIdentifier(fromCurrency)
     const to = normalizeCurrencyIdentifier(toCurrency)
 
-    const response = await apiClient.get<ExchangeRateListResponse>(
-      `/currencies/rates/history/${encodeURIComponent(from)}/${encodeURIComponent(to)}`,
-      { params }
+    const response = await apiClient.get<CurrencyRateHistoryResponse>(
+      `/currencies/rates/${encodeURIComponent(from)}/${encodeURIComponent(to)}`
     )
-    const payload = response.data as ExchangeRateListResponse
-    const items = payload.items ?? payload.data ?? []
+    const payload = response.data as CurrencyRateHistoryResponse
 
     return {
-      data: items,
-      total: payload.total ?? items.length,
+      data: payload.data ?? [],
+      total: payload.total ?? payload.data?.length ?? 0,
       success: payload.success ?? true,
     }
   },

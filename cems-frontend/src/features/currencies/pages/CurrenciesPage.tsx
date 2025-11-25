@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Edit, History, Plus, Search, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,11 +35,11 @@ export default function CurrenciesPage() {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
   const [historyCurrency, setHistoryCurrency] = useState<Currency | null>(null)
   const [showHistoryDialog, setShowHistoryDialog] = useState(false)
+  const [expandedCurrencyId, setExpandedCurrencyId] = useState<string | null>(null)
   const [showCurrencyDialog, setShowCurrencyDialog] = useState(false)
   const [editingCurrency, setEditingCurrency] = useState<Currency | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
   const [region, setRegion] = useState('')
-  const [detailCurrency, setDetailCurrency] = useState<Currency | null>(null)
 
   const { mutate: activateCurrency } = useActivateCurrency()
   const { mutate: deactivateCurrency } = useDeactivateCurrency()
@@ -53,24 +53,12 @@ export default function CurrenciesPage() {
     region: region || null,
   })
 
-  const { data: withRatesResponse } = useCurrencyWithRates(detailCurrency?.id)
+  const { data: expandedCurrencyRates, isLoading: expandedRatesLoading } = useCurrencyWithRates(
+    expandedCurrencyId ?? undefined,
+    { includeHistorical: true, enabled: !!expandedCurrencyId }
+  )
 
-  const normalizedWithRates: CurrencyWithRates | undefined = (() => {
-    if (!withRatesResponse) return undefined
-    const direct = withRatesResponse as CurrencyWithRates
-    if (Array.isArray(direct.rates)) {
-      return direct
-    }
-
-    const wrapped = (withRatesResponse as { data?: CurrencyWithRates }).data
-    if (wrapped && Array.isArray(wrapped.rates)) {
-      return wrapped
-    }
-
-    return undefined
-  })()
-
-  const rateEntries = normalizedWithRates?.rates ?? []
+  const rateEntries = useMemo(() => expandedCurrencyRates?.rates ?? [], [expandedCurrencyRates])
 
   const handleSearch = () => {
     setSearch(searchInput)
@@ -93,7 +81,11 @@ export default function CurrenciesPage() {
     setSelectedCurrency(null)
   }
 
-  const handleViewHistory = (currency: Currency) => {
+  const handleToggleHistory = (currency: Currency) => {
+    setExpandedCurrencyId((prev) => (prev === currency.id ? null : currency.id))
+  }
+
+  const handleViewPairHistory = (currency: Currency) => {
     setHistoryCurrency(currency)
     setShowHistoryDialog(true)
   }
@@ -226,99 +218,196 @@ export default function CurrenciesPage() {
                 </TableHeader>
                 <TableBody>
                   {(data.data ?? []).map((currency) => (
-                    <TableRow key={currency.id} onClick={() => setDetailCurrency(currency)} className="cursor-pointer">
-                      <TableCell className="font-medium">{currency.code ?? 'N/A'}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{currency.name ?? currency.name_en ?? 'N/A'}</div>
-                          {currency.name_ar && <div className="text-sm text-muted-foreground">{currency.name_ar}</div>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xl">{currency.symbol ?? '-'}</TableCell>
-                      <TableCell className="text-center">{currency.decimal_places}</TableCell>
-                      <TableCell className="text-center">
-                        {currency.is_active ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            Inactive
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {currency.updated_at ? formatDistanceToNow(new Date(currency.updated_at), {
-                          addSuffix: true,
-                        }) : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewHistory(currency)}
-                          >
-                            <History className="w-4 h-4 mr-2" />
-                            History
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleUpdateRate(currency)}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Add Rate
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleOpenCurrencyDialog(currency)
-                            }}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Currency
-                          </Button>
+                    <Fragment key={currency.id}>
+                      <TableRow
+                        onClick={() => handleToggleHistory(currency)}
+                        className="cursor-pointer"
+                      >
+                        <TableCell className="font-medium">{currency.code ?? 'N/A'}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{currency.name ?? currency.name_en ?? 'N/A'}</div>
+                            {currency.name_ar && <div className="text-sm text-muted-foreground">{currency.name_ar}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xl">{currency.symbol ?? '-'}</TableCell>
+                        <TableCell className="text-center">{currency.decimal_places}</TableCell>
+                        <TableCell className="text-center">
                           {currency.is_active ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                deactivateCurrency(currency.id)
-                              }}
-                            >
-                              Deactivate
-                            </Button>
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              Active
+                            </span>
                           ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                              Inactive
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {currency.updated_at ? formatDistanceToNow(new Date(currency.updated_at), {
+                            addSuffix: true,
+                          }) : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                activateCurrency(currency.id)
+                                handleToggleHistory(currency)
                               }}
                             >
-                              Activate
+                              <History className="w-4 h-4 mr-2" />
+                              History
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-600"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteCurrency(currency.id)
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleViewPairHistory(currency)
+                              }}
+                            >
+                              <History className="w-4 h-4 mr-2" />
+                              Pair History
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleUpdateRate(currency)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Add Rate
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenCurrencyDialog(currency)
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Currency
+                            </Button>
+                            {currency.is_active ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deactivateCurrency(currency.id)
+                                }}
+                              >
+                                Deactivate
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  activateCurrency(currency.id)
+                                }}
+                              >
+                                Activate
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteCurrency(currency.id)
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {expandedCurrencyId === currency.id && (
+                        <TableRow>
+                          <TableCell colSpan={7} className="bg-muted/50">
+                            <div className="py-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-semibold">
+                                    Rate history for {currency.code} ({currency.name || currency.name_en})
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Showing all recorded rates for this currency against other listed currencies.
+                                  </p>
+                                </div>
+                                {expandedRatesLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
+                              </div>
+
+                              {!expandedRatesLoading && rateEntries.length === 0 && (
+                                <div className="text-sm text-muted-foreground">
+                                  No exchange rates recorded for this currency.
+                                </div>
+                              )}
+
+                              {!expandedRatesLoading && rateEntries.length > 0 && (
+                                <div className="rounded-md border bg-background">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Pair</TableHead>
+                                        <TableHead className="text-right">Mid Rate</TableHead>
+                                        <TableHead className="text-right">Buy Rate</TableHead>
+                                        <TableHead className="text-right">Sell Rate</TableHead>
+                                        <TableHead>Effective From</TableHead>
+                                        <TableHead>Effective To</TableHead>
+                                        <TableHead>Status</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {rateEntries.map((rate) => (
+                                        <TableRow key={rate.id}>
+                                          <TableCell className="font-medium">
+                                            {(rate.from_currency?.code ?? currency.code) || '—'} →{' '}
+                                            {rate.to_currency?.code ?? '—'}
+                                          </TableCell>
+                                          <TableCell className="text-right">{rate.rate}</TableCell>
+                                          <TableCell className="text-right">{rate.buy_rate ?? '—'}</TableCell>
+                                          <TableCell className="text-right">{rate.sell_rate ?? '—'}</TableCell>
+                                          <TableCell className="text-sm text-muted-foreground">
+                                            {rate.effective_from
+                                              ? new Date(rate.effective_from).toLocaleString()
+                                              : rate.created_at
+                                              ? new Date(rate.created_at).toLocaleString()
+                                              : '—'}
+                                          </TableCell>
+                                          <TableCell className="text-sm text-muted-foreground">
+                                            {rate.effective_to ? new Date(rate.effective_to).toLocaleString() : '—'}
+                                          </TableCell>
+                                          <TableCell>
+                                            {rate.is_current ? (
+                                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800">
+                                                Current
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">
+                                                Historical
+                                              </span>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>
@@ -374,7 +463,7 @@ export default function CurrenciesPage() {
         currency={selectedCurrency}
         open={showUpdateDialog}
         onClose={handleCloseDialog}
-        onViewHistory={(currency) => handleViewHistory(currency)}
+        onViewHistory={(currency) => handleViewPairHistory(currency)}
       />
 
       <RateHistoryDialog
@@ -389,49 +478,6 @@ export default function CurrenciesPage() {
         currency={editingCurrency}
       />
 
-      {detailCurrency && normalizedWithRates && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Rates for {detailCurrency.code} ({detailCurrency.name || detailCurrency.name_en})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {rateEntries.length === 0 ? (
-              <div className="text-muted-foreground">No exchange rates recorded for this currency.</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pair</TableHead>
-                    <TableHead>Mid Rate</TableHead>
-                    <TableHead>Buy Rate</TableHead>
-                    <TableHead>Sell Rate</TableHead>
-                    <TableHead>Effective</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rateEntries.map((rate) => (
-                    <TableRow key={rate.id}>
-                      <TableCell className="font-medium">
-                        {rate.from_currency?.code ?? detailCurrency.code} → {rate.to_currency?.code}
-                      </TableCell>
-                      <TableCell>{rate.rate}</TableCell>
-                      <TableCell>{rate.buy_rate ?? 'N/A'}</TableCell>
-                      <TableCell>{rate.sell_rate ?? 'N/A'}</TableCell>
-                      <TableCell>
-                        {rate.effective_from
-                          ? new Date(rate.effective_from).toLocaleString()
-                          : new Date(rate.created_at).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
