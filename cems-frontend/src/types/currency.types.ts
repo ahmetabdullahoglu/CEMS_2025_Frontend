@@ -158,5 +158,30 @@ export interface CalculateCurrencyResponse {
   exchange_rate_used: string
 }
 
+export interface ExchangeRateCreate {
+  from_currency_id: string
+  to_currency_id: string
+  rate: string
+  buy_rate?: string | null
+  sell_rate?: string | null
+  effective_from: string
+  notes?: string | null
+}
+
+export interface CalculateCurrencyRequest {
+  from_currency_id: string
+  to_currency_id: string
+  amount: number | string
+  apply_commission?: boolean
+}
+
+export interface CalculateCurrencyResponse {
+  from_currency_id: string
+  to_currency_id: string
+  original_amount: string
+  converted_amount: string
+  exchange_rate_used: string
+}
+
 // Backward compatibility aliases
 export type CurrencyRequest = CurrencyCreate

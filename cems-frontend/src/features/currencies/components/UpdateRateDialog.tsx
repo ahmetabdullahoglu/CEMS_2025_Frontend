@@ -196,6 +196,19 @@ export default function UpdateRateDialog({ currency, open, onClose, onViewHistor
           <div className="space-y-2">
             <Label htmlFor="buy_rate">Buy Rate (optional)</Label>
             <Input
+              id="rate"
+              type="number"
+              step="0.0001"
+              placeholder="0.0000"
+              {...register('rate')}
+              disabled={isPending}
+            />
+            {errors.rate && <p className="text-sm text-red-500">{errors.rate.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="buy_rate">Buy Rate (optional)</Label>
+            <Input
               id="buy_rate"
               type="number"
               step="0.0001"
