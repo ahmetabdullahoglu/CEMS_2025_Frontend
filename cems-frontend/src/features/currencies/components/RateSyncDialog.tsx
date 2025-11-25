@@ -135,7 +135,7 @@ export function RateSyncDialog({ open, onClose }: RateSyncDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5" /> Initiate Rate Sync
@@ -149,7 +149,7 @@ export function RateSyncDialog({ open, onClose }: RateSyncDialogProps) {
         {!baseCurrency ? (
           <div className="text-center py-10 text-muted-foreground">Base currency not found.</div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
             <Card>
               <CardHeader>
                 <CardTitle>Request configuration</CardTitle>
