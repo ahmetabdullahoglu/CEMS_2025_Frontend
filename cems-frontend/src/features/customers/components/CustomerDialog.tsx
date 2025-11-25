@@ -30,6 +30,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useCreateCustomer, useUpdateCustomer } from '@/hooks/useCustomers'
 import { useAuth } from '@/contexts/useAuth'
+import { useBranchSelection } from '@/contexts/BranchContext'
 import type { Customer, CustomerType, RiskLevel } from '@/types/customer.types'
 
 // Schema matching CustomerCreate from API
@@ -73,6 +74,7 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
   const { mutate: createCustomer, isPending: isCreating } = useCreateCustomer()
   const { mutate: updateCustomer, isPending: isUpdating } = useUpdateCustomer()
   const { user } = useAuth()
+  const { currentBranchId } = useBranchSelection()
 
   const isEditMode = !!customer
   const isPending = isCreating || isUpdating
@@ -130,7 +132,7 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
       passport_number: data.passport_number || null,
       address: data.address || null,
       city: data.city || null,
-      branch_id: user?.id || '', // TODO: Get actual branch_id
+      branch_id: currentBranchId || user?.branches?.[0]?.id || '',
       risk_level: data.risk_level || 'low',
     }
 

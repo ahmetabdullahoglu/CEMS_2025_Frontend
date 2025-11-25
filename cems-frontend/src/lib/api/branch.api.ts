@@ -41,8 +41,11 @@ export const branchApi = {
 
   // Get branch balances
   getBranchBalances: async (id: string): Promise<BranchBalancesResponse> => {
-    const response = await apiClient.get<BranchBalancesResponse>(`/branches/${id}/balances`)
-    return response.data
+    const response = await apiClient.get<BranchBalancesResponse | { data: BranchBalancesResponse }>(
+      `/branches/${id}/balances`
+    )
+    const payload = response.data as BranchBalancesResponse | { data: BranchBalancesResponse }
+    return 'data' in payload ? payload.data : payload
   },
 
   // Set branch balance thresholds

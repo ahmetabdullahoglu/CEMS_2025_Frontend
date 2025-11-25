@@ -14,8 +14,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUpdateCurrencyRates } from '@/hooks/useCurrencies'
+import {
+  useActiveCurrencies,
+  useCreateExchangeRate,
+} from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface UpdateRateDialogProps {
   currency: Currency | null
@@ -25,30 +29,42 @@ interface UpdateRateDialogProps {
 }
 
 const rateSchema = z.object({
+  to_currency_id: z.string().uuid({ message: 'Select a target currency' }),
+  rate: z
+    .string()
+    .min(1, 'Mid rate is required')
+    .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
+      message: 'Rate must be zero or a positive number',
+    }),
   buy_rate: z
     .string()
-    .min(1, 'Buy rate is required')
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: 'Buy rate must be a positive number',
+    .optional()
+    .refine((val) => val === undefined || val === '' || (!isNaN(Number(val)) && Number(val) >= 0), {
+      message: 'Buy rate must be zero or a positive number',
     }),
   sell_rate: z
     .string()
-    .min(1, 'Sell rate is required')
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: 'Sell rate must be a positive number',
+    .optional()
+    .refine((val) => val === undefined || val === '' || (!isNaN(Number(val)) && Number(val) >= 0), {
+      message: 'Sell rate must be zero or a positive number',
     }),
+  effective_from: z.string().min(1, 'Effective date is required'),
+  notes: z.string().max(500, 'Notes must be 500 characters or less').optional(),
 })
 
 type RateFormData = z.infer<typeof rateSchema>
 
 export default function UpdateRateDialog({ currency, open, onClose, onViewHistory }: UpdateRateDialogProps) {
-  const { mutate: updateRates, isPending } = useUpdateCurrencyRates()
+  const { data: activeCurrencies } = useActiveCurrencies()
+  const { mutate: createRate, isPending } = useCreateExchangeRate()
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<RateFormData>({
     resolver: zodResolver(rateSchema),
   })
@@ -56,22 +72,39 @@ export default function UpdateRateDialog({ currency, open, onClose, onViewHistor
   useEffect(() => {
     if (currency && open) {
       reset({
-        buy_rate: currency.buy_rate?.toString() || '0',
-        sell_rate: currency.sell_rate?.toString() || '0',
+        to_currency_id: '',
+        rate: '',
+        buy_rate: '',
+        sell_rate: '',
+        effective_from: new Date().toISOString().slice(0, 16),
+        notes: '',
       })
     }
   }, [currency, open, reset])
 
+  useEffect(() => {
+    if (open && currency && (watch('to_currency_id') ?? '') === '') {
+      const fallback = (activeCurrencies ?? []).find((c) => c.id !== currency.id)
+      if (fallback) {
+        setValue('to_currency_id', fallback.id)
+      }
+    }
+  }, [activeCurrencies, currency, open, setValue, watch])
+
   const onSubmit = (data: RateFormData) => {
     if (!currency) return
 
-    updateRates(
+    const effectiveFrom = new Date(data.effective_from).toISOString()
+
+    createRate(
       {
-        id: currency.id,
-        data: {
-          buy_rate: Number(data.buy_rate),
-          sell_rate: Number(data.sell_rate),
-        },
+        from_currency_id: currency.id,
+        to_currency_id: data.to_currency_id,
+        rate: Number(data.rate),
+        buy_rate: data.buy_rate ? Number(data.buy_rate) : null,
+        sell_rate: data.sell_rate ? Number(data.sell_rate) : null,
+        effective_from: effectiveFrom,
+        notes: data.notes || null,
       },
       {
         onSuccess: () => {
@@ -97,9 +130,10 @@ export default function UpdateRateDialog({ currency, open, onClose, onViewHistor
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <DialogTitle>Update Exchange Rates</DialogTitle>
+              <DialogTitle>Create Exchange Rate</DialogTitle>
               <DialogDescription>
-                Update buy and sell rates for {currency.name_en} ({currency.code})
+                Set a new rate for {currency.name || currency.name_en} ({currency.code}) against another
+                currency
               </DialogDescription>
             </div>
             {onViewHistory && (
@@ -118,9 +152,49 @@ export default function UpdateRateDialog({ currency, open, onClose, onViewHistor
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="buy_rate">
-              Buy Rate <span className="text-red-500">*</span>
+            <Label htmlFor="to_currency_id">
+              Target Currency <span className="text-red-500">*</span>
             </Label>
+            <input type="hidden" {...register('to_currency_id')} />
+            <Select
+              onValueChange={(val) => setValue('to_currency_id', val)}
+              value={watch('to_currency_id')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {(activeCurrencies ?? [])
+                  .filter((item) => item.id !== currency.id)
+                  .map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.code} — {item.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            {errors.to_currency_id && (
+              <p className="text-sm text-red-500">{errors.to_currency_id.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rate">
+              Mid Rate <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="rate"
+              type="number"
+              step="0.0001"
+              placeholder="0.0000"
+              {...register('rate')}
+              disabled={isPending}
+            />
+            {errors.rate && <p className="text-sm text-red-500">{errors.rate.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="buy_rate">Buy Rate (optional)</Label>
             <Input
               id="buy_rate"
               type="number"
@@ -135,9 +209,7 @@ export default function UpdateRateDialog({ currency, open, onClose, onViewHistor
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sell_rate">
-              Sell Rate <span className="text-red-500">*</span>
-            </Label>
+            <Label htmlFor="sell_rate">Sell Rate (optional)</Label>
             <Input
               id="sell_rate"
               type="number"
@@ -151,12 +223,33 @@ export default function UpdateRateDialog({ currency, open, onClose, onViewHistor
             )}
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="effective_from">
+              Effective From <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="effective_from"
+              type="datetime-local"
+              {...register('effective_from')}
+              disabled={isPending}
+            />
+            {errors.effective_from && (
+              <p className="text-sm text-red-500">{errors.effective_from.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Input id="notes" placeholder="Optional notes" {...register('notes')} disabled={isPending} />
+            {errors.notes && <p className="text-sm text-red-500">{errors.notes.message}</p>}
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Updating...' : 'Update Rates'}
+              {isPending ? 'Saving...' : 'Create Rate'}
             </Button>
           </DialogFooter>
         </form>

@@ -7,6 +7,8 @@ import LowBalanceAlerts from '../components/LowBalanceAlerts'
 import UserActivityReport from '../components/UserActivityReport'
 import CustomAnalytics from '../components/CustomAnalytics'
 import ReportExportPanel from '../components/ReportExportPanel'
+import BalanceSnapshot from '../components/BalanceSnapshot'
+import BalanceMovement from '../components/BalanceMovement'
 
 export default function ReportsPage() {
   return (
@@ -17,15 +19,37 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="daily" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-          <TabsTrigger value="daily">Daily</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-          <TabsTrigger value="branch">Branch Performance</TabsTrigger>
-          <TabsTrigger value="exchange">Exchange Trends</TabsTrigger>
-          <TabsTrigger value="alerts">Balance Alerts</TabsTrigger>
-          <TabsTrigger value="users">User Activity</TabsTrigger>
-          <TabsTrigger value="custom">Custom Analytics</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
+        <TabsList className="grid w-full gap-3 rounded-xl bg-muted/60 p-2 shadow-sm grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="daily">
+            Daily
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="monthly">
+            Monthly
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="branch">
+            Branch Performance
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="exchange">
+            Exchange Trends
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="alerts">
+            Balance Alerts
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="snapshot">
+            Balance Snapshot
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="movement">
+            Balance Movement
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="users">
+            User Activity
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="custom">
+            Custom Analytics
+          </TabsTrigger>
+          <TabsTrigger className="data-[state=active]:bg-background data-[state=active]:shadow" value="export">
+            Export
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="daily">
@@ -46,6 +70,14 @@ export default function ReportsPage() {
 
         <TabsContent value="alerts">
           <LowBalanceAlerts />
+        </TabsContent>
+
+        <TabsContent value="snapshot">
+          <BalanceSnapshot />
+        </TabsContent>
+
+        <TabsContent value="movement">
+          <BalanceMovement />
         </TabsContent>
 
         <TabsContent value="users">

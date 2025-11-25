@@ -8,6 +8,7 @@ import {
   FileText,
   Vault,
   UserCog,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -38,6 +39,12 @@ const menuItems: MenuItem[] = [
     name: 'Transactions',
     path: '/transactions',
     icon: ArrowRightLeft,
+    roles: ['admin', 'manager', 'cashier'],
+  },
+  {
+    name: 'Pending Approvals',
+    path: '/transactions/pending-approvals',
+    icon: CheckCircle,
     roles: ['admin', 'manager', 'cashier'],
   },
   {

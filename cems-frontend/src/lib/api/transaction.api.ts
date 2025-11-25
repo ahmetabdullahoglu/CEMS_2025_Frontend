@@ -18,7 +18,9 @@ import type {
   TransactionSummary,
   TransactionSummaryQueryParams,
   TransferReceiptRequest,
+  ExpenseApprovalRequest,
 } from '@/types/transaction.types'
+import type { BranchListResponse, BranchQueryParams } from '@/types/branch.types'
 
 const detailEndpointMap: Partial<Record<TransactionType, string>> = {
   exchange: '/transactions/exchange',
@@ -27,12 +29,27 @@ const detailEndpointMap: Partial<Record<TransactionType, string>> = {
   transfer: '/transactions/transfer',
 }
 
-const withTypeFilters = (params: TransactionQueryParams = {}, type?: TransactionType) => {
-  if (!type) return params
+const allowedParams = [
+  'transaction_type',
+  'branch_id',
+  'customer_id',
+  'status_filter',
+  'currency_id',
+  'amount_min',
+  'amount_max',
+  'date_from',
+  'date_to',
+  'skip',
+  'limit',
+] as const
 
-  const rest: TransactionQueryParams = { ...params }
-  delete rest.transaction_type
-  return rest
+const sanitizeParams = (params: TransactionQueryParams = {}) => {
+  return Object.fromEntries(
+    Object.entries(params).filter(([key, value]) =>
+      // @ts-expect-error narrow keys against whitelist
+      allowedParams.includes(key) && value !== undefined && value !== null && value !== ''
+    )
+  ) as TransactionQueryParams
 }
 
 export const transactionApi = {
@@ -65,15 +82,17 @@ export const transactionApi = {
     return response.data
   },
 
-  // Get all branches
-  getBranches: async (): Promise<Branch[]> => {
-    const response = await apiClient.get<Branch[]>('/branches')
-    return response.data
+  // Get all branches (shared fallback)
+  getBranches: async (params?: BranchQueryParams): Promise<Branch[]> => {
+    const response = await apiClient.get<BranchListResponse>('/branches', { params })
+    return response.data.data
   },
 
   // Get transactions list with filters and pagination
   getTransactions: async (params: TransactionQueryParams): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>('/transactions', { params })
+    const response = await apiClient.get<TransactionListResponse>('/transactions', {
+      params: sanitizeParams(params),
+    })
     return response.data
   },
 
@@ -82,10 +101,7 @@ export const transactionApi = {
     type: TransactionType,
     params: TransactionQueryParams = {}
   ): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>(`/transactions/${type}`, {
-      params: withTypeFilters(params, type),
-    })
-    return response.data
+    return transactionApi.getTransactions({ ...params, transaction_type: type })
   },
 
   getIncomeTransactions: async (
@@ -112,14 +128,15 @@ export const transactionApi = {
     return transactionApi.getTransactionsByType('transfer', params)
   },
 
-  // Pending approvals helper (filters expense endpoint to pending status)
+  // Pending transfer approvals helper (awaiting receipt)
   getPendingApprovalTransactions: async (
     params: TransactionQueryParams = {}
   ): Promise<TransactionListResponse> => {
-    const response = await apiClient.get<TransactionListResponse>('/transactions/expense', {
-      params: { ...withTypeFilters(params, 'expense'), status: 'pending' },
+    return transactionApi.getTransactions({
+      ...params,
+      transaction_type: 'transfer',
+      status_filter: 'pending',
     })
-    return response.data
   },
 
   // Get transaction details by ID
@@ -134,18 +151,26 @@ export const transactionApi = {
   // Cancel transaction
   cancelTransaction: async (
     id: string,
-    payload: TransactionCancelRequest
+    payload?: TransactionCancelRequest
   ): Promise<CancelTransactionResponse> => {
+    const body = payload?.reason ? { reason: payload.reason } : undefined
+
     const response = await apiClient.post<CancelTransactionResponse>(
       `/transactions/${id}/cancel`,
-      payload
+      body ?? {}
     )
     return response.data
   },
 
   // Approve transaction
-  approveTransaction: async (id: string): Promise<TransactionDetail> => {
-    const response = await apiClient.post<TransactionDetail>(`/transactions/expense/${id}/approve`)
+  approveTransaction: async (
+    id: string,
+    payload: ExpenseApprovalRequest = {}
+  ): Promise<TransactionDetail> => {
+    const response = await apiClient.post<TransactionDetail>(
+      `/transactions/expense/${id}/approve`,
+      payload
+    )
     return response.data
   },
 
