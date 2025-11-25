@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Edit, History, Plus, Search, Trash2 } from 'lucide-react'
+import { Edit, History, Plus, Search, Trash2, Zap } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,7 @@ import UpdateRateDialog from '../components/UpdateRateDialog'
 import RateHistoryDialog from '../components/RateHistoryDialog'
 import type { Currency, ExchangeRate } from '@/types/currency.types'
 import { CurrencyDialog } from '../components/CurrencyDialog'
+import { RateSyncDialog } from '../components/RateSyncDialog'
 
 export default function CurrenciesPage() {
   const [page, setPage] = useState(1)
@@ -41,6 +42,7 @@ export default function CurrenciesPage() {
   const [editingCurrency, setEditingCurrency] = useState<Currency | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
   const [region, setRegion] = useState('')
+  const [showRateSyncDialog, setShowRateSyncDialog] = useState(false)
 
   const { mutate: activateCurrency } = useActivateCurrency()
   const { mutate: deactivateCurrency } = useDeactivateCurrency()
@@ -179,9 +181,14 @@ export default function CurrenciesPage() {
             <h1 className="text-3xl font-bold">Currency Management</h1>
             <p className="text-muted-foreground">Manage currencies and exchange rates</p>
           </div>
-          <Button onClick={() => handleOpenCurrencyDialog()}>
-            <Plus className="w-4 h-4 mr-2" /> Add Currency
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowRateSyncDialog(true)}>
+              <Zap className="w-4 h-4 mr-2" /> Sync Rates
+            </Button>
+            <Button onClick={() => handleOpenCurrencyDialog()}>
+              <Plus className="w-4 h-4 mr-2" /> Add Currency
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -554,6 +561,8 @@ export default function CurrenciesPage() {
         onClose={() => setShowCurrencyDialog(false)}
         currency={editingCurrency}
       />
+
+      <RateSyncDialog open={showRateSyncDialog} onClose={() => setShowRateSyncDialog(false)} />
 
     </div>
   )
