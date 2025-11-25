@@ -1,41 +1,65 @@
+export type VaultType = 'main' | 'branch'
+
 // Vault Balance Types
-export interface VaultBalance {
-  currency_id?: string // UUID - optional because some legacy payloads omit it
+export interface VaultBalanceInfo {
   currency_code: string
   currency_name: string
-  balance: string // Decimal as string
-  last_updated: string // ISO datetime
-  // Deprecated fields for backward compatibility
-  reserved?: string // Decimal as string
-  available?: string // Decimal as string
+  balance: string
+  last_updated: string
+  currency_id?: string
 }
 
-// Vault balances endpoint now returns array directly
-export type VaultBalancesResponse = VaultBalance[]
-
-// Vault Details Response (from GET /vault)
-export interface VaultDetailsResponse {
+export interface VaultResponse {
   id: string
   vault_code: string
   name: string
-  vault_type: 'main' | 'branch'
+  vault_type: VaultType
   branch_id: string | null
   is_active: boolean
-  description?: string | null
-  location?: string | null
-  balances: VaultBalance[]
+  description: string | null
+  location: string | null
+  balances?: VaultBalanceInfo[]
   created_at: string
   updated_at: string
 }
 
-export interface VaultCurrencyBalanceDetails {
+export interface VaultCreate {
+  vault_code: string
+  name: string
+  vault_type: VaultType
+  branch_id?: string | null
+  description?: string | null
+  location?: string | null
+}
+
+export interface VaultUpdate {
+  name?: string
+  branch_id?: string | null
+  description?: string | null
+  location?: string | null
+  is_active?: boolean
+}
+
+export interface VaultBalanceResponse {
+  vault_id: string
+  vault_code: string
+  vault_name: string
   currency_id: string
   currency_code: string
-  currency_name?: string
   balance: string
-  reserved: string
-  available: string
   last_updated: string
+}
+
+export interface VaultBalanceUpdate {
+  vault_id: string
+  currency_id: string
+  new_balance: string | number
+  reason: string
+}
+
+export interface VaultCurrencyBalanceDetails extends VaultBalanceResponse {
+  reserved?: string
+  available?: string
   branch_allocations?: Array<{
     branch_id: string
     branch_name: string
@@ -44,6 +68,93 @@ export interface VaultCurrencyBalanceDetails {
     last_updated?: string | null
   }>
 }
+
+export interface PaginatedResponse<T> {
+  success: boolean
+  data: T[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
+}
+
+export type VaultTransferType = 'vault_to_vault' | 'vault_to_branch' | 'branch_to_vault'
+export type VaultTransferStatus = 'pending' | 'approved' | 'in_transit' | 'completed' | 'cancelled' | 'rejected'
+
+export interface VaultTransferResponse {
+  id: string
+  transfer_number: string
+  transfer_type: VaultTransferType
+  status: VaultTransferStatus
+  from_vault_id: string
+  from_vault_code?: string | null
+  to_vault_id?: string | null
+  to_vault_code?: string | null
+  to_branch_id?: string | null
+  to_branch_code?: string | null
+  currency_id: string
+  currency_code?: string | null
+  amount: string
+  initiated_by: string
+  initiated_by_name?: string | null
+  initiated_at: string
+  approved_by?: string | null
+  approved_by_name?: string | null
+  approved_at?: string | null
+  received_by?: string | null
+  received_by_name?: string | null
+  completed_at?: string | null
+  cancelled_at?: string | null
+  notes?: string | null
+  rejection_reason?: string | null
+}
+
+export interface VaultTransferQueryParams {
+  skip?: number
+  limit?: number
+  status?: VaultTransferStatus
+  branch_id?: string
+  vault_id?: string
+  transfer_type?: VaultTransferType
+  date_from?: string
+  date_to?: string
+}
+
+export type PaginatedVaultTransfers = PaginatedResponse<VaultTransferResponse>
+
+export interface VaultToVaultTransferCreate {
+  amount: string | number
+  currency_id: string
+  from_vault_id: string
+  to_vault_id: string
+  notes?: string | null
+}
+
+export interface VaultToBranchTransferCreate {
+  amount: string | number
+  currency_id: string
+  vault_id: string
+  branch_id: string
+  notes?: string | null
+}
+
+export interface BranchToVaultTransferCreate {
+  amount: string | number
+  currency_id: string
+  branch_id: string
+  vault_id: string
+  notes?: string | null
+}
+
+export type CreateVaultTransferRequest =
+  | ({ transfer_type: 'vault_to_vault' } & VaultToVaultTransferCreate)
+  | ({ transfer_type: 'vault_to_branch' } & VaultToBranchTransferCreate)
+  | ({ transfer_type: 'branch_to_vault' } & BranchToVaultTransferCreate)
+
+export type CreateVaultTransferResponse = VaultTransferResponse
+export type ApproveVaultTransferResponse = VaultTransferResponse
 
 export interface VaultReconciliationResult {
   vault_id: string
@@ -67,76 +178,38 @@ export interface VaultReconciliationReport {
   notes: string | null
 }
 
-// Vault Transfer Types
-export type VaultTransferStatus = 'pending' | 'approved' | 'completed' | 'rejected'
-
-export interface VaultTransferBranch {
-  id: string
-  name: string
-}
-
-export interface VaultTransferUser {
-  id: string
-  username: string
-}
-
-export interface VaultTransfer {
-  id: string // UUID
-  from_branch?: VaultTransferBranch | null
-  to_branch?: VaultTransferBranch | null
-  currency_code: string
-  currency_name?: string
-  amount: string // Decimal as string
-  status: VaultTransferStatus
-  notes?: string | null
-  created_by?: VaultTransferUser | null
-  approved_by?: VaultTransferUser | null
-  completed_by?: VaultTransferUser | null
-  created_at: string // ISO datetime
-  approved_at?: string | null // ISO datetime
-  completed_at?: string | null // ISO datetime
-  // Deprecated fields for backward compatibility
-  from_branch_id?: string | null
-  from_branch_name?: string | null
-  to_branch_id?: string | null
-  to_branch_name?: string | null
-  requested_by?: string | null
-  requested_at?: string
-  updated_at?: string
-}
-
-export interface VaultTransferListResponse {
-  success: boolean
-  data: VaultTransfer[]
-  total: number
-  page: number
-  page_size: number
-  total_pages: number
-  has_next: boolean
-  has_prev: boolean
-}
-
-export interface VaultTransferQueryParams {
-  skip?: number // Offset for pagination (replaces page)
-  limit?: number // Number of items per page (replaces page_size)
-  status?: VaultTransferStatus
-  branch_id?: string // UUID
-}
-
-export interface CreateVaultTransferRequest {
-  from_branch_id?: string | null // UUID
-  to_branch_id?: string | null // UUID
-  currency_code: string
-  amount: number | string // Accept both for form input
+export interface VaultReconciliationRequest {
+  vault_id: string
+  currency_id?: string | null
   notes?: string | null
 }
 
-export interface CreateVaultTransferResponse {
-  transfer: VaultTransfer
-  message: string
+export interface VaultStatistics {
+  vault_id: string
+  vault_code: string
+  vault_name: string
+  total_balance_usd_equivalent: string
+  currency_count: number
+  pending_transfers_in: number
+  pending_transfers_out: number
+  last_transfer_date: string | null
+  last_reconciliation_date: string | null
 }
 
-export interface ApproveVaultTransferResponse {
-  transfer: VaultTransfer
-  message: string
+export interface VaultTransferSummary {
+  period_start: string
+  period_end: string
+  total_transfers: number
+  completed_transfers: number
+  pending_transfers: number
+  cancelled_transfers: number
+  total_amount_transferred: string
+  average_transfer_amount: string
+  by_currency: Array<Record<string, unknown>>
+  by_type: Array<Record<string, unknown>>
+}
+
+export interface VaultStatisticsResponse {
+  statistics: VaultStatistics
+  transfer_summary?: VaultTransferSummary
 }

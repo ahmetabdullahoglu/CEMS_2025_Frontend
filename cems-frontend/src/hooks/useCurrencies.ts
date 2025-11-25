@@ -1,10 +1,13 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { currencyApi } from '@/lib/api/currency.api'
 import type {
-  ExchangeTransactionRequest,
+  CalculateCurrencyRequest,
   CurrencyQueryParams,
-  UpdateRateRequest,
+  CurrencyUpdate,
+  CurrencyWithRates,
+  ExchangeRateCreate,
 } from '@/types/currency.types'
+import { isSameCurrency, normalizeCurrencyIdentifier } from '@/utils/currency'
 
 export const useCurrencies = (params?: CurrencyQueryParams) => {
   return useQuery({
@@ -22,11 +25,14 @@ export const useActiveCurrencies = () => {
   })
 }
 
-export const useExchangeRate = (fromCode?: string, toCode?: string) => {
+export const useExchangeRate = (fromCurrency?: string, toCurrency?: string) => {
+  const from = fromCurrency ? normalizeCurrencyIdentifier(fromCurrency) : undefined
+  const to = toCurrency ? normalizeCurrencyIdentifier(toCurrency) : undefined
+
   return useQuery({
-    queryKey: ['exchangeRate', fromCode, toCode],
-    queryFn: () => currencyApi.getExchangeRate(fromCode!, toCode!),
-    enabled: !!fromCode && !!toCode && fromCode !== toCode,
+    queryKey: ['exchangeRate', from, to],
+    queryFn: () => currencyApi.getExchangeRate(from!, to!),
+    enabled: !!from && !!to && !isSameCurrency(from, to),
     staleTime: 1000 * 60 * 2, // 2 minutes - exchange rates update frequently
   })
 }
@@ -35,32 +41,125 @@ export const useCreateExchange = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: ExchangeTransactionRequest) => currencyApi.createExchange(data),
+    mutationFn: (data: CalculateCurrencyRequest) => currencyApi.calculateExchange(data),
     onSuccess: () => {
-      // Invalidate transactions list to refresh after creating new transaction
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
   })
 }
 
-export const useUpdateCurrencyRates = () => {
+export const useCreateCurrency = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateRateRequest }) =>
-      currencyApi.updateCurrencyRates(id, data),
+    mutationFn: currencyApi.createCurrency,
     onSuccess: () => {
-      // Invalidate currencies list to refresh after updating rates
       queryClient.invalidateQueries({ queryKey: ['currencies'] })
+      queryClient.invalidateQueries({ queryKey: ['currencies', 'active'] })
     },
   })
 }
 
-export const useCurrencyRateHistory = (currencyId?: string, enabled = true) => {
+export const useUpdateCurrency = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: CurrencyUpdate }) =>
+      currencyApi.updateCurrency(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currencies'] })
+      queryClient.invalidateQueries({ queryKey: ['currencies', 'active'] })
+    },
+  })
+}
+
+export const useActivateCurrency = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: currencyApi.activateCurrency,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currencies'] })
+      queryClient.invalidateQueries({ queryKey: ['currencies', 'active'] })
+    },
+  })
+}
+
+export const useDeactivateCurrency = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: currencyApi.deactivateCurrency,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currencies'] })
+      queryClient.invalidateQueries({ queryKey: ['currencies', 'active'] })
+    },
+  })
+}
+
+export const useDeleteCurrency = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: currencyApi.deleteCurrency,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currencies'] })
+      queryClient.invalidateQueries({ queryKey: ['currencies', 'active'] })
+    },
+  })
+}
+
+export const useCreateExchangeRate = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: ExchangeRateCreate) => currencyApi.createExchangeRate(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currencies'] })
+      queryClient.invalidateQueries({ queryKey: ['exchangeRates'] })
+    },
+  })
+}
+
+export const useExchangeRatesList = (params?: {
+  from_currency_id?: string | null
+  to_currency_id?: string | null
+  is_current?: boolean | null
+  skip?: number
+  limit?: number
+}) => {
   return useQuery({
-    queryKey: ['currencies', currencyId, 'history'],
-    queryFn: () => currencyApi.getRateHistory(currencyId!, { limit: 30 }),
-    enabled: enabled && Boolean(currencyId),
+    queryKey: ['exchangeRates', params],
+    queryFn: () => currencyApi.listExchangeRates(params),
+    staleTime: 1000 * 60 * 5,
+  })
+}
+
+export const useCurrencyWithRates = (currencyId?: string) => {
+  return useQuery<CurrencyWithRates>({
+    queryKey: ['currencyWithRates', currencyId],
+    queryFn: () => currencyApi.getCurrencyWithRates(currencyId!),
+    enabled: !!currencyId,
+    staleTime: 1000 * 60 * 2,
+    select: (payload) => {
+      const wrapped = (payload as { data?: CurrencyWithRates }).data
+      const base = wrapped ?? payload
+      return {
+        ...base,
+        rates: Array.isArray(base?.rates) ? base.rates : [],
+      } as CurrencyWithRates
+    },
+  })
+}
+
+export const useCurrencyRateHistory = (
+  fromCurrency?: string,
+  toCurrency?: string,
+  enabled = true
+) => {
+  const from = fromCurrency ? normalizeCurrencyIdentifier(fromCurrency) : undefined
+  const to = toCurrency ? normalizeCurrencyIdentifier(toCurrency) : undefined
+
+  const hasPair = !!from && !!to && !isSameCurrency(from, to)
+
+  return useQuery({
+    queryKey: ['currencies', from, to, 'history'],
+    queryFn: () => currencyApi.getRateHistory(from!, to!, {}),
+    enabled: enabled && hasPair,
     staleTime: 1000 * 60 * 5,
   })
 }

@@ -28,13 +28,22 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { useActiveCurrencies, useExchangeRate, useCreateExchange } from '@/hooks/useCurrencies'
+import { useBranchSelection } from '@/contexts/BranchContext'
+import { formatBranchLabel } from '@/utils/branch'
 
 const exchangeSchema = z.object({
-  from_currency_code: z.string().min(1, 'Please select a currency'),
-  to_currency_code: z.string().min(1, 'Please select a currency'),
+  branch_id: z.string().uuid('Please select a branch'),
+  from_currency_id: z.string().uuid('Please select a currency'),
+  to_currency_id: z.string().uuid('Please select a currency'),
   from_amount: z.number().positive('Amount must be positive').min(0.01, 'Amount must be at least 0.01'),
-  customer_name: z.string().optional(),
+  exchange_rate: z.number().positive('Exchange rate must be positive').optional(),
+  commission_percentage: z.number().min(0, 'Commission cannot be negative').optional(),
+  customer_id: z.string().uuid('Invalid customer').optional().or(z.literal('')),
+  description: z.string().optional(),
+  notes: z.string().optional(),
+  reference_number: z.string().optional(),
 })
 
 type ExchangeFormData = z.infer<typeof exchangeSchema>
@@ -46,27 +55,49 @@ interface ExchangeDialogProps {
 
 export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogProps) {
   const { data: currencies, isLoading: currenciesLoading } = useActiveCurrencies()
+  const { availableBranches: branches, currentBranchId, isLoading: branchesLoading } =
+    useBranchSelection()
   const { mutate: createExchange, isPending: isCreating } = useCreateExchange()
 
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(exchangeSchema),
     defaultValues: {
-      from_currency_code: '',
-      to_currency_code: '',
+      branch_id: currentBranchId ?? '',
+      from_currency_id: '',
+      to_currency_id: '',
       from_amount: 0,
-      customer_name: '',
+      exchange_rate: undefined,
+      commission_percentage: undefined,
+      customer_id: '',
+      description: '',
+      notes: '',
+      reference_number: '',
     },
   })
 
-  const fromCurrency = form.watch('from_currency_code')
-  const toCurrency = form.watch('to_currency_code')
+  const fromCurrencyId = form.watch('from_currency_id')
+  const toCurrencyId = form.watch('to_currency_id')
   const fromAmount = form.watch('from_amount')
+  const manualRate = form.watch('exchange_rate')
 
-  const { data: exchangeRate, isLoading: rateLoading } = useExchangeRate(fromCurrency, toCurrency)
+  const selectedFromCurrency = currencies?.find((currency) => currency.id === fromCurrencyId)
+  const selectedToCurrency = currencies?.find((currency) => currency.id === toCurrencyId)
 
-  // Calculate to_amount based on exchange rate
+  const { data: exchangeRate, isLoading: rateLoading } = useExchangeRate(
+    selectedFromCurrency?.code,
+    selectedToCurrency?.code
+  )
+
+  useEffect(() => {
+    if (exchangeRate?.rate && !manualRate) {
+      form.setValue('exchange_rate', Number(exchangeRate.rate))
+    }
+  }, [exchangeRate?.rate, form, manualRate])
+
+  const effectiveRate = manualRate || (exchangeRate ? Number(exchangeRate.rate) : undefined)
+
   const toAmount =
-    exchangeRate && fromAmount > 0 ? (fromAmount * Number(exchangeRate.rate)).toFixed(2) : '0.00'
+    effectiveRate && fromAmount > 0 ? (fromAmount * Number(effectiveRate)).toFixed(2) : '0.00'
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -75,13 +106,32 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
     }
   }, [open, form])
 
+  useEffect(() => {
+    if (open && currentBranchId) {
+      form.setValue('branch_id', currentBranchId)
+    }
+  }, [currentBranchId, form, open])
+
   const onSubmit = (data: ExchangeFormData) => {
+    if (data.from_currency_id === data.to_currency_id) {
+      form.setError('to_currency_id', {
+        message: 'From and To currencies cannot be the same',
+      })
+      return
+    }
+
     createExchange(
       {
-        from_currency_code: data.from_currency_code,
-        to_currency_code: data.to_currency_code,
+        branch_id: data.branch_id,
+        from_currency_id: data.from_currency_id,
+        to_currency_id: data.to_currency_id,
         from_amount: data.from_amount,
-        customer_name: data.customer_name || undefined,
+        exchange_rate: data.exchange_rate ?? (exchangeRate ? Number(exchangeRate.rate) : undefined),
+        commission_percentage: data.commission_percentage ?? undefined,
+        customer_id: data.customer_id || undefined,
+        description: data.description || undefined,
+        notes: data.notes || undefined,
+        reference_number: data.reference_number || undefined,
       },
       {
         onSuccess: () => {
@@ -104,28 +154,28 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* From Currency */}
+            {/* Branch */}
             <FormField
               control={form.control}
-              name="from_currency_code"
+              name="branch_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>From Currency</FormLabel>
+                  <FormLabel>Branch</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select currency" />
+                        <SelectValue placeholder="Select branch" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {currenciesLoading ? (
+                      {branchesLoading ? (
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="h-4 w-4 animate-spin" />
                         </div>
                       ) : (
-                        currencies?.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name_en}
+                        branches?.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id}>
+                            {formatBranchLabel(branch, branch.name, branch.id)}
                           </SelectItem>
                         ))
                       )}
@@ -136,40 +186,73 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
               )}
             />
 
-            {/* To Currency */}
-            <FormField
-              control={form.control}
-              name="to_currency_code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>To Currency</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {currenciesLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </div>
-                      ) : (
-                        currencies?.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
-                            {currency.code} - {currency.name_en}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* From Currency */}
+              <FormField
+                control={form.control}
+                name="from_currency_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>From Currency</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {currenciesLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : (
+                          currencies?.map((currency) => (
+                            <SelectItem key={currency.id} value={currency.id}>
+                              {currency.code} - {currency.name_en}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Exchange Rate Display */}
-            {fromCurrency && toCurrency && fromCurrency !== toCurrency && (
+              {/* To Currency */}
+              <FormField
+                control={form.control}
+                name="to_currency_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>To Currency</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {currenciesLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : (
+                          currencies?.map((currency) => (
+                            <SelectItem key={currency.id} value={currency.id}>
+                              {currency.code} - {currency.name_en}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {selectedFromCurrency && selectedToCurrency && selectedFromCurrency.id !== selectedToCurrency.id && (
               <div className="rounded-lg border bg-muted/50 p-3">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -179,9 +262,10 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
                   <div className="font-medium">
                     {rateLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : exchangeRate ? (
+                    ) : effectiveRate ? (
                       <>
-                        1 {fromCurrency} = {Number(exchangeRate.rate).toFixed(4)} {toCurrency}
+                        1 {selectedFromCurrency.code} = {Number(effectiveRate).toFixed(4)}{' '}
+                        {selectedToCurrency.code}
                       </>
                     ) : (
                       'N/A'
@@ -191,13 +275,67 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
               </div>
             )}
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Exchange Rate Override */}
+              <FormField
+                control={form.control}
+                name="exchange_rate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Exchange Rate (auto-filled)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.0001"
+                        placeholder="Enter exchange rate"
+                        value={field.value ?? ''}
+                        onChange={(e) =>
+                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                        }
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Defaults to the latest rate. You can override it if needed.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Commission Percentage */}
+              <FormField
+                control={form.control}
+                name="commission_percentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Commission % (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        placeholder="e.g. 1.5"
+                        value={field.value ?? ''}
+                        onChange={(e) =>
+                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Amount */}
             <FormField
               control={form.control}
               name="from_amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount ({fromCurrency || 'From Currency'})</FormLabel>
+                  <FormLabel>
+                    Amount {selectedFromCurrency ? `(${selectedFromCurrency.code})` : ''}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -213,26 +351,69 @@ export default function ExchangeDialog({ open, onOpenChange }: ExchangeDialogPro
             />
 
             {/* Calculated To Amount */}
-            {fromCurrency && toCurrency && fromAmount > 0 && exchangeRate && (
+            {selectedFromCurrency && selectedToCurrency && fromAmount > 0 && effectiveRate && (
               <div className="rounded-lg border bg-primary/5 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    You will receive ({toCurrency})
+                    You will receive ({selectedToCurrency.code})
                   </span>
                   <span className="text-lg font-bold">{toAmount}</span>
                 </div>
               </div>
             )}
 
-            {/* Customer Name (Optional) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="customer_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer ID (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Customer UUID" value={field.value ?? ''} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reference_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reference Number (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. EXC-2025-001" value={field.value ?? ''} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="customer_name"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer Name (Optional)</FormLabel>
+                  <FormLabel>Description (optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter customer name" {...field} />
+                    <Input placeholder="Describe this exchange" value={field.value ?? ''} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Additional details" value={field.value ?? ''} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
