@@ -7,6 +7,7 @@ import type {
   CurrencyListResponse,
   CurrencyQueryParams,
   CurrencyRateHistoryResponse,
+  RateChangeLogEntry,
   CurrencyUpdate,
   CurrencyWithRates,
   ExchangeRate,
@@ -140,12 +141,49 @@ export const currencyApi = {
     const response = await apiClient.get<CurrencyRateHistoryResponse>(
       `/currencies/rates/${encodeURIComponent(from)}/${encodeURIComponent(to)}`
     )
-    const payload = response.data as CurrencyRateHistoryResponse
+    const payload = response.data as
+      | CurrencyRateHistoryResponse
+      | CurrencyRateHistoryResponse['data']
+      | ExchangeRate
+
+    const normalizeEntry = (entry: RateChangeLogEntry | ExchangeRate): RateChangeLogEntry => {
+      if ((entry as RateChangeLogEntry).change_type) return entry as RateChangeLogEntry
+
+      const rate = entry as ExchangeRate
+
+      return {
+        id: rate.id,
+        exchange_rate_id: rate.id,
+        from_currency_code:
+          (rate as unknown as { from_currency_code?: string }).from_currency_code ??
+          rate.from_currency?.code ??
+          '',
+        to_currency_code:
+          (rate as unknown as { to_currency_code?: string }).to_currency_code ?? rate.to_currency?.code ?? '',
+        old_rate: rate.effective_to ? rate.rate : null,
+        old_buy_rate: rate.effective_to ? rate.buy_rate ?? null : null,
+        old_sell_rate: rate.effective_to ? rate.sell_rate ?? null : null,
+        new_rate: rate.rate,
+        new_buy_rate: rate.buy_rate ?? null,
+        new_sell_rate: rate.sell_rate ?? null,
+        change_type: rate.is_current ? 'current' : 'historical',
+        changed_by: rate.set_by ?? null,
+        changed_at: rate.updated_at ?? rate.effective_from ?? rate.created_at,
+        reason: rate.notes ?? null,
+        rate_change_percentage: null,
+      }
+    }
+
+    const dataArray: RateChangeLogEntry[] = Array.isArray((payload as CurrencyRateHistoryResponse).data)
+      ? ((payload as CurrencyRateHistoryResponse).data ?? []).map(normalizeEntry)
+      : Array.isArray(payload)
+        ? (payload as Array<RateChangeLogEntry | ExchangeRate>).map(normalizeEntry)
+        : [normalizeEntry(payload as ExchangeRate)]
 
     return {
-      data: payload.data ?? [],
-      total: payload.total ?? payload.data?.length ?? 0,
-      success: payload.success ?? true,
+      data: dataArray,
+      total: (payload as CurrencyRateHistoryResponse).total ?? dataArray.length,
+      success: (payload as CurrencyRateHistoryResponse).success ?? true,
     }
   },
 
