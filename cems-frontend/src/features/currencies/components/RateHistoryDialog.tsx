@@ -9,8 +9,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useActiveCurrencies, useCurrencyRateHistory } from '@/hooks/useCurrencies'
-import type { Currency } from '@/types/currency.types'
+import { useActiveCurrencies, useCurrencyRateHistory, useExchangeRate } from '@/hooks/useCurrencies'
+import type { Currency, ExchangeRate, RateChangeLogEntry } from '@/types/currency.types'
 import { Badge } from '@/components/ui/badge'
 
 interface RateHistoryDialogProps {
@@ -46,13 +46,55 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
     }
   }, [open, currency, baseCurrency?.id, availableTargets])
 
-  const { data, isLoading } = useCurrencyRateHistory(
+  const { data, isLoading } = useCurrencyRateHistory(baseCurrency?.id, targetCurrencyId, {
+    enabled: open && !!baseCurrency && !!targetCurrencyId,
+    limit: 50,
+  })
+
+  const { data: currentRate, isLoading: isCurrentRateLoading } = useExchangeRate(
     baseCurrency?.id,
-    targetCurrencyId,
-    open && !!baseCurrency && !!targetCurrencyId
+    targetCurrencyId
   )
 
-  const historyEntries = data?.data ?? []
+  const historyEntries = useMemo(() => {
+    const entries = data?.data ?? []
+    return [...entries].sort(
+      (a, b) => new Date(b.changed_at ?? '').getTime() - new Date(a.changed_at ?? '').getTime()
+    )
+  }, [data?.data])
+
+  const currentEntry = useMemo<RateChangeLogEntry | null>(() => {
+    if (!currentRate) return null
+
+    const mapRate = (rate: ExchangeRate): RateChangeLogEntry => ({
+      id: `${rate.id}-current`,
+      exchange_rate_id: rate.id,
+      from_currency_code:
+        (rate as unknown as { from_currency_code?: string }).from_currency_code ??
+        rate.from_currency?.code ??
+        '',
+      to_currency_code:
+        (rate as unknown as { to_currency_code?: string }).to_currency_code ?? rate.to_currency?.code ?? '',
+      old_rate: null,
+      old_buy_rate: null,
+      old_sell_rate: null,
+      new_rate: rate.rate,
+      new_buy_rate: rate.buy_rate ?? null,
+      new_sell_rate: rate.sell_rate ?? null,
+      change_type: 'current',
+      changed_by: rate.set_by ?? null,
+      changed_at: rate.updated_at ?? rate.effective_from ?? rate.created_at,
+      reason: rate.notes ?? null,
+      rate_change_percentage: null,
+    })
+
+    return mapRate(currentRate)
+  }, [currentRate])
+
+  const rowsToRender = useMemo(
+    () => (currentEntry ? [currentEntry, ...historyEntries] : historyEntries),
+    [currentEntry, historyEntries]
+  )
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -68,9 +110,9 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
           <div className="text-center py-8 text-muted-foreground">Base currency not found.</div>
         ) : availableTargets.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">No comparison currencies available.</div>
-        ) : isLoading ? (
+        ) : isLoading || isCurrentRateLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading rate history...</div>
-        ) : historyEntries.length === 0 ? (
+        ) : rowsToRender.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">No historical rates were found.</div>
         ) : (
           <div className="space-y-4">
@@ -90,7 +132,7 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
               </Select>
             </div>
             <div className="text-sm text-muted-foreground">
-              Showing {historyEntries.length} entries for {baseCurrency?.code} →{' '}
+              Showing {rowsToRender.length} entries for {baseCurrency?.code} →{' '}
               {availableTargets.find((item) => item.id === targetCurrencyId)?.code}
             </div>
             <div className="rounded-lg border">
@@ -106,13 +148,15 @@ export default function RateHistoryDialog({ currency, open, onClose }: RateHisto
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {historyEntries.map((rate) => (
+                  {rowsToRender.map((rate) => (
                     <TableRow key={rate.id}>
                       <TableCell className="font-medium">
-                        {new Date(rate.changed_at).toLocaleString()}
+                        {rate.changed_at ? new Date(rate.changed_at).toLocaleString() : '—'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={rate.change_type === 'created' ? 'default' : 'secondary'}>
+                        <Badge
+                          variant={rate.change_type === 'created' || rate.change_type === 'current' ? 'default' : 'secondary'}
+                        >
                           {rate.change_type}
                         </Badge>
                       </TableCell>

@@ -133,13 +133,17 @@ export const currencyApi = {
   // Get exchange rate history for a currency pair
   getRateHistory: async (
     fromCurrency: string,
-    toCurrency: string
+    toCurrency: string,
+    limit = 50
   ): Promise<CurrencyRateHistoryResponse> => {
     const from = normalizeCurrencyIdentifier(fromCurrency)
     const to = normalizeCurrencyIdentifier(toCurrency)
 
     const response = await apiClient.get<CurrencyRateHistoryResponse>(
-      `/currencies/rates/${encodeURIComponent(from)}/${encodeURIComponent(to)}`
+      `/currencies/rates/history/${encodeURIComponent(from)}/${encodeURIComponent(to)}`,
+      {
+        params: { limit },
+      }
     )
     const payload = response.data as
       | CurrencyRateHistoryResponse

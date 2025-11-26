@@ -152,7 +152,7 @@ export const useCurrencyWithRates = (
 export const useCurrencyRateHistory = (
   fromCurrency?: string,
   toCurrency?: string,
-  enabled = true
+  options?: { enabled?: boolean; limit?: number }
 ) => {
   const from = fromCurrency ? normalizeCurrencyIdentifier(fromCurrency) : undefined
   const to = toCurrency ? normalizeCurrencyIdentifier(toCurrency) : undefined
@@ -160,9 +160,9 @@ export const useCurrencyRateHistory = (
   const hasPair = !!from && !!to && !isSameCurrency(from, to)
 
   return useQuery({
-    queryKey: ['currencies', from, to, 'history'],
-    queryFn: () => currencyApi.getRateHistory(from!, to!),
-    enabled: enabled && hasPair,
+    queryKey: ['currencies', from, to, 'history', options?.limit],
+    queryFn: () => currencyApi.getRateHistory(from!, to!, options?.limit),
+    enabled: (options?.enabled ?? true) && hasPair,
     staleTime: 1000 * 60 * 5,
   })
 }
