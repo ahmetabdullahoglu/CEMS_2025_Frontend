@@ -5,7 +5,6 @@ import {
   DollarSign,
   Building2,
   AlertTriangle,
-  CheckCircle,
   Clock,
   TrendingUp,
   PieChart,
@@ -306,12 +305,6 @@ export default function DashboardPage() {
           value={overview.active_branches.toLocaleString()}
           icon={Building2}
           description="Operating branches"
-        />
-        <StatCard
-          title="Pending Approvals"
-          value={overview.pending_approvals.toLocaleString()}
-          icon={CheckCircle}
-          description={overview.pending_approvals > 0 ? 'Requires attention' : 'All clear'}
         />
       </div>
 
