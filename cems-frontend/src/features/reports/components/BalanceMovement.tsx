@@ -64,6 +64,37 @@ export default function BalanceMovement() {
   const currencyLabel = selectedCurrency ?? 'All currencies'
   const movementCount = payload?.movement_count ?? movements.length
 
+  const resolveBranchLabel = (branchId?: string | null, branchCode?: string | null, branchName?: string | null) => {
+    if (branchId) {
+      const branch = branches.find((item) => item.id === branchId)
+      if (branch) return formatBranchLabel(branch)
+    }
+    return branchCode || branchName || '—'
+  }
+
+  const resolveVaultLabel = (vaultCode?: string | null, vaultName?: string | null) => {
+    if (vaultCode && vaultName) return `${vaultCode} — ${vaultName}`
+    return vaultCode || vaultName || '—'
+  }
+
+  const resolveLocationLabel = (movement: BalanceMovementItem, destination = false) => {
+    const branchLabel = destination
+      ? resolveBranchLabel(
+          movement.destination_branch_id,
+          movement.destination_branch_code,
+          movement.destination_branch_name
+        )
+      : resolveBranchLabel(movement.branch_id, movement.branch_code, movement.branch_name)
+
+    const vaultLabel = destination
+      ? resolveVaultLabel(movement.destination_vault_code, movement.destination_vault_name)
+      : resolveVaultLabel(movement.vault_code, movement.vault_name)
+
+    if (branchLabel && branchLabel !== '—') return branchLabel
+    if (vaultLabel && vaultLabel !== '—') return vaultLabel
+    return '—'
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -191,7 +222,12 @@ export default function BalanceMovement() {
                       <TableHead>Date</TableHead>
                       <TableHead>Transaction</TableHead>
                       <TableHead>Type</TableHead>
-                      {showBranchColumn && <TableHead>Branch</TableHead>}
+                      {showBranchColumn && (
+                        <>
+                          <TableHead>Source (Branch/Vault)</TableHead>
+                          <TableHead>Destination (Branch/Vault)</TableHead>
+                        </>
+                      )}
                       {showCurrencyColumn && <TableHead>Currency</TableHead>}
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead className="text-right">Debit</TableHead>
@@ -209,11 +245,12 @@ export default function BalanceMovement() {
                         <TableCell className="font-medium">{movement.transaction_number}</TableCell>
                         <TableCell className="capitalize">{movement.type}</TableCell>
                         {showBranchColumn && (
-                          <TableCell>
-                            {movement.branch_id
-                              ? formatBranchLabel(branches.find((branch) => branch.id === movement.branch_id))
-                              : movement.branch_name || movement.branch_code || '—'}
-                          </TableCell>
+                          <>
+                            <TableCell>{resolveLocationLabel(movement)}</TableCell>
+                            <TableCell>
+                              {movement.type === 'transfer' ? resolveLocationLabel(movement, true) : '—'}
+                            </TableCell>
+                          </>
                         )}
                         {showCurrencyColumn && <TableCell>{movement.currency ?? '—'}</TableCell>}
                         <TableCell className="text-right">{formatAmount(movement.amount)}</TableCell>
