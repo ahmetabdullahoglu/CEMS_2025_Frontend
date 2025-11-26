@@ -306,48 +306,45 @@ export default function DashboardPage() {
           icon={Building2}
           description="Operating branches"
         />
+        {overview.pending_approvals > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-base">Pending Approvals</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-blue-700">{overview.pending_approvals}</p>
+              <p className="text-sm text-blue-600 mt-1">Transactions awaiting approval</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                onClick={() => navigate('/transactions/pending-approvals')}
+              >
+                Review Pending Transfers
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Alerts and Quick Stats */}
-      {(overview.low_balance_alerts > 0 || overview.pending_approvals > 0) && (
+      {overview.low_balance_alerts > 0 && (
         <div className="grid gap-4 md:grid-cols-2">
-          {overview.low_balance_alerts > 0 && (
-            <Card className="border-yellow-200 bg-yellow-50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  <CardTitle className="text-base">Low Balance Alerts</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-yellow-700">{overview.low_balance_alerts}</p>
-                <p className="text-sm text-yellow-600 mt-1">Currency balances need attention</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {overview.pending_approvals > 0 && (
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <CardTitle className="text-base">Pending Approvals</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-blue-700">{overview.pending_approvals}</p>
-                <p className="text-sm text-blue-600 mt-1">Transactions awaiting approval</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => navigate('/transactions/pending-approvals')}
-                >
-                  Review Pending Transfers
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <CardTitle className="text-base">Low Balance Alerts</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-yellow-700">{overview.low_balance_alerts}</p>
+              <p className="text-sm text-yellow-600 mt-1">Currency balances need attention</p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
