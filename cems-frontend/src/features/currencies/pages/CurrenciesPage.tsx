@@ -1,6 +1,17 @@
 import { Fragment, useMemo, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Edit, Link2, ListChecks, Plus, Search, Trash2, Zap } from 'lucide-react'
+import {
+  Ban,
+  CheckCircle2,
+  CirclePlus,
+  Clock3,
+  Edit,
+  ListChecks,
+  Plus,
+  Search,
+  Trash2,
+  Zap,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -43,6 +54,9 @@ export default function CurrenciesPage() {
   const [includeInactive, setIncludeInactive] = useState(false)
   const [region, setRegion] = useState('')
   const [showRateSyncDialog, setShowRateSyncDialog] = useState(false)
+  const [syncFeedback, setSyncFeedback] = useState<
+    { type: 'approved' | 'rejected'; message: string } | null
+  >(null)
 
   const { mutate: activateCurrency } = useActivateCurrency()
   const { mutate: deactivateCurrency } = useDeactivateCurrency()
@@ -192,6 +206,33 @@ export default function CurrenciesPage() {
         </div>
       </div>
 
+      {syncFeedback && (
+        <div
+          className={`flex items-center justify-between gap-3 rounded border px-3 py-2 text-sm ${
+            syncFeedback.type === 'approved'
+              ? 'border-green-200 bg-green-50 text-green-800'
+              : 'border-red-200 bg-red-50 text-red-800'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {syncFeedback.type === 'approved' ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <Ban className="h-4 w-4" />
+            )}
+            <span>{syncFeedback.message}</span>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSyncFeedback(null)}
+            className="h-8 px-2"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Search Currencies</CardTitle>
@@ -325,15 +366,16 @@ export default function CurrenciesPage() {
                               }}
                               title="View history with base currency"
                             >
-                              <Link2 className="w-4 h-4 mr-2" />
+                              <Clock3 className="w-4 h-4 mr-2" />
                               History with base
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleUpdateRate(currency)}
+                              title="Add rate"
                             >
-                              <Edit className="w-4 h-4 mr-2" />
+                              <CirclePlus className="w-4 h-4 mr-2" />
                               Add Rate
                             </Button>
                             <Button
@@ -355,8 +397,10 @@ export default function CurrenciesPage() {
                                   e.stopPropagation()
                                   deactivateCurrency(currency.id)
                                 }}
+                                aria-label="Deactivate currency"
+                                title="Deactivate currency"
                               >
-                                Deactivate
+                                <Ban className="w-4 h-4" />
                               </Button>
                             ) : (
                               <Button
@@ -366,8 +410,10 @@ export default function CurrenciesPage() {
                                   e.stopPropagation()
                                   activateCurrency(currency.id)
                                 }}
+                                aria-label="Activate currency"
+                                title="Activate currency"
                               >
-                                Activate
+                                <CheckCircle2 className="w-4 h-4" />
                               </Button>
                             )}
                             <Button
@@ -378,9 +424,10 @@ export default function CurrenciesPage() {
                                 e.stopPropagation()
                                 deleteCurrency(currency.id)
                               }}
+                              aria-label="Delete currency"
+                              title="Delete currency"
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -564,7 +611,16 @@ export default function CurrenciesPage() {
         currency={editingCurrency}
       />
 
-      <RateSyncDialog open={showRateSyncDialog} onClose={() => setShowRateSyncDialog(false)} />
+      <RateSyncDialog
+        open={showRateSyncDialog}
+        onClose={() => setShowRateSyncDialog(false)}
+        onApproveSuccess={() =>
+          setSyncFeedback({ type: 'approved', message: 'Rate sync request approved and applied.' })
+        }
+        onRejectSuccess={() =>
+          setSyncFeedback({ type: 'rejected', message: 'Rate sync request rejected.' })
+        }
+      />
 
     </div>
   )

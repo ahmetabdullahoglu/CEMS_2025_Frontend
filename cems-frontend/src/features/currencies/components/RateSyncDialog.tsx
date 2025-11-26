@@ -28,9 +28,11 @@ import type { RateSyncInitiateResponse, RateSyncRateEntry } from '@/types/rate-s
 interface RateSyncDialogProps {
   open: boolean
   onClose: () => void
+  onApproveSuccess?: () => void
+  onRejectSuccess?: () => void
 }
 
-export function RateSyncDialog({ open, onClose }: RateSyncDialogProps) {
+export function RateSyncDialog({ open, onClose, onApproveSuccess, onRejectSuccess }: RateSyncDialogProps) {
   const { data: activeCurrencies } = useActiveCurrencies()
   const [source, setSource] = useState('auto')
   const [selectedTargets, setSelectedTargets] = useState<string[]>([])
@@ -111,6 +113,8 @@ export function RateSyncDialog({ open, onClose }: RateSyncDialogProps) {
       {
         onSuccess: () => {
           refetchRequest()
+          onApproveSuccess?.()
+          onClose()
         },
       }
     )
@@ -123,6 +127,8 @@ export function RateSyncDialog({ open, onClose }: RateSyncDialogProps) {
       {
         onSuccess: () => {
           refetchRequest()
+          onRejectSuccess?.()
+          onClose()
         },
       }
     )
