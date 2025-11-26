@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Edit, History, Plus, Search, Trash2, Zap } from 'lucide-react'
+import { Edit, Link2, ListChecks, Plus, Search, Trash2, Zap } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -311,9 +311,10 @@ export default function CurrenciesPage() {
                                 e.stopPropagation()
                                 handleToggleHistory(currency)
                               }}
+                              title="View all pairs history"
                             >
-                              <History className="w-4 h-4 mr-2" />
-                              History
+                              <ListChecks className="w-4 h-4 mr-2" />
+                              All pairs history
                             </Button>
                             <Button
                               size="sm"
@@ -322,9 +323,10 @@ export default function CurrenciesPage() {
                                 e.stopPropagation()
                                 handleViewPairHistory(currency)
                               }}
+                              title="View history with base currency"
                             >
-                              <History className="w-4 h-4 mr-2" />
-                              Pair History
+                              <Link2 className="w-4 h-4 mr-2" />
+                              History with base
                             </Button>
                             <Button
                               size="sm"
