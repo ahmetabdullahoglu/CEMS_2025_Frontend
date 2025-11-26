@@ -245,7 +245,6 @@ export default function DashboardPage() {
     transaction_growth_percent: 0,
   }
 
-  const topCurrencies = data.top_currencies ?? []
   const quickStats = data.quick_stats ?? {
     transactions_yesterday: 0,
     average_transaction_value: 0,
@@ -386,77 +385,6 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Top Currencies and Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        {/* Top Currencies */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Currencies</CardTitle>
-            <CardDescription>Most traded currencies today</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {topCurrencies.length > 0 ? (
-              <div className="space-y-3">
-                {topCurrencies.map((currency, index) => (
-                  <div key={currency.currency_code} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="w-8 text-center">
-                        {index + 1}
-                      </Badge>
-                      <div>
-                        <p className="font-medium">{currency.currency_code}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {currency.transaction_count} transactions
-                        </p>
-                      </div>
-                    </div>
-                    <p className="font-semibold">
-                      ${Number(currency.total_amount ?? 0).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No currency data available for today
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Statistics</CardTitle>
-            <CardDescription>Performance insights</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b">
-                <div>
-                  <p className="text-sm text-muted-foreground">Transactions Yesterday</p>
-                  <p className="text-2xl font-bold">{quickStats.transactions_yesterday}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between pb-3 border-b">
-                <div>
-                  <p className="text-sm text-muted-foreground">Average Transaction Value</p>
-                  <p className="text-2xl font-bold">
-                    ${quickStats.average_transaction_value.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Busiest Hour</p>
-                  <p className="text-2xl font-bold">{quickStats.busiest_hour}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Dashboard Alerts */}
       {alertsData && alertsData.alerts && alertsData.alerts.length > 0 && (
