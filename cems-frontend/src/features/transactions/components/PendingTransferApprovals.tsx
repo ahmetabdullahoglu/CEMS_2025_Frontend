@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -25,6 +25,7 @@ import { usePendingApprovalTransactions, useReceiveTransfer, useCancelTransactio
 import type { TransactionQueryParams, TransferTransactionResponse } from '@/types/transaction.types'
 import { formatBranchLabel } from '@/utils/branch'
 import { handleApiError } from '@/lib/api/client'
+import { ActionIconButton } from '@/components/action-icon-button'
 
 interface PendingTransferApprovalsProps {
   branchId?: string
@@ -148,22 +149,22 @@ export default function PendingTransferApprovals({ branchId }: PendingTransferAp
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                  <Button
+                  <ActionIconButton
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
+                    label="Approve receipt"
                     onClick={() => openDialog('receive', transfer.id)}
                     disabled={loading}
-                  >
-                    Approve Receipt
-                  </Button>
-                  <Button
+                    icon={<CheckCircle2 className="w-4 h-4" />}
+                  />
+                  <ActionIconButton
                     size="sm"
-                    variant="destructive"
+                    variant="ghost"
+                    label="Cancel transfer"
                     onClick={() => openDialog('cancel', transfer.id)}
                     disabled={loading}
-                  >
-                    Cancel
-                  </Button>
+                    icon={<XCircle className="w-4 h-4" />}
+                  />
                 </div>
               </TableCell>
             </TableRow>

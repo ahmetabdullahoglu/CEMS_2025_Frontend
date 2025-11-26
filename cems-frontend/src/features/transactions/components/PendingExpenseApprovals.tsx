@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { Loader2 } from 'lucide-react'
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +27,7 @@ import type {
   ExpenseTransactionResponse,
   TransactionQueryParams,
 } from '@/types/transaction.types'
+import { ActionIconButton } from '@/components/action-icon-button'
 
 interface PendingExpenseApprovalsProps {
   branchId?: string
@@ -132,17 +133,22 @@ export default function PendingExpenseApprovals({ branchId }: PendingExpenseAppr
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                  <Button size="sm" onClick={() => openDialog('approve', expense.id)} disabled={loading}>
-                    Approve
-                  </Button>
-                  <Button
+                  <ActionIconButton
                     size="sm"
-                    variant="destructive"
+                    variant="ghost"
+                    label="Approve expense"
+                    onClick={() => openDialog('approve', expense.id)}
+                    disabled={loading}
+                    icon={<CheckCircle2 className="w-4 h-4" />}
+                  />
+                  <ActionIconButton
+                    size="sm"
+                    variant="ghost"
+                    label="Cancel expense"
                     onClick={() => openDialog('cancel', expense.id)}
                     disabled={loading}
-                  >
-                    Cancel
-                  </Button>
+                    icon={<XCircle className="w-4 h-4" />}
+                  />
                 </div>
               </TableCell>
             </TableRow>

@@ -51,6 +51,7 @@ import {
   useUpdateBranch,
 } from '@/hooks/useBranches'
 import { formatAmount } from '@/utils/number'
+import { ActionIconButton } from '@/components/action-icon-button'
 
 type BranchFormState = {
   name: string
@@ -564,46 +565,50 @@ export default function BranchesPage() {
                           return formatAmount(totalUsdValue)
                         })()}
                       </TableCell>
-                      <TableCell>
+                          <TableCell>
                         <Badge variant={branch.is_active ? 'default' : 'secondary'}>
                           {branch.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
-                                <PencilLine className="w-4 h-4 mr-2" />
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => navigate(`/branches/${branch.id}/users`)}
-                              >
-                                <Users className="w-4 h-4 mr-2" />
-                                Users
-                              </Button>
-                              <Button
+                              <ActionIconButton
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleViewBranch(branch.id)}
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                Details
-                              </Button>
-                              <Button
+                                label="Edit branch"
+                                onClick={() => openEditDialog(branch)}
+                                icon={<PencilLine className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
                                 size="sm"
-                                variant={isExpanded ? 'default' : 'outline'}
+                                variant="ghost"
+                                label="View users"
+                                onClick={() => navigate(`/branches/${branch.id}/users`)}
+                                icon={<Users className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
+                                size="sm"
+                                variant="ghost"
+                                label="View details"
+                                onClick={() => handleViewBranch(branch.id)}
+                                icon={<Eye className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
+                                size="sm"
+                                variant="ghost"
+                                label={isExpanded ? 'Hide balances' : 'Show balances'}
                                 onClick={() => toggleBalances(branch.id)}
-                              >
-                                <Wallet className="w-4 h-4 mr-2" />
-                                {isExpanded ? 'Hide Balances' : 'Balances'}
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 ml-2" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 ml-2" />
-                                )}
-                              </Button>
+                                icon={
+                                  <span className="flex items-center gap-1">
+                                    <Wallet className="w-4 h-4" />
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-3 h-3" />
+                                    ) : (
+                                      <ChevronDown className="w-3 h-3" />
+                                    )}
+                                  </span>
+                                }
+                              />
                             </div>
                           </TableCell>
                         </TableRow>

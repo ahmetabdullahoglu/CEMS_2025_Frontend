@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Lock, Search, Shield, UserPlus } from 'lucide-react'
+import { ArrowLeft, Lock, Search, Shield, Trash2, UserPlus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,7 @@ import {
   useRemoveUserFromBranch,
 } from '@/hooks/useBranches'
 import { useUsers } from '@/hooks/useUsers'
+import { ActionIconButton } from '@/components/action-icon-button'
 
 export default function BranchUsersPage() {
   const navigate = useNavigate()
@@ -246,14 +247,14 @@ export default function BranchUsersPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
+                          <ActionIconButton
                             variant="ghost"
                             size="sm"
+                            label={removingUserId === user.id ? 'Removing user' : 'Remove user'}
                             onClick={() => handleRemoveUser(user.id)}
                             disabled={removingUserId === user.id}
-                          >
-                            {removingUserId === user.id ? 'Removing...' : 'Remove'}
-                          </Button>
+                            icon={<Trash2 className="w-4 h-4" />}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
