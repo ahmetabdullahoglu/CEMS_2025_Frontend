@@ -44,6 +44,9 @@ export default function BalanceMovement() {
   const selectedBranchId = branchFilter === ALL_BRANCHES ? undefined : branchFilter
   const selectedCurrency = currencyFilter === ALL_CURRENCIES ? undefined : currencyFilter
 
+  const showBranchColumn = branchFilter === ALL_BRANCHES
+  const showCurrencyColumn = currencyFilter === ALL_CURRENCIES
+
   const { data, isLoading, isError, refetch, isFetching } = useBalanceMovement({
     branchId: selectedBranchId,
     currencyCode: selectedCurrency,
@@ -188,6 +191,8 @@ export default function BalanceMovement() {
                       <TableHead>Date</TableHead>
                       <TableHead>Transaction</TableHead>
                       <TableHead>Type</TableHead>
+                      {showBranchColumn && <TableHead>Branch</TableHead>}
+                      {showCurrencyColumn && <TableHead>Currency</TableHead>}
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead className="text-right">Debit</TableHead>
                       <TableHead className="text-right">Credit</TableHead>
@@ -203,6 +208,14 @@ export default function BalanceMovement() {
                         </TableCell>
                         <TableCell className="font-medium">{movement.transaction_number}</TableCell>
                         <TableCell className="capitalize">{movement.type}</TableCell>
+                        {showBranchColumn && (
+                          <TableCell>
+                            {movement.branch_id
+                              ? formatBranchLabel(branches.find((branch) => branch.id === movement.branch_id))
+                              : movement.branch_name || movement.branch_code || '—'}
+                          </TableCell>
+                        )}
+                        {showCurrencyColumn && <TableCell>{movement.currency ?? '—'}</TableCell>}
                         <TableCell className="text-right">{formatAmount(movement.amount)}</TableCell>
                         <TableCell className="text-right">{formatAmount(movement.debit)}</TableCell>
                         <TableCell className="text-right">{formatAmount(movement.credit)}</TableCell>
