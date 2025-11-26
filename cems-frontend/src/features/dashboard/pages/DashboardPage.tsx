@@ -32,7 +32,6 @@ import type {
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -315,16 +314,18 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-blue-700">{overview.pending_approvals}</p>
-              <p className="text-sm text-blue-600 mt-1">Transactions awaiting approval</p>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="mt-3"
+              <button
+                type="button"
                 onClick={() => navigate('/transactions/pending-approvals')}
+                className="group text-left"
               >
-                Review Pending Transfers
-              </Button>
+                <p className="text-2xl font-bold text-blue-700 group-hover:underline">
+                  {overview.pending_approvals}
+                </p>
+                <p className="text-sm text-blue-600 mt-1 group-hover:underline">
+                  Transactions awaiting approval
+                </p>
+              </button>
             </CardContent>
           </Card>
         )}
