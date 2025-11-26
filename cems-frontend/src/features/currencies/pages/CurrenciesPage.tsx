@@ -306,7 +306,6 @@ export default function CurrenciesPage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Symbol</TableHead>
                     <TableHead className="text-center">Decimals</TableHead>
-                    <TableHead className="text-center">Active</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -327,24 +326,13 @@ export default function CurrenciesPage() {
                         </TableCell>
                         <TableCell className="text-xl">{currency.symbol ?? '-'}</TableCell>
                         <TableCell className="text-center">{currency.decimal_places}</TableCell>
-                        <TableCell className="text-center">
-                          {currency.is_active ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                              Inactive
-                            </span>
-                          )}
-                        </TableCell>
                         <TableCell>
                           {currency.updated_at ? formatDistanceToNow(new Date(currency.updated_at), {
                             addSuffix: true,
                           }) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2 items-center">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -353,9 +341,9 @@ export default function CurrenciesPage() {
                                 handleToggleHistory(currency)
                               }}
                               title="View all pairs history"
+                              aria-label="View all pairs history"
                             >
-                              <ListChecks className="w-4 h-4 mr-2" />
-                              All pairs history
+                              <ListChecks className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
@@ -365,18 +353,18 @@ export default function CurrenciesPage() {
                                 handleViewPairHistory(currency)
                               }}
                               title="View history with base currency"
+                              aria-label="View history with base currency"
                             >
-                              <Clock3 className="w-4 h-4 mr-2" />
-                              History with base
+                              <Clock3 className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleUpdateRate(currency)}
                               title="Add rate"
+                              aria-label="Add rate"
                             >
-                              <CirclePlus className="w-4 h-4 mr-2" />
-                              Add Rate
+                              <CirclePlus className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
@@ -385,10 +373,28 @@ export default function CurrenciesPage() {
                                 e.stopPropagation()
                                 handleOpenCurrencyDialog(currency)
                               }}
+                              title="Edit currency"
+                              aria-label="Edit currency"
                             >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Currency
+                              <Edit className="w-4 h-4" />
                             </Button>
+                            {currency.is_active ? (
+                              <span
+                                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
+                                title="Currency is active"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Active
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800"
+                                title="Currency is inactive"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Inactive
+                              </span>
+                            )}
                             {currency.is_active ? (
                               <Button
                                 size="sm"
@@ -435,7 +441,7 @@ export default function CurrenciesPage() {
 
                       {expandedCurrencyId === currency.id && (
                         <TableRow>
-                          <TableCell colSpan={7} className="bg-muted/50">
+                          <TableCell colSpan={6} className="bg-muted/50">
                             <div className="py-4 space-y-3">
                               <div className="flex items-center justify-between">
                                 <div>
