@@ -34,27 +34,81 @@ import { useAuth } from '@/contexts/useAuth'
 import { useBranchSelection } from '@/contexts/BranchContext'
 import type { Customer, CustomerType } from '@/types/customer.types'
 
+const nameRegex = /^[\p{L} ]+$/u
+const nationalIdRegex = /^[12]\d{9}$/
+const passportRegex = /^[A-Za-z0-9]{6,9}$/
+
 // Schema matching CustomerCreate from API
 const customerSchema = z
   .object({
-    first_name: z.string().min(1, 'First name is required'),
-    last_name: z.string().min(1, 'Last name is required'),
-    name_ar: z.string().optional(),
-    national_id: z.string().optional(),
-    passport_number: z.string().optional(),
-    phone_number: z.string().min(1, 'Phone number is required'),
+    first_name: z
+      .string()
+      .min(2, 'First name must be at least 2 characters')
+      .max(100, 'First name must be at most 100 characters')
+      .regex(nameRegex, 'Name must contain only letters and spaces'),
+    last_name: z
+      .string()
+      .min(2, 'Last name must be at least 2 characters')
+      .max(100, 'Last name must be at most 100 characters')
+      .regex(nameRegex, 'Name must contain only letters and spaces'),
+    name_ar: z.string().max(200, 'Arabic name must be at most 200 characters').optional().or(z.literal('')),
+    national_id: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .refine((val) => !val || nationalIdRegex.test(val), {
+        message: 'Invalid national ID format. Must be 10 digits starting with 1 or 2',
+      }),
+    passport_number: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .refine((val) => !val || passportRegex.test(val), {
+        message: 'Invalid passport format. Must be 6-9 alphanumeric characters',
+      }),
+    phone_number: z
+      .string()
+      .min(1, 'Phone number is required')
+      .refine((val) => {
+        const digits = val.replace(/[^0-9]/g, '')
+        return digits.length >= 10 && digits.length <= 15
+      }, { message: 'Invalid phone number. Must be 10-15 digits (with optional +)' }),
     email: z.string().email('Invalid email').optional().or(z.literal('')),
-    date_of_birth: z.string().optional().or(z.literal('')).default(''), // YYYY-MM-DD format
-    nationality: z.string().optional().or(z.literal('')).default(''),
+    date_of_birth: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .superRefine((val, ctx) => {
+        if (!val) return
+        const dob = new Date(val)
+        if (Number.isNaN(dob.getTime())) return
+        const age = (Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+        if (age < 18) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Customer must be at least 18 years old' })
+        } else if (age > 120) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid date of birth' })
+        }
+      }),
+    nationality: z.string().max(100, 'Nationality must be at most 100 characters').optional().or(z.literal('')).default(''),
     address: z.string().optional().or(z.literal('')).default(''),
-    city: z.string().optional().or(z.literal('')).default(''),
-    country: z.string().optional().or(z.literal('')).default(''),
+    city: z.string().max(100, 'City must be at most 100 characters').optional().or(z.literal('')).default(''),
+    country: z
+      .string()
+      .max(100, 'Country must be at most 100 characters')
+      .optional()
+      .or(z.literal(''))
+      .default(''),
     customer_type: z.enum(['individual', 'corporate']).optional().default('individual'),
     branch_id: z.string().min(1, 'Branch is required'),
   })
-  .refine((data) => data.national_id || data.passport_number, {
-    message: 'National ID or Passport number is required',
-    path: ['national_id'],
+  .superRefine((data, ctx) => {
+    if (!data.national_id && !data.passport_number) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['national_id'],
+        message: 'At least one form of identification (national_id or passport_number) is required',
+      })
+    }
   })
 
 type CustomerFormData = z.infer<typeof customerSchema>
@@ -145,12 +199,16 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
       return
     }
 
+    const phoneDigits = data.phone_number.replace(/[^0-9]/g, '')
+    const normalizedPhone = phoneDigits ? `+${phoneDigits}` : ''
+
     const payload = {
       ...data,
       email: data.email || null,
       name_ar: data.name_ar || null,
       national_id: data.national_id || null,
       passport_number: data.passport_number || null,
+      phone_number: normalizedPhone,
       address: data.address || null,
       city: data.city || null,
       country: data.country || null,

@@ -80,6 +80,7 @@ export default function VaultPage() {
     location: '',
     is_active: true,
   })
+  const [vaultFormError, setVaultFormError] = useState<string | null>(null)
 
   const [historyFilters, setHistoryFilters] = useState<{
     status?: VaultTransferStatus
@@ -171,9 +172,34 @@ export default function VaultPage() {
 
   const activeVault = selectedVault ?? balancesData
 
+  const validateVaultForm = () => {
+    if (vaultForm.vault_code.trim().length < 3 || vaultForm.vault_code.trim().length > 20) {
+      return 'Vault code must be between 3 and 20 characters'
+    }
+
+    if (vaultForm.name.trim().length < 3 || vaultForm.name.trim().length > 100) {
+      return 'Vault name must be between 3 and 100 characters'
+    }
+
+    if (vaultForm.vault_type === 'branch' && !vaultForm.branch_id) {
+      return 'branch_id is required for branch vaults'
+    }
+
+    if (vaultForm.vault_type === 'main' && vaultForm.branch_id) {
+      return 'branch_id must be NULL for main vault'
+    }
+
+    return null
+  }
+
   const handleSaveVault = () => {
-    if (!vaultForm.name || !vaultForm.vault_code) return
-    if (vaultForm.vault_type === 'branch' && !vaultForm.branch_id) return
+    setVaultFormError(null)
+    const validationError = validateVaultForm()
+    if (validationError) {
+      setVaultFormError(validationError)
+      return
+    }
+
     if (editingVault) {
       updateVault(
         { vaultId: editingVault.id, payload: { ...vaultForm, vault_type: undefined } },
@@ -790,7 +816,15 @@ export default function VaultPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={vaultDialogOpen} onOpenChange={setVaultDialogOpen}>
+      <Dialog
+        open={vaultDialogOpen}
+        onOpenChange={(open) => {
+          setVaultDialogOpen(open)
+          if (!open) {
+            setVaultFormError(null)
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingVault ? 'Update Vault' : 'Create Vault'}</DialogTitle>
@@ -882,6 +916,7 @@ export default function VaultPage() {
               />
             </div>
           </div>
+          {vaultFormError && <p className="text-sm text-destructive">{vaultFormError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setVaultDialogOpen(false)}>
               Cancel

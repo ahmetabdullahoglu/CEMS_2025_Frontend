@@ -81,6 +81,46 @@ const defaultBranchForm: BranchFormState = {
   opening_balance_date: '',
 }
 
+const branchCodePattern = /^BR\d+$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const validateBranchForm = (form: BranchFormState): string | null => {
+  if (form.name_en.trim().length < 2 || form.name_en.trim().length > 200) {
+    return 'Branch English name must be between 2 and 200 characters'
+  }
+
+  if (form.name_ar.trim().length < 2 || form.name_ar.trim().length > 200) {
+    return 'Branch Arabic name must be between 2 and 200 characters'
+  }
+
+  if (!branchCodePattern.test(form.code.trim())) {
+    return "Branch code must start with 'BR' followed by digits (e.g., BR001)"
+  }
+
+  if (form.address.trim().length < 10 || form.address.trim().length > 500) {
+    return 'Address must be between 10 and 500 characters'
+  }
+
+  if (form.city.trim().length < 2 || form.city.trim().length > 100) {
+    return 'City must be between 2 and 100 characters'
+  }
+
+  const phoneDigits = form.phone.replace(/\D/g, '')
+  if (phoneDigits.length < 10 || phoneDigits.length > 20) {
+    return 'Phone must be between 10 and 20 digits'
+  }
+
+  if (form.email && !emailPattern.test(form.email)) {
+    return 'Invalid email format'
+  }
+
+  if (!form.region.trim()) {
+    return 'Region is required'
+  }
+
+  return null
+}
+
 export default function BranchesPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
@@ -331,6 +371,11 @@ export default function BranchesPage() {
   const handleCreateBranch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setFormError(null)
+    const validationError = validateBranchForm(createForm)
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
     try {
       await createBranch({
         name_en: createForm.name_en,
@@ -356,6 +401,11 @@ export default function BranchesPage() {
     e.preventDefault()
     if (!editingBranch) return
     setFormError(null)
+    const validationError = validateBranchForm(editForm)
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
     try {
       await updateBranch({
         id: editingBranch.id,

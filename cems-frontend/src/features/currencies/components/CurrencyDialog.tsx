@@ -14,16 +14,22 @@ import type { Currency } from '@/types/currency.types'
 const currencySchema = z.object({
   code: z
     .string()
-    .min(3, 'Code must be 3 characters')
-    .max(3, 'Code must be 3 characters')
+    .length(3, 'Currency code must be 3 letters')
+    .regex(/^[A-Za-z]{3}$/, 'Currency code must contain only letters')
     .transform((val) => val.toUpperCase()),
-  name_en: z.string().min(2, 'English name is required'),
-  name_ar: z.string().min(2, 'Arabic name is required'),
-  symbol: z.string().max(5, 'Max 5 characters').optional().or(z.literal('')),
+  name_en: z
+    .string()
+    .min(2, 'English name must be at least 2 characters')
+    .max(100, 'English name must be at most 100 characters'),
+  name_ar: z
+    .string()
+    .min(2, 'Arabic name must be at least 2 characters')
+    .max(100, 'Arabic name must be at most 100 characters'),
+  symbol: z.string().max(10, 'Symbol must be at most 10 characters').optional().or(z.literal('')),
   decimal_places: z
     .number({ invalid_type_error: 'Decimal places are required' })
-    .min(0)
-    .max(6, 'Maximum 6 decimal places')
+    .min(0, 'Decimal places must be between 0 and 8')
+    .max(8, 'Decimal places must be between 0 and 8')
     .optional()
     .default(2),
   is_base_currency: z.boolean().optional(),
