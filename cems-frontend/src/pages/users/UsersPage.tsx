@@ -41,6 +41,7 @@ import {
 import { useBranches } from '@/hooks/useBranches'
 import type { User } from '@/types/user.types'
 import { format } from 'date-fns'
+import { USER_ROLES } from '@/constants/enums'
 
 type UserFormState = {
   username: string
@@ -139,6 +140,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [branchFilter, setBranchFilter] = useState('all')
+  const [roleFilter, setRoleFilter] = useState('all')
 
   const { data: branchesData } = useBranches({ limit: 100 })
   const branchFilterLabel = branchesData?.data?.find((branch) => branch.id === branchFilter)?.name_en
@@ -148,6 +150,7 @@ export default function UsersPage() {
     limit: pageSize,
     search,
     branch_id: branchFilter === 'all' ? undefined : branchFilter,
+    role: roleFilter === 'all' ? undefined : roleFilter,
   })
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -413,6 +416,25 @@ export default function UsersPage() {
                   {(branchesData?.data ?? []).map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name_en ?? branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={roleFilter}
+                onValueChange={(value) => {
+                  setRoleFilter(value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="All roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All roles</SelectItem>
+                  {USER_ROLES.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

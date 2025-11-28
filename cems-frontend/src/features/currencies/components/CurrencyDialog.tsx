@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CURRENCY_STATUSES } from '@/constants/enums'
 import { useCreateCurrency, useUpdateCurrency } from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
 
@@ -122,6 +124,7 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
   }
 
   const isBusy = creating || updating
+  const activeStatus = watch('is_active') ? 'active' : 'inactive'
 
   return (
     <Dialog open={open} onOpenChange={() => !isBusy && onClose()}>
@@ -185,17 +188,32 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <div>
-              <Label htmlFor="is_active">Active</Label>
-              <p className="text-sm text-muted-foreground">Toggle currency availability</p>
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="currency-status">Status</Label>
+                <p className="text-sm text-muted-foreground">Select availability for this currency</p>
+              </div>
+              <Select
+                value={activeStatus}
+                onValueChange={(value) => setValue('is_active', value === 'active')}
+                disabled={isBusy}
+              >
+                <SelectTrigger id="currency-status" className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCY_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Checkbox
-              id="is_active"
-              checked={watch('is_active') ?? false}
-              onCheckedChange={(checked) => setValue('is_active', !!checked)}
-              disabled={isBusy}
-            />
+            <p className="text-xs text-muted-foreground">
+              Deprecated or inactive statuses will disable new usage for this currency.
+            </p>
           </div>
 
           <DialogFooter>

@@ -52,6 +52,7 @@ import {
 } from '@/hooks/useBranches'
 import { formatAmount } from '@/utils/number'
 import { ActionIconButton } from '@/components/action-icon-button'
+import { BRANCH_REGIONS } from '@/constants/enums'
 
 type BranchFormState = {
   name_en: string
@@ -222,6 +223,9 @@ export default function BranchesPage() {
         setFormState: React.Dispatch<React.SetStateAction<BranchFormState>>
         disabled?: boolean
       }) {
+        const selectedRegion = BRANCH_REGIONS.some((option) => option.value === formState.region)
+          ? formState.region
+          : 'other'
         return (
           <div className="grid gap-4">
             <div>
@@ -260,14 +264,34 @@ export default function BranchesPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="branch-region">Region</Label>
-                <Input
-                  id="branch-region"
-                  value={formState.region}
-                  onChange={(e) => setFormState((prev) => ({ ...prev, region: e.target.value }))}
-                  placeholder="e.g. Central"
+                <Select
+                  value={selectedRegion}
+                  onValueChange={(value) =>
+                    setFormState((prev) => ({ ...prev, region: value === 'other' ? prev.region : value }))
+                  }
                   disabled={disabled}
-                  required
-                />
+                >
+                  <SelectTrigger id="branch-region">
+                    <SelectValue placeholder="Choose region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BRANCH_REGIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedRegion === 'other' && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Enter region name"
+                    value={formState.region}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, region: e.target.value }))}
+                    disabled={disabled}
+                    required
+                  />
+                )}
               </div>
               <div>
                 <Label htmlFor="branch-city">City</Label>
@@ -512,15 +536,25 @@ export default function BranchesPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-4">
             <div className="md:col-span-2">
               <Label htmlFor="region-filter">Region</Label>
-              <Input
-                id="region-filter"
-                placeholder="e.g. Istanbul_Asian"
-                value={region}
-                onChange={(e) => {
-                  setRegion(e.target.value)
+              <Select
+                value={region || 'all'}
+                onValueChange={(value) => {
+                  setRegion(value === 'all' ? '' : value)
                   setPage(1)
                 }}
-              />
+              >
+                <SelectTrigger id="region-filter">
+                  <SelectValue placeholder="All regions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All regions</SelectItem>
+                  {BRANCH_REGIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Status</Label>
