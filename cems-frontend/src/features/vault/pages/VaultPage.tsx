@@ -173,6 +173,7 @@ export default function VaultPage() {
 
   const handleSaveVault = () => {
     if (!vaultForm.name || !vaultForm.vault_code) return
+    if (vaultForm.vault_type === 'branch' && !vaultForm.branch_id) return
     if (editingVault) {
       updateVault(
         { vaultId: editingVault.id, payload: { ...vaultForm, vault_type: undefined } },

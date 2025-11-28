@@ -54,21 +54,31 @@ import { formatAmount } from '@/utils/number'
 import { ActionIconButton } from '@/components/action-icon-button'
 
 type BranchFormState = {
-  name: string
+  name_en: string
+  name_ar: string
   code: string
+  region: string
   address: string
   city: string
   phone: string
   email: string
+  manager_id: string
+  is_main_branch: boolean
+  opening_balance_date: string
 }
 
 const defaultBranchForm: BranchFormState = {
-  name: '',
+  name_en: '',
+  name_ar: '',
   code: '',
+  region: '',
   address: '',
   city: '',
   phone: '',
   email: '',
+  manager_id: '',
+  is_main_branch: false,
+  opening_balance_date: '',
 }
 
 export default function BranchesPage() {
@@ -175,12 +185,23 @@ export default function BranchesPage() {
         return (
           <div className="grid gap-4">
             <div>
-              <Label htmlFor="branch-name">Branch Name</Label>
+              <Label htmlFor="branch-name-en">Branch Name (English)</Label>
               <Input
-                id="branch-name"
-                value={formState.name}
-                onChange={(e) => setFormState((prev) => ({ ...prev, name: e.target.value }))}
+                id="branch-name-en"
+                value={formState.name_en}
+                onChange={(e) => setFormState((prev) => ({ ...prev, name_en: e.target.value }))}
                 placeholder="e.g. Baghdad Central"
+                disabled={disabled}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="branch-name-ar">Branch Name (Arabic)</Label>
+              <Input
+                id="branch-name-ar"
+                value={formState.name_ar}
+                onChange={(e) => setFormState((prev) => ({ ...prev, name_ar: e.target.value }))}
+                placeholder="مثال: فرع بغداد المركزي"
                 disabled={disabled}
                 required
               />
@@ -198,6 +219,17 @@ export default function BranchesPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
+                <Label htmlFor="branch-region">Region</Label>
+                <Input
+                  id="branch-region"
+                  value={formState.region}
+                  onChange={(e) => setFormState((prev) => ({ ...prev, region: e.target.value }))}
+                  placeholder="e.g. Central"
+                  disabled={disabled}
+                  required
+                />
+              </div>
+              <div>
                 <Label htmlFor="branch-city">City</Label>
                 <Input
                   id="branch-city"
@@ -205,6 +237,7 @@ export default function BranchesPage() {
                   onChange={(e) => setFormState((prev) => ({ ...prev, city: e.target.value }))}
                   placeholder="Baghdad"
                   disabled={disabled}
+                  required
                 />
               </div>
               <div>
@@ -215,6 +248,7 @@ export default function BranchesPage() {
                   onChange={(e) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
                   placeholder="+964 123 456 789"
                   disabled={disabled}
+                  required
                 />
               </div>
             </div>
@@ -226,6 +260,7 @@ export default function BranchesPage() {
                 onChange={(e) => setFormState((prev) => ({ ...prev, address: e.target.value }))}
                 placeholder="Karrada, 14 July St."
                 disabled={disabled}
+                required
               />
             </div>
             <div>
@@ -238,6 +273,44 @@ export default function BranchesPage() {
                 placeholder="branch@cems.com"
                 disabled={disabled}
               />
+            </div>
+            <div>
+              <Label htmlFor="branch-manager">Manager ID</Label>
+              <Input
+                id="branch-manager"
+                value={formState.manager_id}
+                onChange={(e) => setFormState((prev) => ({ ...prev, manager_id: e.target.value }))}
+                placeholder="UUID of manager (optional)"
+                disabled={disabled}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <Label htmlFor="branch-main">Main Branch</Label>
+                  <p className="text-sm text-muted-foreground">Mark branch as the main location</p>
+                </div>
+                <Checkbox
+                  id="branch-main"
+                  checked={formState.is_main_branch}
+                  onCheckedChange={(checked) =>
+                    setFormState((prev) => ({ ...prev, is_main_branch: !!checked }))
+                  }
+                  disabled={disabled}
+                />
+              </div>
+              <div>
+                <Label htmlFor="opening-balance-date">Opening Balance Date</Label>
+                <Input
+                  id="opening-balance-date"
+                  type="datetime-local"
+                  value={formState.opening_balance_date}
+                  onChange={(e) =>
+                    setFormState((prev) => ({ ...prev, opening_balance_date: e.target.value }))
+                  }
+                  disabled={disabled}
+                />
+              </div>
             </div>
           </div>
         )
@@ -260,12 +333,17 @@ export default function BranchesPage() {
     setFormError(null)
     try {
       await createBranch({
-        name: createForm.name,
+        name_en: createForm.name_en,
+        name_ar: createForm.name_ar,
         code: createForm.code,
-        address: createForm.address || undefined,
-        city: createForm.city || undefined,
-        phone: createForm.phone || undefined,
-        email: createForm.email || undefined,
+        region: createForm.region,
+        address: createForm.address,
+        city: createForm.city,
+        phone: createForm.phone,
+        email: createForm.email || null,
+        manager_id: createForm.manager_id || null,
+        is_main_branch: createForm.is_main_branch,
+        opening_balance_date: createForm.opening_balance_date || null,
       })
       resetForms()
       setIsCreateDialogOpen(false)
@@ -282,12 +360,17 @@ export default function BranchesPage() {
       await updateBranch({
         id: editingBranch.id,
         data: {
-          name: editForm.name,
+          name_en: editForm.name_en,
+          name_ar: editForm.name_ar,
           code: editForm.code,
-          address: editForm.address || undefined,
-          city: editForm.city || undefined,
-          phone: editForm.phone || undefined,
-          email: editForm.email || undefined,
+          region: editForm.region,
+          address: editForm.address || null,
+          city: editForm.city || null,
+          phone: editForm.phone || null,
+          email: editForm.email || null,
+          manager_id: editForm.manager_id || null,
+          is_main_branch: editForm.is_main_branch,
+          opening_balance_date: editForm.opening_balance_date || null,
         },
       })
       setIsEditDialogOpen(false)
@@ -300,12 +383,17 @@ export default function BranchesPage() {
   const openEditDialog = (branch: Branch) => {
     setEditingBranch(branch)
     setEditForm({
-      name: branch.name_en ?? branch.name ?? '',
+      name_en: branch.name_en ?? branch.name ?? '',
+      name_ar: branch.name_ar ?? '',
       code: branch.code ?? '',
+      region: branch.region ?? '',
       address: branch.address ?? '',
       city: branch.city ?? '',
       phone: branch.phone ?? '',
       email: branch.email ?? '',
+      manager_id: branch.manager_id ?? '',
+      is_main_branch: branch.is_main_branch,
+      opening_balance_date: branch.opening_balance_date ?? '',
     })
     setFormError(null)
     setIsEditDialogOpen(true)

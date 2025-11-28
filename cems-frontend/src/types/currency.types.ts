@@ -3,7 +3,7 @@ export interface Currency {
   id: string // UUID
   code: string
   name: string
-  symbol: string
+  symbol: string | null
   decimal_places: number
   is_active: boolean
   created_at: string // ISO datetime
@@ -20,16 +20,20 @@ export type CurrencyName = string
 // Currency Create (matches API CurrencyCreate schema)
 export interface CurrencyCreate {
   code: string
-  name: string
-  symbol: string
-  decimal_places: number
+  name_en: string
+  name_ar: string
+  symbol?: string | null
+  is_base_currency?: boolean
+  decimal_places?: number
   is_active?: boolean
 }
 
 // Currency Update (matches API CurrencyUpdate schema)
 export interface CurrencyUpdate {
-  name?: string | null
+  name_en?: string | null
+  name_ar?: string | null
   symbol?: string | null
+  is_base_currency?: boolean | null
   decimal_places?: number | null
   is_active?: boolean | null
 }

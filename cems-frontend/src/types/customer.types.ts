@@ -53,13 +53,12 @@ export interface CustomerCreate {
   passport_number?: string | null
   phone_number: string
   email?: string | null
-  date_of_birth: string // ISO date format (YYYY-MM-DD)
-  nationality: string
+  date_of_birth?: string | null // ISO date format (YYYY-MM-DD)
+  nationality?: string | null
   address?: string | null
   city?: string | null
-  country: string
-  customer_type: CustomerType
-  risk_level?: RiskLevel // Defaults to 'low' in API
+  country?: string | null
+  customer_type?: CustomerType
   branch_id: string // UUID
   additional_info?: Record<string, unknown> | null
 }

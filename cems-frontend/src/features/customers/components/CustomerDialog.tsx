@@ -17,6 +17,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormDescription,
   FormMessage,
 } from '@/components/ui/form'
 import {
@@ -31,25 +32,30 @@ import { Button } from '@/components/ui/button'
 import { useCreateCustomer, useUpdateCustomer } from '@/hooks/useCustomers'
 import { useAuth } from '@/contexts/useAuth'
 import { useBranchSelection } from '@/contexts/BranchContext'
-import type { Customer, CustomerType, RiskLevel } from '@/types/customer.types'
+import type { Customer, CustomerType } from '@/types/customer.types'
 
 // Schema matching CustomerCreate from API
-const customerSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  name_ar: z.string().optional(),
-  national_id: z.string().optional(),
-  passport_number: z.string().optional(),
-  phone_number: z.string().min(1, 'Phone number is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  date_of_birth: z.string().min(1, 'Date of birth is required'), // YYYY-MM-DD format
-  nationality: z.string().min(1, 'Nationality is required'),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().min(1, 'Country is required'),
-  customer_type: z.enum(['individual', 'corporate']),
-  risk_level: z.enum(['low', 'medium', 'high']).optional(),
-})
+const customerSchema = z
+  .object({
+    first_name: z.string().min(1, 'First name is required'),
+    last_name: z.string().min(1, 'Last name is required'),
+    name_ar: z.string().optional(),
+    national_id: z.string().optional(),
+    passport_number: z.string().optional(),
+    phone_number: z.string().min(1, 'Phone number is required'),
+    email: z.string().email('Invalid email').optional().or(z.literal('')),
+    date_of_birth: z.string().optional().or(z.literal('')).default(''), // YYYY-MM-DD format
+    nationality: z.string().optional().or(z.literal('')).default(''),
+    address: z.string().optional().or(z.literal('')).default(''),
+    city: z.string().optional().or(z.literal('')).default(''),
+    country: z.string().optional().or(z.literal('')).default(''),
+    customer_type: z.enum(['individual', 'corporate']).optional().default('individual'),
+    branch_id: z.string().min(1, 'Branch is required'),
+  })
+  .refine((data) => data.national_id || data.passport_number, {
+    message: 'National ID or Passport number is required',
+    path: ['national_id'],
+  })
 
 type CustomerFormData = z.infer<typeof customerSchema>
 
@@ -62,12 +68,6 @@ interface CustomerDialogProps {
 const CUSTOMER_TYPES: { value: CustomerType; label: string }[] = [
   { value: 'individual', label: 'Individual' },
   { value: 'corporate', label: 'Corporate' },
-]
-
-const RISK_LEVELS: { value: RiskLevel; label: string }[] = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
 ]
 
 export default function CustomerDialog({ open, onOpenChange, customer }: CustomerDialogProps) {
@@ -95,7 +95,7 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
       city: '',
       country: '',
       customer_type: 'individual',
-      risk_level: 'low',
+      branch_id: '',
     },
   })
 
@@ -116,14 +116,35 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
         city: customer.city || '',
         country: customer.country,
         customer_type: customer.customer_type,
-        risk_level: customer.risk_level,
+        branch_id: customer.branch_id,
       })
     } else if (!open) {
-      form.reset()
+      form.reset({
+        first_name: '',
+        last_name: '',
+        name_ar: '',
+        national_id: '',
+        passport_number: '',
+        phone_number: '',
+        email: '',
+        date_of_birth: '',
+        nationality: '',
+        address: '',
+        city: '',
+        country: '',
+        customer_type: 'individual',
+        branch_id: currentBranchId || user?.branches?.[0]?.id || '',
+      })
     }
-  }, [customer, open, form])
+  }, [customer, open, form, currentBranchId, user?.branches])
 
   const onSubmit = (data: CustomerFormData) => {
+    const branchId = data.branch_id || currentBranchId || user?.branches?.[0]?.id || ''
+    if (!branchId) {
+      form.setError('branch_id', { message: 'Branch is required' })
+      return
+    }
+
     const payload = {
       ...data,
       email: data.email || null,
@@ -132,8 +153,11 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
       passport_number: data.passport_number || null,
       address: data.address || null,
       city: data.city || null,
-      branch_id: currentBranchId || user?.branches?.[0]?.id || '',
-      risk_level: data.risk_level || 'low',
+      country: data.country || null,
+      nationality: data.nationality || null,
+      date_of_birth: data.date_of_birth || null,
+      customer_type: data.customer_type || 'individual',
+      branch_id: branchId,
     }
 
     if (isEditMode && customer) {
@@ -199,6 +223,32 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
                 )}
               />
             </div>
+
+            {/* Branch */}
+            <FormField
+              control={form.control}
+              name="branch_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Branch *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Branch ID"
+                      {...field}
+                      value={field.value || currentBranchId || user?.branches?.[0]?.id || ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      disabled={!!currentBranchId}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {currentBranchId
+                      ? 'Branch is preselected from your current context.'
+                      : 'Provide the branch ID for this customer.'}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Customer Type */}
             <FormField
@@ -358,32 +408,6 @@ export default function CustomerDialog({ open, onOpenChange, customer }: Custome
                   <FormControl>
                     <Input placeholder="Enter address" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Risk Level */}
-            <FormField
-              control={form.control}
-              name="risk_level"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Risk Level</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select risk level" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {RISK_LEVELS.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
