@@ -23,6 +23,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionIconButton } from '@/components/action-icon-button'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   useVaultTransfers,
   useApproveVaultTransfer,
   useCompleteVaultTransfer,
@@ -312,7 +318,6 @@ export default function PendingTransfers() {
                 <TableHead>Currency</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Requested By</TableHead>
                 <TableHead>Meta</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -321,9 +326,20 @@ export default function PendingTransfers() {
               {(data.data ?? []).map((transfer) => (
                 <TableRow key={transfer.id}>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <span className="font-semibold">{transfer.transfer_number}</span>
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold">{transfer.transfer_number}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm">
+                            Requested by {transfer.initiated_by_name || transfer.initiated_by || '—'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell>{renderTransferRoute(transfer)}</TableCell>
                   <TableCell>
@@ -338,9 +354,6 @@ export default function PendingTransfers() {
                     })}
                   </TableCell>
                   <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {transfer.initiated_by_name || transfer.initiated_by || '-'}
-                  </TableCell>
                   <TableCell>{renderMeta(transfer)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
