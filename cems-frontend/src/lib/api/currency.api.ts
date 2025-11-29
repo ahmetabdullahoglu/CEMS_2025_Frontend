@@ -20,7 +20,9 @@ import { normalizeCurrencyIdentifier } from '@/utils/currency'
 export const currencyApi = {
   // Get all currencies with pagination
   getCurrencies: async (params?: CurrencyQueryParams): Promise<CurrencyListResponse> => {
-    const response = await apiClient.get<CurrencyListResponse>('/currencies', { params })
+    const response = await apiClient.get<CurrencyListResponse>('/currencies', {
+      params: { limit: params?.limit ?? 50, ...(params ?? {}) },
+    })
     return response.data
   },
 
