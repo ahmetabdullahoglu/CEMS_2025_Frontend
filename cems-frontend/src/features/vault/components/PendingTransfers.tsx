@@ -23,12 +23,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ActionIconButton } from '@/components/action-icon-button'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import {
   useVaultTransfers,
   useApproveVaultTransfer,
   useCompleteVaultTransfer,
@@ -326,20 +320,12 @@ export default function PendingTransfers() {
               {(data.data ?? []).map((transfer) => (
                 <TableRow key={transfer.id}>
                   <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold">{transfer.transfer_number}</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">
-                            Requested by {transfer.initiated_by_name || transfer.initiated_by || '—'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div
+                      className="flex flex-col gap-1"
+                      title={`Requested by ${transfer.initiated_by_name || transfer.initiated_by || '—'}`}
+                    >
+                      <span className="font-semibold">{transfer.transfer_number}</span>
+                    </div>
                   </TableCell>
                   <TableCell>{renderTransferRoute(transfer)}</TableCell>
                   <TableCell>
