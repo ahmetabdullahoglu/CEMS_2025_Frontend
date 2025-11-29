@@ -27,22 +27,32 @@ export interface Branch {
 
 // Branch Create (matches API BranchCreate schema)
 export interface BranchCreate {
-  name: string
   code: string
-  address?: string | null
-  city?: string | null
-  phone?: string | null
+  name_en: string
+  name_ar: string
+  region: string
+  address: string
+  city: string
+  phone: string
   email?: string | null
+  manager_id?: string | null
+  is_main_branch?: boolean
+  opening_balance_date?: string | null
 }
 
 // Branch Update (matches API BranchUpdate schema)
 export interface BranchUpdate {
-  name?: string
   code?: string
+  name_en?: string
+  name_ar?: string
+  region?: string
   address?: string | null
   city?: string | null
   phone?: string | null
   email?: string | null
+  manager_id?: string | null
+  is_main_branch?: boolean
+  opening_balance_date?: string | null
   is_active?: boolean
 }
 

@@ -10,7 +10,9 @@ import type {
 export const userApi = {
   // Get users list with filters and pagination
   getUsers: async (params?: UserQueryParams): Promise<UserListResponse> => {
-    const response = await apiClient.get<UserListResponse>('/users', { params })
+    const response = await apiClient.get<UserListResponse>('/users', {
+      params: { limit: params?.limit ?? 50, ...(params ?? {}) },
+    })
     return response.data
   },
 

@@ -114,6 +114,19 @@ export interface BalanceMovementItem {
   debit: number | string
   credit: number | string
   balance: number | string
+  currency?: string | null
+  branch_id?: string | null
+  branch_name?: string | null
+  branch_code?: string | null
+  vault_id?: string | null
+  vault_name?: string | null
+  vault_code?: string | null
+  destination_branch_id?: string | null
+  destination_branch_name?: string | null
+  destination_branch_code?: string | null
+  destination_vault_id?: string | null
+  destination_vault_name?: string | null
+  destination_vault_code?: string | null
 }
 
 export interface BalanceMovementResponse {

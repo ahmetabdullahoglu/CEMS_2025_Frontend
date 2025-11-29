@@ -41,6 +41,7 @@ import {
 import { useBranches } from '@/hooks/useBranches'
 import type { User } from '@/types/user.types'
 import { format } from 'date-fns'
+import { USER_ROLES } from '@/constants/enums'
 
 type UserFormState = {
   username: string
@@ -72,6 +73,65 @@ const defaultUpdateForm: UserUpdateFormState = {
   is_active: true,
 }
 
+const usernamePattern = /^[A-Za-z0-9._-]{3,50}$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const createPhonePattern = /^\+[0-9\s]{9,19}$/
+
+const validatePassword = (password: string): string | null => {
+  if (password.length < 8) return 'Password must be at least 8 characters long'
+  if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter'
+  if (!/[a-z]/.test(password)) return 'Password must include at least one lowercase letter'
+  if (!/[0-9]/.test(password)) return 'Password must include at least one number'
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must include at least one special character'
+  return null
+}
+
+const validateUserCreateForm = (form: UserFormState): string | null => {
+  if (!usernamePattern.test(form.username)) {
+    return 'Username can only contain letters, numbers, dots, hyphens, and underscores'
+  }
+
+  if (!emailPattern.test(form.email)) {
+    return 'Please enter a valid email address'
+  }
+
+  if (form.full_name.trim().length < 2 || form.full_name.trim().length > 100) {
+    return 'Full name must be between 2 and 100 characters'
+  }
+
+  const passwordError = validatePassword(form.password)
+  if (passwordError) return passwordError
+
+  if (form.phone_number) {
+    const trimmedPhone = form.phone_number.trim()
+    if (!createPhonePattern.test(trimmedPhone) || trimmedPhone.replace(/\s/g, '').length > 20) {
+      return 'Invalid phone number format. Use international format (e.g., +90 555 123 4567)'
+    }
+  }
+
+  return null
+}
+
+const validateUserUpdateForm = (form: UserUpdateFormState): string | null => {
+  if (form.email && !emailPattern.test(form.email)) {
+    return 'Please enter a valid email address'
+  }
+
+  if (form.full_name.trim().length < 2 || form.full_name.trim().length > 100) {
+    return 'Full name must be between 2 and 100 characters'
+  }
+
+  if (form.phone_number) {
+    const normalized = form.phone_number.trim()
+    const numericLength = normalized.replace(/[^0-9]/g, '').length
+    if (!/^\+?[0-9\s-]+$/.test(normalized) || numericLength < 10 || numericLength > 20) {
+      return 'Invalid phone number format'
+    }
+  }
+
+  return null
+}
+
 export default function UsersPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
@@ -80,6 +140,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [branchFilter, setBranchFilter] = useState('all')
+  const [roleFilter, setRoleFilter] = useState('all')
 
   const { data: branchesData } = useBranches({ limit: 100 })
   const branchFilterLabel = branchesData?.data?.find((branch) => branch.id === branchFilter)?.name_en
@@ -89,6 +150,7 @@ export default function UsersPage() {
     limit: pageSize,
     search,
     branch_id: branchFilter === 'all' ? undefined : branchFilter,
+    role: roleFilter === 'all' ? undefined : roleFilter,
   })
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -145,13 +207,22 @@ export default function UsersPage() {
   const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setFormError(null)
+    const validationError = validateUserCreateForm(createForm)
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
+
+    const normalizedPhone = createForm.phone_number.trim()
+    const phoneNumber = normalizedPhone ? normalizedPhone.replace(/\s+/g, ' ') : undefined
+
     try {
       await createUser({
         username: createForm.username,
         email: createForm.email,
         password: createForm.password,
-        full_name: createForm.full_name,
-        phone_number: createForm.phone_number || undefined,
+        full_name: createForm.full_name.trim(),
+        phone_number: phoneNumber,
       })
       setCreateForm(defaultUserForm)
       setCreateDialogOpen(false)
@@ -164,13 +235,23 @@ export default function UsersPage() {
     e.preventDefault()
     if (!editingUser) return
     setFormError(null)
+
+    const validationError = validateUserUpdateForm(editForm)
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
+
+    const normalizedPhone = editForm.phone_number.trim()
+    const phoneNumber = normalizedPhone ? normalizedPhone.replace(/\s+/g, ' ') : undefined
+
     try {
       await updateUser({
         id: editingUser.id,
         data: {
           email: editForm.email,
-          full_name: editForm.full_name,
-          phone_number: editForm.phone_number || undefined,
+          full_name: editForm.full_name.trim(),
+          phone_number: phoneNumber,
           is_active: editForm.is_active,
         },
       })
@@ -335,6 +416,25 @@ export default function UsersPage() {
                   {(branchesData?.data ?? []).map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name_en ?? branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={roleFilter}
+                onValueChange={(value) => {
+                  setRoleFilter(value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="All roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All roles</SelectItem>
+                  {USER_ROLES.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

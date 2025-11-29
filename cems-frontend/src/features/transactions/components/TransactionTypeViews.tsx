@@ -1,7 +1,6 @@
 import { format } from 'date-fns'
-import { ArrowRightLeft, MoveRight, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowRightLeft, Eye, MoveRight, TrendingDown, TrendingUp } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type {
   ExchangeTransactionResponse,
@@ -11,6 +10,7 @@ import type {
   TransactionType,
 } from '@/types/transaction.types'
 import { cn } from '@/lib/utils'
+import { ActionIconButton } from '@/components/action-icon-button'
 
 interface BaseTypeListProps<T> {
   transactions: T[]
@@ -93,13 +93,13 @@ export const ExchangeTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button
-              variant="outline"
+            <ActionIconButton
+              variant="ghost"
               size="sm"
+              label="View details"
               onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
-            >
-              View Details
-            </Button>
+              icon={<Eye className="w-4 h-4" />}
+            />
           </CardFooter>
         </Card>
       ))}
@@ -144,13 +144,13 @@ export const IncomeTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button
-              variant="outline"
+            <ActionIconButton
+              variant="ghost"
               size="sm"
+              label="View details"
               onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
-            >
-              View Details
-            </Button>
+              icon={<Eye className="w-4 h-4" />}
+            />
           </CardFooter>
         </Card>
       ))}
@@ -195,13 +195,13 @@ export const ExpenseTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button
+            <ActionIconButton
               size="sm"
-              variant="outline"
+              variant="ghost"
+              label="Review details"
               onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
-            >
-              Review Details
-            </Button>
+              icon={<Eye className="w-4 h-4" />}
+            />
           </CardFooter>
         </Card>
       ))}
@@ -254,13 +254,13 @@ export const TransferTransactionsList = ({
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button
+            <ActionIconButton
               size="sm"
-              variant="outline"
+              variant="ghost"
+              label="Inspect transfer"
               onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
-            >
-              Inspect Transfer
-            </Button>
+              icon={<Eye className="w-4 h-4" />}
+            />
           </CardFooter>
         </Card>
       ))}

@@ -1,7 +1,7 @@
 import { History, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { ActionIconButton } from '@/components/action-icon-button'
 import {
   Table,
   TableBody,
@@ -48,10 +48,14 @@ export default function VaultReconciliationTable({ report, isLoading, isFetching
           <Badge variant="secondary">
             {report?.total_discrepancies ?? 0} discrepancy{(report?.total_discrepancies ?? 0) === 1 ? '' : 'ies'}
           </Badge>
-          <Button variant="outline" size="sm" onClick={onRefresh} disabled={!onRefresh}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <ActionIconButton
+            variant="ghost"
+            size="sm"
+            label="Refresh reconciliation"
+            onClick={onRefresh}
+            disabled={!onRefresh}
+            icon={<RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />}
+          />
         </div>
       </CardHeader>
       <CardContent>

@@ -51,23 +51,75 @@ import {
   useUpdateBranch,
 } from '@/hooks/useBranches'
 import { formatAmount } from '@/utils/number'
+import { ActionIconButton } from '@/components/action-icon-button'
+import { BRANCH_REGIONS } from '@/constants/enums'
 
 type BranchFormState = {
-  name: string
+  name_en: string
+  name_ar: string
   code: string
+  region: string
   address: string
   city: string
   phone: string
   email: string
+  manager_id: string
+  is_main_branch: boolean
+  opening_balance_date: string
 }
 
 const defaultBranchForm: BranchFormState = {
-  name: '',
+  name_en: '',
+  name_ar: '',
   code: '',
+  region: '',
   address: '',
   city: '',
   phone: '',
   email: '',
+  manager_id: '',
+  is_main_branch: false,
+  opening_balance_date: '',
+}
+
+const branchCodePattern = /^BR\d+$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const validateBranchForm = (form: BranchFormState): string | null => {
+  if (form.name_en.trim().length < 2 || form.name_en.trim().length > 200) {
+    return 'Branch English name must be between 2 and 200 characters'
+  }
+
+  if (form.name_ar.trim().length < 2 || form.name_ar.trim().length > 200) {
+    return 'Branch Arabic name must be between 2 and 200 characters'
+  }
+
+  if (!branchCodePattern.test(form.code.trim())) {
+    return "Branch code must start with 'BR' followed by digits (e.g., BR001)"
+  }
+
+  if (form.address.trim().length < 10 || form.address.trim().length > 500) {
+    return 'Address must be between 10 and 500 characters'
+  }
+
+  if (form.city.trim().length < 2 || form.city.trim().length > 100) {
+    return 'City must be between 2 and 100 characters'
+  }
+
+  const phoneDigits = form.phone.replace(/\D/g, '')
+  if (phoneDigits.length < 10 || phoneDigits.length > 20) {
+    return 'Phone must be between 10 and 20 digits'
+  }
+
+  if (form.email && !emailPattern.test(form.email)) {
+    return 'Invalid email format'
+  }
+
+  if (!form.region.trim()) {
+    return 'Region is required'
+  }
+
+  return null
 }
 
 export default function BranchesPage() {
@@ -171,15 +223,29 @@ export default function BranchesPage() {
         setFormState: React.Dispatch<React.SetStateAction<BranchFormState>>
         disabled?: boolean
       }) {
+        const selectedRegion = BRANCH_REGIONS.some((option) => option.value === formState.region)
+          ? formState.region
+          : 'other'
         return (
           <div className="grid gap-4">
             <div>
-              <Label htmlFor="branch-name">Branch Name</Label>
+              <Label htmlFor="branch-name-en">Branch Name (English)</Label>
               <Input
-                id="branch-name"
-                value={formState.name}
-                onChange={(e) => setFormState((prev) => ({ ...prev, name: e.target.value }))}
+                id="branch-name-en"
+                value={formState.name_en}
+                onChange={(e) => setFormState((prev) => ({ ...prev, name_en: e.target.value }))}
                 placeholder="e.g. Baghdad Central"
+                disabled={disabled}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="branch-name-ar">Branch Name (Arabic)</Label>
+              <Input
+                id="branch-name-ar"
+                value={formState.name_ar}
+                onChange={(e) => setFormState((prev) => ({ ...prev, name_ar: e.target.value }))}
+                placeholder="مثال: فرع بغداد المركزي"
                 disabled={disabled}
                 required
               />
@@ -197,6 +263,37 @@ export default function BranchesPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
+                <Label htmlFor="branch-region">Region</Label>
+                <Select
+                  value={selectedRegion}
+                  onValueChange={(value) =>
+                    setFormState((prev) => ({ ...prev, region: value === 'other' ? prev.region : value }))
+                  }
+                  disabled={disabled}
+                >
+                  <SelectTrigger id="branch-region">
+                    <SelectValue placeholder="Choose region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BRANCH_REGIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedRegion === 'other' && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Enter region name"
+                    value={formState.region}
+                    onChange={(e) => setFormState((prev) => ({ ...prev, region: e.target.value }))}
+                    disabled={disabled}
+                    required
+                  />
+                )}
+              </div>
+              <div>
                 <Label htmlFor="branch-city">City</Label>
                 <Input
                   id="branch-city"
@@ -204,6 +301,7 @@ export default function BranchesPage() {
                   onChange={(e) => setFormState((prev) => ({ ...prev, city: e.target.value }))}
                   placeholder="Baghdad"
                   disabled={disabled}
+                  required
                 />
               </div>
               <div>
@@ -214,6 +312,7 @@ export default function BranchesPage() {
                   onChange={(e) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
                   placeholder="+964 123 456 789"
                   disabled={disabled}
+                  required
                 />
               </div>
             </div>
@@ -225,6 +324,7 @@ export default function BranchesPage() {
                 onChange={(e) => setFormState((prev) => ({ ...prev, address: e.target.value }))}
                 placeholder="Karrada, 14 July St."
                 disabled={disabled}
+                required
               />
             </div>
             <div>
@@ -237,6 +337,44 @@ export default function BranchesPage() {
                 placeholder="branch@cems.com"
                 disabled={disabled}
               />
+            </div>
+            <div>
+              <Label htmlFor="branch-manager">Manager ID</Label>
+              <Input
+                id="branch-manager"
+                value={formState.manager_id}
+                onChange={(e) => setFormState((prev) => ({ ...prev, manager_id: e.target.value }))}
+                placeholder="UUID of manager (optional)"
+                disabled={disabled}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <Label htmlFor="branch-main">Main Branch</Label>
+                  <p className="text-sm text-muted-foreground">Mark branch as the main location</p>
+                </div>
+                <Checkbox
+                  id="branch-main"
+                  checked={formState.is_main_branch}
+                  onCheckedChange={(checked) =>
+                    setFormState((prev) => ({ ...prev, is_main_branch: !!checked }))
+                  }
+                  disabled={disabled}
+                />
+              </div>
+              <div>
+                <Label htmlFor="opening-balance-date">Opening Balance Date</Label>
+                <Input
+                  id="opening-balance-date"
+                  type="datetime-local"
+                  value={formState.opening_balance_date}
+                  onChange={(e) =>
+                    setFormState((prev) => ({ ...prev, opening_balance_date: e.target.value }))
+                  }
+                  disabled={disabled}
+                />
+              </div>
             </div>
           </div>
         )
@@ -257,14 +395,24 @@ export default function BranchesPage() {
   const handleCreateBranch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setFormError(null)
+    const validationError = validateBranchForm(createForm)
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
     try {
       await createBranch({
-        name: createForm.name,
+        name_en: createForm.name_en,
+        name_ar: createForm.name_ar,
         code: createForm.code,
-        address: createForm.address || undefined,
-        city: createForm.city || undefined,
-        phone: createForm.phone || undefined,
-        email: createForm.email || undefined,
+        region: createForm.region,
+        address: createForm.address,
+        city: createForm.city,
+        phone: createForm.phone,
+        email: createForm.email || null,
+        manager_id: createForm.manager_id || null,
+        is_main_branch: createForm.is_main_branch,
+        opening_balance_date: createForm.opening_balance_date || null,
       })
       resetForms()
       setIsCreateDialogOpen(false)
@@ -277,16 +425,26 @@ export default function BranchesPage() {
     e.preventDefault()
     if (!editingBranch) return
     setFormError(null)
+    const validationError = validateBranchForm(editForm)
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
     try {
       await updateBranch({
         id: editingBranch.id,
         data: {
-          name: editForm.name,
+          name_en: editForm.name_en,
+          name_ar: editForm.name_ar,
           code: editForm.code,
-          address: editForm.address || undefined,
-          city: editForm.city || undefined,
-          phone: editForm.phone || undefined,
-          email: editForm.email || undefined,
+          region: editForm.region,
+          address: editForm.address || null,
+          city: editForm.city || null,
+          phone: editForm.phone || null,
+          email: editForm.email || null,
+          manager_id: editForm.manager_id || null,
+          is_main_branch: editForm.is_main_branch,
+          opening_balance_date: editForm.opening_balance_date || null,
         },
       })
       setIsEditDialogOpen(false)
@@ -299,12 +457,17 @@ export default function BranchesPage() {
   const openEditDialog = (branch: Branch) => {
     setEditingBranch(branch)
     setEditForm({
-      name: branch.name_en ?? branch.name ?? '',
+      name_en: branch.name_en ?? branch.name ?? '',
+      name_ar: branch.name_ar ?? '',
       code: branch.code ?? '',
+      region: branch.region ?? '',
       address: branch.address ?? '',
       city: branch.city ?? '',
       phone: branch.phone ?? '',
       email: branch.email ?? '',
+      manager_id: branch.manager_id ?? '',
+      is_main_branch: branch.is_main_branch,
+      opening_balance_date: branch.opening_balance_date ?? '',
     })
     setFormError(null)
     setIsEditDialogOpen(true)
@@ -373,15 +536,25 @@ export default function BranchesPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-4">
             <div className="md:col-span-2">
               <Label htmlFor="region-filter">Region</Label>
-              <Input
-                id="region-filter"
-                placeholder="e.g. Istanbul_Asian"
-                value={region}
-                onChange={(e) => {
-                  setRegion(e.target.value)
+              <Select
+                value={region || 'all'}
+                onValueChange={(value) => {
+                  setRegion(value === 'all' ? '' : value)
                   setPage(1)
                 }}
-              />
+              >
+                <SelectTrigger id="region-filter">
+                  <SelectValue placeholder="All regions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All regions</SelectItem>
+                  {BRANCH_REGIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Status</Label>
@@ -564,46 +737,50 @@ export default function BranchesPage() {
                           return formatAmount(totalUsdValue)
                         })()}
                       </TableCell>
-                      <TableCell>
+                          <TableCell>
                         <Badge variant={branch.is_active ? 'default' : 'secondary'}>
                           {branch.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
-                                <PencilLine className="w-4 h-4 mr-2" />
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => navigate(`/branches/${branch.id}/users`)}
-                              >
-                                <Users className="w-4 h-4 mr-2" />
-                                Users
-                              </Button>
-                              <Button
+                              <ActionIconButton
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleViewBranch(branch.id)}
-                              >
-                                <Eye className="w-4 h-4 mr-2" />
-                                Details
-                              </Button>
-                              <Button
+                                label="Edit branch"
+                                onClick={() => openEditDialog(branch)}
+                                icon={<PencilLine className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
                                 size="sm"
-                                variant={isExpanded ? 'default' : 'outline'}
+                                variant="ghost"
+                                label="View users"
+                                onClick={() => navigate(`/branches/${branch.id}/users`)}
+                                icon={<Users className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
+                                size="sm"
+                                variant="ghost"
+                                label="View details"
+                                onClick={() => handleViewBranch(branch.id)}
+                                icon={<Eye className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
+                                size="sm"
+                                variant="ghost"
+                                label={isExpanded ? 'Hide balances' : 'Show balances'}
                                 onClick={() => toggleBalances(branch.id)}
-                              >
-                                <Wallet className="w-4 h-4 mr-2" />
-                                {isExpanded ? 'Hide Balances' : 'Balances'}
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 ml-2" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 ml-2" />
-                                )}
-                              </Button>
+                                icon={
+                                  <span className="flex items-center gap-1">
+                                    <Wallet className="w-4 h-4" />
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-3 h-3" />
+                                    ) : (
+                                      <ChevronDown className="w-3 h-3" />
+                                    )}
+                                  </span>
+                                }
+                              />
                             </div>
                           </TableCell>
                         </TableRow>

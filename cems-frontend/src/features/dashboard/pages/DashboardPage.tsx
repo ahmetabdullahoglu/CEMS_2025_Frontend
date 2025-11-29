@@ -5,7 +5,6 @@ import {
   DollarSign,
   Building2,
   AlertTriangle,
-  CheckCircle,
   Clock,
   TrendingUp,
   PieChart,
@@ -33,7 +32,6 @@ import type {
 import StatCard from '../components/StatCard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -247,7 +245,6 @@ export default function DashboardPage() {
     transaction_growth_percent: 0,
   }
 
-  const topCurrencies = data.top_currencies ?? []
   const quickStats = data.quick_stats ?? {
     transactions_yesterday: 0,
     average_transaction_value: 0,
@@ -307,162 +304,82 @@ export default function DashboardPage() {
           icon={Building2}
           description="Operating branches"
         />
-        <StatCard
-          title="Pending Approvals"
-          value={overview.pending_approvals.toLocaleString()}
-          icon={CheckCircle}
-          description={overview.pending_approvals > 0 ? 'Requires attention' : 'All clear'}
-        />
+        {overview.pending_approvals > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-base">Pending Approvals</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <button
+                type="button"
+                onClick={() => navigate('/transactions/pending-approvals')}
+                className="group text-left"
+              >
+                <p className="text-2xl font-bold text-blue-700 group-hover:underline">
+                  {overview.pending_approvals}
+                </p>
+                <p className="text-sm text-blue-600 mt-1 group-hover:underline">
+                  Transactions awaiting approval
+                </p>
+              </button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Alerts and Quick Stats */}
-      {(overview.low_balance_alerts > 0 || overview.pending_approvals > 0) && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {overview.low_balance_alerts > 0 && (
-            <Card className="border-yellow-200 bg-yellow-50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  <CardTitle className="text-base">Low Balance Alerts</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-yellow-700">{overview.low_balance_alerts}</p>
-                <p className="text-sm text-yellow-600 mt-1">Currency balances need attention</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {overview.pending_approvals > 0 && (
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <CardTitle className="text-base">Pending Approvals</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-blue-700">{overview.pending_approvals}</p>
-                <p className="text-sm text-blue-600 mt-1">Transactions awaiting approval</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => navigate('/transactions/pending-approvals')}
-                >
-                  Review Pending Transfers
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-red-600" />
-            <CardTitle>Critical Liquidity Alerts</CardTitle>
-          </div>
-          <CardDescription>Live feed from detailed reports</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {criticalAlertsLoading ? (
-            <p className="text-sm text-muted-foreground">Checking balances...</p>
-          ) : criticalBalanceData && criticalBalanceData.alerts.length > 0 ? (
-            <div className="space-y-3">
-              {criticalBalanceData.alerts.slice(0, 4).map((alert) => (
-                <div key={`${alert.branch_id}-${alert.currency_id}`} className="flex flex-col gap-1 rounded-lg border p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{alert.branch_name}</p>
-                      <p className="text-xs text-muted-foreground">{alert.currency_code}</p>
-                    </div>
-                    <Badge variant="destructive" className="capitalize">
-                      {alert.severity}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Current ${Number(alert.current_balance).toLocaleString()} vs threshold $
-                    {Number(alert.threshold).toLocaleString()} — shortage $
-                    {Number(alert.shortage).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <CardTitle className="text-base">Low Balance Alerts</CardTitle>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No critical balance alerts detected.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top Currencies and Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        {/* Top Currencies */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Currencies</CardTitle>
-            <CardDescription>Most traded currencies today</CardDescription>
           </CardHeader>
           <CardContent>
-            {topCurrencies.length > 0 ? (
+            <p className="text-2xl font-bold text-yellow-700">{overview.low_balance_alerts}</p>
+            <p className="text-sm text-yellow-600 mt-1">Currency balances need attention</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-red-600" />
+              <CardTitle>Critical Liquidity Alerts</CardTitle>
+            </div>
+            <CardDescription>Live feed from detailed reports</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {criticalAlertsLoading ? (
+              <p className="text-sm text-muted-foreground">Checking balances...</p>
+            ) : criticalBalanceData && criticalBalanceData.alerts.length > 0 ? (
               <div className="space-y-3">
-                {topCurrencies.map((currency, index) => (
-                  <div key={currency.currency_code} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="w-8 text-center">
-                        {index + 1}
-                      </Badge>
+                {criticalBalanceData.alerts.slice(0, 4).map((alert) => (
+                  <div key={`${alert.branch_id}-${alert.currency_id}`} className="flex flex-col gap-1 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{currency.currency_code}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {currency.transaction_count} transactions
-                        </p>
+                        <p className="font-semibold">{alert.branch_name}</p>
+                        <p className="text-xs text-muted-foreground">{alert.currency_code}</p>
                       </div>
+                      <Badge variant="destructive" className="capitalize">
+                        {alert.severity}
+                      </Badge>
                     </div>
-                    <p className="font-semibold">
-                      ${Number(currency.total_amount ?? 0).toLocaleString()}
+                    <p className="text-sm text-muted-foreground">
+                      Current ${Number(alert.current_balance).toLocaleString()} vs threshold $
+                      {Number(alert.threshold).toLocaleString()} — shortage $
+                      {Number(alert.shortage).toLocaleString()}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No currency data available for today
-              </p>
+              <p className="text-sm text-muted-foreground">No critical balance alerts detected.</p>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Statistics</CardTitle>
-            <CardDescription>Performance insights</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b">
-                <div>
-                  <p className="text-sm text-muted-foreground">Transactions Yesterday</p>
-                  <p className="text-2xl font-bold">{quickStats.transactions_yesterday}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between pb-3 border-b">
-                <div>
-                  <p className="text-sm text-muted-foreground">Average Transaction Value</p>
-                  <p className="text-2xl font-bold">
-                    ${quickStats.average_transaction_value.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Busiest Hour</p>
-                  <p className="text-2xl font-bold">{quickStats.busiest_hour}</p>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

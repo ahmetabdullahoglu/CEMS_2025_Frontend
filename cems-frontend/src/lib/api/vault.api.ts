@@ -39,7 +39,9 @@ export const vaultApi = {
     search?: string
     vault_type?: string
   }) => {
-    const response = await apiClient.get('/vault/all', { params })
+    const response = await apiClient.get('/vault/all', {
+      params: { limit: params?.limit ?? 50, ...(params ?? {}) },
+    })
     return response.data
   },
 

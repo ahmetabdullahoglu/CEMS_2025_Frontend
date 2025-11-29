@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { Check, X, ArrowRight, Trash2 } from 'lucide-react'
+import { Check, X, ArrowRight, Trash2, CheckCircle2, XCircle } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { ActionIconButton } from '@/components/action-icon-button'
 import {
   useVaultTransfers,
   useApproveVaultTransfer,
@@ -311,7 +312,6 @@ export default function PendingTransfers() {
                 <TableHead>Currency</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Requested By</TableHead>
                 <TableHead>Meta</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -320,7 +320,10 @@ export default function PendingTransfers() {
               {(data.data ?? []).map((transfer) => (
                 <TableRow key={transfer.id}>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
+                    <div
+                      className="flex flex-col gap-1"
+                      title={`Requested by ${transfer.initiated_by_name || transfer.initiated_by || '—'}`}
+                    >
                       <span className="font-semibold">{transfer.transfer_number}</span>
                     </div>
                   </TableCell>
@@ -337,49 +340,46 @@ export default function PendingTransfers() {
                     })}
                   </TableCell>
                   <TableCell>{getStatusBadge(transfer.status ?? 'pending')}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {transfer.initiated_by_name || transfer.initiated_by || '-'}
-                  </TableCell>
                   <TableCell>{renderMeta(transfer)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       {transfer.status === 'pending' && (
                         <>
-                          <Button
+                          <ActionIconButton
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
+                            label="Approve transfer"
                             onClick={() => handleApprove(transfer.id)}
                             disabled={isApproving || isRejecting || isCancelling || isCompleting}
-                          >
-                            <Check className="w-4 h-4 mr-1" /> Approve
-                          </Button>
-                          <Button
+                            icon={<CheckCircle2 className="w-4 h-4" />}
+                          />
+                          <ActionIconButton
                             size="sm"
-                            variant="secondary"
+                            variant="ghost"
+                            label="Reject transfer"
                             onClick={() => handleReject(transfer.id)}
                             disabled={isApproving || isRejecting || isCancelling || isCompleting}
-                          >
-                            <X className="w-4 h-4 mr-1" /> Reject
-                          </Button>
-                          <Button
+                            icon={<XCircle className="w-4 h-4" />}
+                          />
+                          <ActionIconButton
                             size="sm"
-                            variant="destructive"
+                            variant="ghost"
+                            label="Cancel transfer"
                             onClick={() => handleCancel(transfer.id)}
                             disabled={isApproving || isRejecting || isCancelling || isCompleting}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" /> Cancel
-                          </Button>
+                            icon={<Trash2 className="w-4 h-4" />}
+                          />
                         </>
                       )}
                       {(transfer.status === 'approved' || transfer.status === 'in_transit') && (
-                        <Button
+                        <ActionIconButton
                           size="sm"
                           onClick={() => handleComplete(transfer.id)}
                           disabled={isApproving || isRejecting || isCancelling || isCompleting}
-                          variant="outline"
-                        >
-                          Mark Received
-                        </Button>
+                          variant="ghost"
+                          label="Mark received"
+                          icon={<Check className="w-4 h-4" />}
+                        />
                       )}
                     </div>
                   </TableCell>

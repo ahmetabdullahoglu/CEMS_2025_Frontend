@@ -12,7 +12,9 @@ import type {
 export const branchApi = {
   // Get all branches with pagination
   getBranches: async (params?: BranchQueryParams): Promise<BranchListResponse> => {
-    const response = await apiClient.get<BranchListResponse>('/branches', { params })
+    const response = await apiClient.get<BranchListResponse>('/branches', {
+      params: { limit: params?.limit ?? 50, ...(params ?? {}) },
+    })
     return response.data
   },
 

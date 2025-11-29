@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, RefreshCw, ShieldCheck, CircleDollarSign, History } from 'lucide-react'
+import {
+  Ban,
+  CheckCircle2,
+  CheckSquare,
+  CircleDollarSign,
+  Eye,
+  History,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  XCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -38,6 +49,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import { ActionIconButton } from '@/components/action-icon-button'
 import { format } from 'date-fns'
 import { useBranches } from '@/hooks/useBranches'
 import type { VaultResponse, VaultTransferStatus, VaultTransferType } from '@/types/vault.types'
@@ -68,6 +80,7 @@ export default function VaultPage() {
     location: '',
     is_active: true,
   })
+  const [vaultFormError, setVaultFormError] = useState<string | null>(null)
 
   const [historyFilters, setHistoryFilters] = useState<{
     status?: VaultTransferStatus
@@ -159,8 +172,34 @@ export default function VaultPage() {
 
   const activeVault = selectedVault ?? balancesData
 
+  const validateVaultForm = () => {
+    if (vaultForm.vault_code.trim().length < 3 || vaultForm.vault_code.trim().length > 20) {
+      return 'Vault code must be between 3 and 20 characters'
+    }
+
+    if (vaultForm.name.trim().length < 3 || vaultForm.name.trim().length > 100) {
+      return 'Vault name must be between 3 and 100 characters'
+    }
+
+    if (vaultForm.vault_type === 'branch' && !vaultForm.branch_id) {
+      return 'branch_id is required for branch vaults'
+    }
+
+    if (vaultForm.vault_type === 'main' && vaultForm.branch_id) {
+      return 'branch_id must be NULL for main vault'
+    }
+
+    return null
+  }
+
   const handleSaveVault = () => {
-    if (!vaultForm.name || !vaultForm.vault_code) return
+    setVaultFormError(null)
+    const validationError = validateVaultForm()
+    if (validationError) {
+      setVaultFormError(validationError)
+      return
+    }
+
     if (editingVault) {
       updateVault(
         { vaultId: editingVault.id, payload: { ...vaultForm, vault_type: undefined } },
@@ -402,15 +441,15 @@ export default function VaultPage() {
             </div>
             <div className="flex-1" />
             <div className="flex gap-2">
-              <Button
-                variant="outline"
+              <ActionIconButton
+                variant="ghost"
                 size="sm"
+                label="Refresh history"
                 onClick={() => {
                   refetchTransferHistory()
                 }}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />Refresh
-              </Button>
+                icon={<RefreshCw className="w-4 h-4" />}
+              />
             </div>
           </div>
 
@@ -453,47 +492,52 @@ export default function VaultPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => setDetailId(transfer.id)}>
-                          View
-                        </Button>
+                          <ActionIconButton
+                            size="sm"
+                            variant="ghost"
+                            label="View transfer"
+                            onClick={() => setDetailId(transfer.id)}
+                            icon={<Eye className="w-4 h-4" />}
+                          />
                           {transfer.status === 'pending' && (
                             <>
-                              <Button
+                              <ActionIconButton
                                 size="sm"
+                                variant="ghost"
+                                label="Approve transfer"
                                 onClick={() => setNotesDialog({ action: 'approve', id: transfer.id })}
                                 disabled={approving || rejecting}
-                              >
-                                Approve
-                              </Button>
-                              <Button
+                                icon={<CheckCircle2 className="w-4 h-4" />}
+                              />
+                              <ActionIconButton
                                 size="sm"
-                                variant="secondary"
+                                variant="ghost"
+                                label="Reject transfer"
                                 onClick={() => setNotesDialog({ action: 'reject', id: transfer.id })}
                                 disabled={approving || rejecting}
-                              >
-                                Reject
-                              </Button>
+                                icon={<XCircle className="w-4 h-4" />}
+                              />
                             </>
                           )}
                           {transfer.status === 'approved' && (
-                            <Button
+                            <ActionIconButton
                               size="sm"
-                              variant="outline"
+                              variant="ghost"
+                              label="Mark completed"
                               onClick={() => completeVaultTransfer(transfer.id)}
                               disabled={completing}
-                            >
-                              Mark Completed
-                            </Button>
+                              icon={<CheckSquare className="w-4 h-4" />}
+                            />
                           )}
                           {transfer.status !== 'completed' && transfer.status !== 'cancelled' && (
-                            <Button
+                            <ActionIconButton
                               size="sm"
-                              variant="destructive"
+                              variant="ghost"
+                              label="Cancel transfer"
                               onClick={() => setNotesDialog({ action: 'cancel', id: transfer.id })}
                               disabled={cancelling}
-                            >
-                              Cancel
-                            </Button>
+                              icon={<Ban className="w-4 h-4" />}
+                            />
                           )}
                         </div>
                       </TableCell>
@@ -772,7 +816,15 @@ export default function VaultPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={vaultDialogOpen} onOpenChange={setVaultDialogOpen}>
+      <Dialog
+        open={vaultDialogOpen}
+        onOpenChange={(open) => {
+          setVaultDialogOpen(open)
+          if (!open) {
+            setVaultFormError(null)
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingVault ? 'Update Vault' : 'Create Vault'}</DialogTitle>
@@ -864,6 +916,7 @@ export default function VaultPage() {
               />
             </div>
           </div>
+          {vaultFormError && <p className="text-sm text-destructive">{vaultFormError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setVaultDialogOpen(false)}>
               Cancel

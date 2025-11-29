@@ -13,7 +13,9 @@ import type {
 export const customerApi = {
   // Get customers list with filters and pagination
   getCustomers: async (params: CustomerQueryParams): Promise<CustomerListResponse> => {
-    const response = await apiClient.get<CustomerListResponse>('/customers', { params })
+    const response = await apiClient.get<CustomerListResponse>('/customers', {
+      params: { limit: params?.limit ?? 50, ...(params ?? {}) },
+    })
     return response.data
   },
 

@@ -11,6 +11,7 @@ import type {
   TransactionType,
 } from '@/types/transaction.types'
 import { cn } from '@/lib/utils'
+import { ActionIconButton } from '@/components/action-icon-button'
 
 interface TransactionTableProps {
   transactions: AnyTransactionResponse[]
@@ -223,14 +224,13 @@ export default function TransactionTable({
                     }) : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
+                    <ActionIconButton
                       variant="ghost"
                       size="sm"
+                      label="View details"
                       onClick={() => onViewDetails?.(transaction.id, transaction.transaction_type)}
-                      title="View Details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                      icon={<Eye className="w-4 h-4" />}
+                    />
                   </TableCell>
                 </TableRow>
               )

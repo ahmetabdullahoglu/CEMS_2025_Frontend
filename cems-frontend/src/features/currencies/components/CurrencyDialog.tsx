@@ -8,21 +8,33 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CURRENCY_STATUSES } from '@/constants/enums'
 import { useCreateCurrency, useUpdateCurrency } from '@/hooks/useCurrencies'
 import type { Currency } from '@/types/currency.types'
 
 const currencySchema = z.object({
   code: z
     .string()
-    .min(3, 'Code must be 3 characters')
-    .max(3, 'Code must be 3 characters')
+    .length(3, 'Currency code must be 3 letters')
+    .regex(/^[A-Za-z]{3}$/, 'Currency code must contain only letters')
     .transform((val) => val.toUpperCase()),
-  name: z.string().min(2, 'Name is required'),
-  symbol: z.string().min(1, 'Symbol is required').max(5, 'Max 5 characters'),
+  name_en: z
+    .string()
+    .min(2, 'English name must be at least 2 characters')
+    .max(100, 'English name must be at most 100 characters'),
+  name_ar: z
+    .string()
+    .min(2, 'Arabic name must be at least 2 characters')
+    .max(100, 'Arabic name must be at most 100 characters'),
+  symbol: z.string().max(10, 'Symbol must be at most 10 characters').optional().or(z.literal('')),
   decimal_places: z
     .number({ invalid_type_error: 'Decimal places are required' })
-    .min(0)
-    .max(6, 'Maximum 6 decimal places'),
+    .min(0, 'Decimal places must be between 0 and 8')
+    .max(8, 'Decimal places must be between 0 and 8')
+    .optional()
+    .default(2),
+  is_base_currency: z.boolean().optional(),
   is_active: z.boolean().optional(),
 })
 
@@ -50,9 +62,11 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
     resolver: zodResolver(currencySchema),
     defaultValues: {
       code: '',
-      name: '',
+      name_en: '',
+      name_ar: '',
       symbol: '',
       decimal_places: 2,
+      is_base_currency: false,
       is_active: true,
     },
   })
@@ -61,13 +75,23 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
     if (currency && open) {
       reset({
         code: currency.code,
-        name: currency.name || currency.name_en,
-        symbol: currency.symbol,
+        name_en: currency.name_en || currency.name,
+        name_ar: currency.name_ar || currency.name,
+        symbol: currency.symbol || '',
         decimal_places: currency.decimal_places,
+        is_base_currency: currency.is_base_currency ?? false,
         is_active: currency.is_active,
       })
     } else if (!currency && open) {
-      reset({ code: '', name: '', symbol: '', decimal_places: 2, is_active: true })
+      reset({
+        code: '',
+        name_en: '',
+        name_ar: '',
+        symbol: '',
+        decimal_places: 2,
+        is_base_currency: false,
+        is_active: true,
+      })
     }
   }, [currency, open, reset])
 
@@ -76,18 +100,22 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
       await updateCurrency({
         id: currency.id,
         payload: {
-          name: data.name,
-          symbol: data.symbol,
+          name_en: data.name_en,
+          name_ar: data.name_ar,
+          symbol: data.symbol || null,
           decimal_places: data.decimal_places,
+          is_base_currency: data.is_base_currency,
           is_active: data.is_active,
         },
       })
     } else {
       await createCurrency({
         code: data.code,
-        name: data.name,
-        symbol: data.symbol,
+        name_en: data.name_en,
+        name_ar: data.name_ar,
+        symbol: data.symbol || null,
         decimal_places: data.decimal_places,
+        is_base_currency: data.is_base_currency,
         is_active: data.is_active,
       })
     }
@@ -96,6 +124,7 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
   }
 
   const isBusy = creating || updating
+  const activeStatus = watch('is_active') ? 'active' : 'inactive'
 
   return (
     <Dialog open={open} onOpenChange={() => !isBusy && onClose()}>
@@ -118,10 +147,17 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="US Dollar" disabled={isBusy} {...register('name')} />
-            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name_en">Name (English)</Label>
+              <Input id="name_en" placeholder="US Dollar" disabled={isBusy} {...register('name_en')} />
+              {errors.name_en && <p className="text-sm text-red-500">{errors.name_en.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name_ar">Name (Arabic)</Label>
+              <Input id="name_ar" placeholder="دولار أمريكي" disabled={isBusy} {...register('name_ar')} />
+              {errors.name_ar && <p className="text-sm text-red-500">{errors.name_ar.message}</p>}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -141,15 +177,43 @@ export function CurrencyDialog({ open, onClose, currency }: CurrencyDialogProps)
 
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
-              <Label htmlFor="is_active">Active</Label>
-              <p className="text-sm text-muted-foreground">Toggle currency availability</p>
+              <Label htmlFor="is_base_currency">Base Currency</Label>
+              <p className="text-sm text-muted-foreground">Mark as the system base currency</p>
             </div>
             <Checkbox
-              id="is_active"
-              checked={watch('is_active') ?? false}
-              onCheckedChange={(checked) => setValue('is_active', !!checked)}
+              id="is_base_currency"
+              checked={watch('is_base_currency') ?? false}
+              onCheckedChange={(checked) => setValue('is_base_currency', !!checked)}
               disabled={isBusy}
             />
+          </div>
+
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="currency-status">Status</Label>
+                <p className="text-sm text-muted-foreground">Select availability for this currency</p>
+              </div>
+              <Select
+                value={activeStatus}
+                onValueChange={(value) => setValue('is_active', value === 'active')}
+                disabled={isBusy}
+              >
+                <SelectTrigger id="currency-status" className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCY_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Deprecated or inactive statuses will disable new usage for this currency.
+            </p>
           </div>
 
           <DialogFooter>
